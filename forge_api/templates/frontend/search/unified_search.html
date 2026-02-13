@@ -1,0 +1,435 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Búsqueda Unificada - MovIAx{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-result-item {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.3s ease;
+    }
+    .search-result-item:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-color: #007bff;
+        background: #f8f9fa;
+    }
+    .search-highlight {
+        background: #fff3cd;
+        padding: 0 0.125rem;
+        border-radius: 0.25rem;
+    }
+    .result-type-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+    .result-type-product {
+        background: #28a745;
+        color: white;
+    }
+    .result-type-oem {
+        background: #007bff;
+        color: white;
+    }
+    .result-type-equivalence {
+        background: #17a2b8;
+        color: white;
+    }
+    .result-type-equipment {
+        background: #fd7e14;
+        color: white;
+    }
+    .stock-badge {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+    .stock-high {
+        background: #d4edda;
+        color: #155724;
+    }
+    .stock-low {
+        background: #fff3cd;
+        color: #856404;
+    }
+    .stock-none {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    .confidence-bar {
+        height: 8px;
+        border-radius: 4px;
+        background: #e9ecef;
+        overflow: hidden;
+    }
+    .confidence-fill {
+        height: 100%;
+        border-radius: 4px;
+    }
+    .confidence-high { background: #28a745; }
+    .confidence-medium { background: #ffc107; }
+    .confidence-low { background: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-search text-primary me-2"></i>
+                Búsqueda Unificada
+            </h1>
+            <p class="text-muted mb-0">
+                Busca en Inventario, Catálogo OEM, Equivalencias y Equipos
+            </p>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <form method="get" class="mb-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-white">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text" name="q" class="form-control" 
+                           placeholder="Buscar por SKU, número de parte, nombre, código..."
+                           value="{{ query|default:'' }}"
+                           autofocus>
+                    {% if query %}
+                    <a href="{% url 'frontend:unified_search' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="type" class="form-select form-select-lg">
+                    <option value="all" {% if search_type == 'all' %}selected{% endif %}>
+                        Todos los catálogos
+                    </option>
+                    <option value="products" {% if search_type == 'products' %}selected{% endif %}>
+                        Inventario
+                    </option>
+                    <option value="oem" {% if search_type == 'oem' %}selected{% endif %}>
+                        Catálogo OEM
+                    </option>
+                    <option value="equivalences" {% if search_type == 'equivalences' %}selected{% endif %}>
+                        Equivalencias
+                    </option>
+                    <option value="equipment" {% if search_type == 'equipment' %}selected{% endif %}>
+                        Equipos
+                    </option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Quick filters -->
+        <div class="row mt-2">
+            <div class="col-12">
+                <small class="text-muted">Filtros rápidos:</small>
+                <div class="btn-group btn-group-sm ms-2">
+                    <button type="button" class="btn btn-outline-secondary" onclick="setFilter('brand', '')">Todos</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="setFilter('brand', 'Ford')">Ford</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="setFilter('brand', 'CAT')">CAT</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="setFilter('brand', 'John Deere')">John Deere</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    {% if results %}
+    <!-- Results Summary -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    {% if results.total_count > 0 %}
+                    <i class="bi bi-check-circle text-success me-2"></i>
+                    {{ results.total_count }} resultados para "{{ query }}"
+                    {% else %}
+                    <i class="bi bi-x-circle text-danger me-2"></i>
+                    No se encontraron resultados
+                    {% endif %}
+                </h5>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Results by Category -->
+        <div class="col-md-12">
+            <!-- Products -->
+            {% if results.results.products %}
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-box-seam text-success me-2"></i>
+                    Inventario ({{ results.results.products|length }})
+                </h5>
+                {% for product in results.results.products %}
+                <div class="search-result-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <span class="result-type-badge result-type-product me-2">INV</span>
+                                <div>
+                                    <a href="{{ product.url }}" class="text-decoration-none fw-bold">
+                                        {{ product.name|default:product.sku }}
+                                    </a>
+                                    <div class="text-muted small">
+                                        SKU: {{ product.sku }} | 
+                                        Marca: {{ product.brand|default:'N/A' }} |
+                                        OEM: {{ product.oem_ref|default:'N/A' }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <span class="stock-badge {% if product.stock.available > 10 %}stock-high{% elif product.stock.available > 0 %}stock-low{% else %}stock-none{% endif %}">
+                                {{ product.stock.available }} en stock
+                            </span>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <span class="fw-bold">${{ product.price }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- OEM Items -->
+            {% if results.results.oem_items %}
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-gear text-primary me-2"></i>
+                    Catálogo OEM ({{ results.results.oem_items|length }})
+                </h5>
+                {% for item in results.results.oem_items %}
+                <div class="search-result-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <span class="result-type-badge result-type-oem me-2">OEM</span>
+                                <div>
+                                    <a href="{{ item.url }}" class="text-decoration-none fw-bold">
+                                        {{ item.part_number }}
+                                    </a>
+                                    <div class="text-muted small">
+                                        {{ item.brand }} | 
+                                        Tipo: {{ item.item_type }} |
+                                        {% if item.year_start %}{{ item.year_start }}{% endif %}
+                                    </div>
+                                    <div class="small">{{ item.description|truncatechars:80 }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            {% if item.list_price %}
+                            <span class="fw-bold">${{ item.list_price }}</span>
+                            {% else %}
+                            <span class="text-muted">Consultar</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <a href="{{ item.url }}" class="btn btn-sm btn-outline-primary">
+                                Ver detalles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Equivalences -->
+            {% if results.results.equivalences %}
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-arrow-left-right text-info me-2"></i>
+                    Equivalencias ({{ results.results.equivalences|length }})
+                </h5>
+                {% for eq in results.results.equivalences %}
+                <div class="search-result-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-7">
+                            <div class="d-flex align-items-center">
+                                <span class="result-type-badge result-type-equivalence me-2">EQ</span>
+                                <div>
+                                    <a href="{{ eq.url }}" class="text-decoration-none fw-bold">
+                                        {{ eq.oem_part_number }} → {{ eq.aftermarket_sku|default:'N/A' }}
+                                    </a>
+                                    <div class="text-muted small">
+                                        {{ eq.oem_brand }} | 
+                                        {{ eq.equivalence_type }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="confidence-bar">
+                                <div class="confidence-fill {% if eq.confidence_score >= 80 %}confidence-high{% elif eq.confidence_score >= 50 %}confidence-medium{% else %}confidence-low{% endif %}" 
+                                     style="width: {{ eq.confidence_score }}%;"></div>
+                            </div>
+                            <small class="text-muted">{{ eq.confidence_score }}% confianza</small>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            {% if eq.verified %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Verificado</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Pendiente</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Equipment -->
+            {% if results.results.equipment %}
+            <div class="mb-4">
+                <h5 class="border-bottom pb-2 mb-3">
+                    <i class="bi bi-truck text-warning me-2"></i>
+                    Equipos ({{ results.results.equipment|length }})
+                </h5>
+                {% for equip in results.results.equipment %}
+                <div class="search-result-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center">
+                                <span class="result-type-badge result-type-equipment me-2">EQP</span>
+                                <div>
+                                    <a href="{{ equip.url }}" class="text-decoration-none fw-bold">
+                                        {{ equip.brand }} {{ equip.model }}
+                                    </a>
+                                    <div class="text-muted small">
+                                        Año: {{ equip.year|default:'N/A' }} |
+                                        Código: {{ equip.code }} |
+                                        Placas: {{ equip.license_plate|default:'N/A' }}
+                                    </div>
+                                    {% if equip.client %}
+                                    <small class="text-info">
+                                        <i class="bi bi-person"></i> {{ equip.client.name }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <span class="badge {% if equip.status == 'ACTIVO' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ equip.status }}
+                            </span>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <a href="{{ equip.url }}" class="btn btn-sm btn-outline-primary">
+                                Ver equipo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% elif query %}
+    <!-- No Results -->
+    <div class="text-center py-5">
+        <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
+        <h4 class="text-muted mt-3">No se encontraron resultados para "{{ query }}"</h4>
+        <p class="text-muted">
+            Intenta con términos más generales o verifica la ortografía.
+        </p>
+        <div class="mt-4">
+            <a href="{% url 'frontend:unified_search' %}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>
+                Nueva búsqueda
+            </a>
+            <a href="#" class="btn btn-outline-primary">
+                <i class="bi bi-plus-circle me-1"></i>
+                Agregar al catálogo
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <!-- Initial State -->
+    <div class="text-center py-5">
+        <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
+        <h4 class="text-muted mt-3">Realiza una búsqueda</h4>
+        <p class="text-muted">
+            Busca en todos los catálogos del sistema: inventario, partes OEM, equivalencias y equipos.
+        </p>
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-box-seam text-success" style="font-size: 2rem;"></i>
+                        <h6 class="mt-2">Inventario</h6>
+                        <small class="text-muted">Productos y stock</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-gear text-primary" style="font-size: 2rem;"></i>
+                        <h6 class="mt-2">Catálogo OEM</h6>
+                        <small class="text-muted">Partes originales</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-arrow-left-right text-info" style="font-size: 2rem;"></i>
+                        <h6 class="mt-2">Equivalencias</h6>
+                        <small class="text-muted">Alternativas del mercado</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-truck text-warning" style="font-size: 2rem;"></i>
+                        <h6 class="mt-2">Equipos</h6>
+                        <small class="text-muted">Vehículos y maquinaria</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+    function setFilter(name, value) {
+        const url = new URL(window.location);
+        if (value) {
+            url.searchParams.set(name, value);
+        } else {
+            url.searchParams.delete(name);
+        }
+        window.location.href = url.toString();
+    }
+
+    // Auto-submit on type change
+    document.querySelector('select[name="type"]').addEventListener('change', function() {
+        this.form.submit();
+    });
+</script>
+{% endblock %}

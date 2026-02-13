@@ -1,0 +1,659 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Registro de Auditoría - MovIAx{% endblock %}
+
+{% block body_class %}alert-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .audit-entry {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .audit-entry.action-insert {
+        border-left-color: #198754;
+    }
+    
+    .audit-entry.action-update {
+        border-left-color: #fd7e14;
+    }
+    
+    .audit-entry.action-delete {
+        border-left-color: #dc3545;
+    }
+    
+    .audit-entry:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .json-viewer {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 0.75rem;
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .filter-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+    }
+    
+    .filter-card .form-control,
+    .filter-card .form-select {
+        background-color: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .filter-card .form-label {
+        color: rgba(255, 255, 255, 0.9);
+        font-weight: 500;
+    }
+    
+    .action-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .table-badge {
+        background-color: #e9ecef;
+        color: #495057;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+    }
+    
+    .changes-summary {
+        background-color: #f8f9fa;
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+        margin: 0.5rem 0;
+    }
+    
+    .pagination-info {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    
+    .export-options {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-journal-text me-2 text-primary"></i>
+                        Registro de Auditoría
+                    </h2>
+                    <p class="text-muted mb-0">Seguimiento completo de cambios en el sistema con filtros avanzados</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-success" onclick="exportAuditLog()">
+                        <i class="bi bi-download me-1"></i>
+                        Exportar
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="refreshAuditLog()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Actualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card filter-card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">
+                        <i class="bi bi-funnel me-2"></i>
+                        Filtros Avanzados
+                    </h5>
+                    <form method="GET" id="filterForm">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Tabla</label>
+                                <select class="form-select" name="table_name">
+                                    <option value="">Todas las tablas</option>
+                                    {% for table in unique_tables %}
+                                    <option value="{{ table }}" {% if filters.table_name == table %}selected{% endif %}>
+                                        {{ table }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Acción</label>
+                                <select class="form-select" name="action">
+                                    <option value="">Todas las acciones</option>
+                                    {% for action in action_choices %}
+                                    <option value="{{ action }}" {% if filters.action == action %}selected{% endif %}>
+                                        {{ action }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Usuario</label>
+                                <input type="text" class="form-control" name="changed_by" 
+                                       value="{{ filters.changed_by }}" placeholder="ID de usuario">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Fecha Desde</label>
+                                <input type="date" class="form-control" name="date_from" 
+                                       value="{{ filters.date_from }}">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Fecha Hasta</label>
+                                <input type="date" class="form-control" name="date_to" 
+                                       value="{{ filters.date_to }}">
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-light">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-light btn-sm" onclick="clearFilters()">
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        Limpiar Filtros
+                                    </button>
+                                    <button type="button" class="btn btn-outline-light btn-sm" onclick="saveFilters()">
+                                        <i class="bi bi-bookmark me-1"></i>
+                                        Guardar Filtros
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="export-options">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h6 class="mb-1">
+                    <i class="bi bi-file-earmark-spreadsheet me-1"></i>
+                    Opciones de Exportación
+                </h6>
+                <p class="text-muted small mb-0">
+                    Exporte los registros de auditoría filtrados en diferentes formatos para análisis o cumplimiento.
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-primary btn-sm" onclick="exportFormat('csv')">
+                        <i class="bi bi-filetype-csv me-1"></i>
+                        CSV
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="exportFormat('excel')">
+                        <i class="bi bi-filetype-xlsx me-1"></i>
+                        Excel
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="exportFormat('pdf')">
+                        <i class="bi bi-filetype-pdf me-1"></i>
+                        PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="pagination-info">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Mostrando {{ audit_logs|length }} de {{ pagination.count }} registros
+                    {% if pagination.current_page > 1 %}
+                    (Página {{ pagination.current_page }} de {{ pagination.total_pages }})
+                    {% endif %}
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-success">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        INSERT
+                    </span>
+                    <span class="badge bg-warning">
+                        <i class="bi bi-pencil-circle me-1"></i>
+                        UPDATE
+                    </span>
+                    <span class="badge bg-danger">
+                        <i class="bi bi-trash-circle me-1"></i>
+                        DELETE
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Log Entries -->
+    <div class="row">
+        <div class="col-12">
+            {% if audit_logs %}
+                {% for log in audit_logs %}
+                <div class="audit-entry card mb-3 action-{{ log.action|lower }}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <i class="{{ log.action_icon }} fs-4 text-{{ log.action_class }}"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <h6 class="mb-0 me-2">
+                                                {{ log.action }} en {{ log.table_name }}
+                                            </h6>
+                                            <span class="badge bg-{{ log.action_class }} action-badge me-2">
+                                                {{ log.action }}
+                                            </span>
+                                            <span class="table-badge">
+                                                ID: {{ log.record_id }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-center text-muted small mb-2">
+                                            <i class="bi bi-clock me-1"></i>
+                                            <span class="me-3">{{ log.changed_at_formatted }}</span>
+                                            {% if log.changed_by %}
+                                            <i class="bi bi-person me-1"></i>
+                                            <span class="me-3">Usuario: {{ log.changed_by }}</span>
+                                            {% endif %}
+                                            {% if log.ip_address %}
+                                            <i class="bi bi-geo me-1"></i>
+                                            <span>IP: {{ log.ip_address }}</span>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Changes Summary -->
+                                        {% if log.old_values or log.new_values %}
+                                        <div class="changes-summary">
+                                            <div class="row">
+                                                {% if log.old_values and log.action == 'UPDATE' %}
+                                                <div class="col-md-6">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <strong>Valores Anteriores:</strong>
+                                                    </small>
+                                                    <div class="json-viewer">
+                                                        {{ log.old_values|truncatechars:200 }}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                                {% if log.new_values %}
+                                                <div class="col-md-6">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <strong>
+                                                            {% if log.action == 'INSERT' %}Valores Insertados:
+                                                            {% elif log.action == 'UPDATE' %}Valores Nuevos:
+                                                            {% else %}Valores Eliminados:
+                                                            {% endif %}
+                                                        </strong>
+                                                    </small>
+                                                    <div class="json-viewer">
+                                                        {{ log.new_values|truncatechars:200 }}
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if log.user_agent %}
+                                        <div class="text-muted small">
+                                            <i class="bi bi-browser-chrome me-1"></i>
+                                            <span>{{ log.user_agent|truncatechars:100 }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="btn-group-vertical" role="group">
+                                    <button class="btn btn-outline-primary btn-sm" 
+                                            onclick="viewFullDetails({{ log.audit_id }})">
+                                        <i class="bi bi-eye me-1"></i>
+                                        Ver Completo
+                                    </button>
+                                    {% if log.old_values and log.new_values %}
+                                    <button class="btn btn-outline-info btn-sm" 
+                                            onclick="compareChanges({{ log.audit_id }})">
+                                        <i class="bi bi-arrow-left-right me-1"></i>
+                                        Comparar
+                                    </button>
+                                    {% endif %}
+                                    <button class="btn btn-outline-secondary btn-sm" 
+                                            onclick="viewRelatedChanges('{{ log.table_name }}', {{ log.record_id }})">
+                                        <i class="bi bi-link me-1"></i>
+                                        Relacionados
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- Pagination -->
+                {% if pagination.total_pages > 1 %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <nav aria-label="Paginación de auditoría">
+                            <ul class="pagination justify-content-center">
+                                {% if pagination.previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ pagination.current_page|add:'-1' }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        <i class="bi bi-chevron-left"></i>
+                                        Anterior
+                                    </a>
+                                </li>
+                                {% endif %}
+                                
+                                {% for page_num in pagination.page_range %}
+                                <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
+                                    <a class="page-link" href="?page={{ page_num }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                                {% endfor %}
+                                
+                                {% if pagination.next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ pagination.current_page|add:'1' }}{% for key, value in filters.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        Siguiente
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-journal-x fs-1 text-muted mb-3"></i>
+                        <h4 class="text-muted">No se encontraron registros de auditoría</h4>
+                        <p class="text-muted">
+                            No hay registros que coincidan con los filtros seleccionados.
+                            <br>
+                            Intente ajustar los criterios de búsqueda.
+                        </p>
+                        <button class="btn btn-outline-primary" onclick="clearFilters()">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Limpiar Filtros
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Full Details Modal -->
+<div class="modal fade" id="fullDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalles Completos del Registro de Auditoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="fullDetailsContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Compare Changes Modal -->
+<div class="modal fade" id="compareChangesModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Comparación de Cambios</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="compareChangesContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form on filter change
+    const filterForm = document.getElementById('filterForm');
+    const filterInputs = filterForm.querySelectorAll('select, input[type="date"]');
+    
+    filterInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Add a small delay to allow multiple quick changes
+            clearTimeout(this.submitTimeout);
+            this.submitTimeout = setTimeout(() => {
+                filterForm.submit();
+            }, 500);
+        });
+    });
+});
+
+// Global functions
+function refreshAuditLog() {
+    window.location.reload();
+}
+
+function clearFilters() {
+    const form = document.getElementById('filterForm');
+    form.reset();
+    form.submit();
+}
+
+function saveFilters() {
+    const form = document.getElementById('filterForm');
+    const formData = new FormData(form);
+    const filters = {};
+    
+    for (let [key, value] of formData.entries()) {
+        if (value) filters[key] = value;
+    }
+    
+    localStorage.setItem('auditLogFilters', JSON.stringify(filters));
+    
+    // Show success message
+    const toast = document.createElement('div');
+    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-check-circle me-2"></i>
+                Filtros guardados exitosamente
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+    
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+
+function exportAuditLog() {
+    // Show export options
+    const exportModal = document.createElement('div');
+    exportModal.innerHTML = `
+        <div class="modal fade" id="exportModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Exportar Registro de Auditoría</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Seleccione el formato de exportación:</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="exportFormat('csv')">
+                                <i class="bi bi-filetype-csv me-2"></i>
+                                Exportar como CSV
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportFormat('excel')">
+                                <i class="bi bi-filetype-xlsx me-2"></i>
+                                Exportar como Excel
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="exportFormat('pdf')">
+                                <i class="bi bi-filetype-pdf me-2"></i>
+                                Exportar como PDF
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(exportModal);
+    const modal = new bootstrap.Modal(document.getElementById('exportModal'));
+    modal.show();
+    
+    modal._element.addEventListener('hidden.bs.modal', () => {
+        exportModal.remove();
+    });
+}
+
+function exportFormat(format) {
+    // In a real implementation, this would trigger the export
+    alert(`Exportando en formato ${format.toUpperCase()}. Esta funcionalidad se implementará próximamente.`);
+    
+    // Close any open modals
+    const modals = document.querySelectorAll('.modal.show');
+    modals.forEach(modal => {
+        const bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) bsModal.hide();
+    });
+}
+
+function viewFullDetails(auditId) {
+    // In a real implementation, this would fetch full details via API
+    const content = `
+        <div class="row">
+            <div class="col-12">
+                <h6>Información del Registro</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>ID de Auditoría:</strong></td><td>${auditId}</td></tr>
+                    <tr><td><strong>Tabla:</strong></td><td>products</td></tr>
+                    <tr><td><strong>ID de Registro:</strong></td><td>123</td></tr>
+                    <tr><td><strong>Acción:</strong></td><td>UPDATE</td></tr>
+                    <tr><td><strong>Usuario:</strong></td><td>admin</td></tr>
+                    <tr><td><strong>Fecha:</strong></td><td>2024-01-03 10:30:00</td></tr>
+                    <tr><td><strong>IP:</strong></td><td>192.168.1.100</td></tr>
+                </table>
+                
+                <h6 class="mt-3">Valores Anteriores</h6>
+                <pre class="json-viewer">{"name": "Producto A", "price": 100.00, "stock": 50}</pre>
+                
+                <h6 class="mt-3">Valores Nuevos</h6>
+                <pre class="json-viewer">{"name": "Producto A", "price": 120.00, "stock": 45}</pre>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('fullDetailsContent').innerHTML = content;
+    const modal = new bootstrap.Modal(document.getElementById('fullDetailsModal'));
+    modal.show();
+}
+
+function compareChanges(auditId) {
+    // In a real implementation, this would show a side-by-side comparison
+    const content = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-danger">Valores Anteriores</h6>
+                <div class="json-viewer">
+                    <div class="mb-2"><strong>name:</strong> "Producto A"</div>
+                    <div class="mb-2 bg-danger bg-opacity-25"><strong>price:</strong> 100.00</div>
+                    <div class="mb-2 bg-danger bg-opacity-25"><strong>stock:</strong> 50</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-success">Valores Nuevos</h6>
+                <div class="json-viewer">
+                    <div class="mb-2"><strong>name:</strong> "Producto A"</div>
+                    <div class="mb-2 bg-success bg-opacity-25"><strong>price:</strong> 120.00</div>
+                    <div class="mb-2 bg-success bg-opacity-25"><strong>stock:</strong> 45</div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6>Resumen de Cambios</h6>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-arrow-right text-warning me-2"></i>Precio cambió de $100.00 a $120.00</li>
+                    <li><i class="bi bi-arrow-right text-warning me-2"></i>Stock cambió de 50 a 45 unidades</li>
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('compareChangesContent').innerHTML = content;
+    const modal = new bootstrap.Modal(document.getElementById('compareChangesModal'));
+    modal.show();
+}
+
+function viewRelatedChanges(tableName, recordId) {
+    // In a real implementation, this would filter to show related changes
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('table_name', tableName);
+    currentUrl.searchParams.set('record_id', recordId);
+    window.location.href = currentUrl.toString();
+}
+</script>
+{% endblock %}

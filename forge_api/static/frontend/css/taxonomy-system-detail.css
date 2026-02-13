@@ -1,0 +1,133 @@
+/* Estilos para vista de detalle de sistema de taxonomía */
+
+/* Cards de estadísticas - altura uniforme */
+.card-stats {
+    min-height: 120px;
+}
+
+/* Cards del panel lateral - altura mínima consistente */
+.sidebar-card {
+    min-height: 200px;
+}
+
+/* Asegurar que todas las cards en una fila tengan la misma altura */
+.row-equal-height {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.row-equal-height > [class*='col-'] {
+    display: flex;
+    flex-direction: column;
+}
+
+.row-equal-height .card {
+    flex: 1;
+}
+
+/* Card de subsistemas - altura mínima */
+.card-subsistemas {
+    min-height: 400px;
+}
+
+/* Timeline para actividad reciente */
+.timeline {
+    position: relative;
+    padding-left: 20px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 15px;
+    border-left: 2px solid #dee2e6;
+    padding-left: 15px;
+}
+
+.timeline-item:last-child {
+    border-left: 2px solid transparent;
+    padding-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -6px;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.timeline-content {
+    padding-left: 10px;
+}
+
+.timeline-title {
+    margin-bottom: 2px;
+    font-size: 0.9rem;
+}
+
+.timeline-description {
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+    color: #6c757d;
+}
+
+/* Mejoras para badges en la tabla */
+.table .badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+/* Botones de acción en tabla */
+.table .btn-group-sm > .btn {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .sidebar-card {
+        min-height: auto;
+    }
+    
+    .card-subsistemas {
+        min-height: auto;
+    }
+}
+
+/* Hover effects para cards */
+.card-hover:hover {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+/* Header de cards más compacto */
+.card-header-compact {
+    padding: 0.75rem 1rem;
+}
+
+/* Body de cards con padding consistente */
+.card-body-compact {
+    padding: 1rem;
+}
+
+/* Estilos para modales - Solo para #addSubsystemModal, no afectar otros modales */
+
+#addSubsystemModal {
+    pointer-events: auto;
+}
+
+#addSubsystemModal .modal-dialog {
+    pointer-events: auto;
+}
+
+#addSubsystemModal .modal-content {
+    pointer-events: auto;
+}
+
+#addSubsystemModal input,
+#addSubsystemModal select,
+#addSubsystemModal textarea,
+#addSubsystemModal button {
+    pointer-events: auto;
+}

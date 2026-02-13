@@ -1,0 +1,505 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Importar Códigos - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-table {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .status-new {
+        background-color: #d1e7dd;
+    }
+    
+    .status-duplicate {
+        background-color: #fff3cd;
+    }
+    
+    .status-error {
+        background-color: #f8d7da;
+    }
+    
+    .upload-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .upload-area:hover {
+        border-color: #0d6efd;
+        background-color: #f8f9fa;
+    }
+    
+    .upload-area.dragover {
+        border-color: #0d6efd;
+        background-color: #e7f1ff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            {% for crumb in breadcrumbs %}
+                {% if crumb.url %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% else %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header bg-{{ category_config.color }} text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-upload"></i>
+                        Importar Códigos - {{ category_config.title }}
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Instrucciones -->
+                    <div class="alert alert-info">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-info-circle"></i> Instrucciones
+                        </h5>
+                        <ul class="mb-0">
+                            <li>El archivo puede ser <strong>CSV</strong> (UTF-8) o <strong>Excel</strong> (.xls, .xlsx)</li>
+                            <li>Debe contener las columnas: <strong>Código</strong>, <strong>Descripción</strong>, <strong>Activo</strong></li>
+                            <li>La columna "Activo" es para referencia/futuro uso (será ignorada)</li>
+                            <li>Los códigos duplicados pueden ser omitidos o actualizados según tu elección</li>
+                            <li>Tamaño máximo: 5MB</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Área de mensajes de error -->
+                    <div id="errorAlert" class="alert alert-danger d-none">
+                        <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Error</h6>
+                        <span id="errorMessage"></span>
+                    </div>
+                    
+                    <!-- Ejemplo de formato -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-file-earmark-text"></i> Ejemplo de formato (CSV o Excel)
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <pre class="mb-0 bg-light p-2 rounded">Código,Descripción,Activo
+DIESEL,Combustible Diesel,Sí
+GASOLINA,Combustible Gasolina,Sí
+ELECTRICO,Vehículo Eléctrico,Sí</pre>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="text-muted mb-2">
+                                        <strong>Para Excel:</strong> La primera fila debe contener los nombres de columnas.
+                                    </p>
+                                    <p class="text-muted mb-2">
+                                        <strong>Columnas:</strong>
+                                    </p>
+                                    <ul class="small text-muted">
+                                        <li><strong>Código</strong> - Identificador único (ej: DIESEL)</li>
+                                        <li><strong>Descripción</strong> - Nombre descriptivo</li>
+                                        <li><strong>Activo</strong> - Para uso futuro (ignorado)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <a href="{% url 'frontend:reference_code_export' %}?category={{ category }}&format=csv" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download"></i> Descargar plantilla CSV con datos actuales
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Formulario de importación -->
+                    <form method="post" enctype="multipart/form-data" id="importForm">
+                        {% csrf_token %}
+                        
+                        <!-- Área de carga de archivo -->
+                        <div class="upload-area mb-3" id="uploadArea">
+                            <i class="bi bi-cloud-upload fs-1 text-primary d-block mb-3"></i>
+                            <h5>Arrastra tu archivo CSV o Excel aquí</h5>
+                            <p class="text-muted">o haz clic para seleccionar</p>
+                            <input type="file" 
+                                   name="csv_file" 
+                                   id="id_csv_file"
+                                   accept=".csv,.xls,.xlsx"
+                                   class="d-none"
+                                   required>
+                            <div id="fileName" class="mt-3 text-success fw-bold"></div>
+                            <div id="fileSize" class="text-muted small"></div>
+                        </div>
+                        
+                        <!-- Opciones -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" 
+                                       name="skip_duplicates" 
+                                       id="id_skip_duplicates"
+                                       class="form-check-input"
+                                       checked>
+                                <label class="form-check-label" for="id_skip_duplicates">
+                                    Omitir códigos duplicados
+                                </label>
+                                <div class="form-text">
+                                    Si está marcado, los códigos que ya existen serán omitidos. 
+                                    Si no, serán actualizados con los nuevos valores.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Vista previa -->
+                        <div id="previewSection" class="d-none">
+                            <h5 class="mb-3">
+                                <i class="bi bi-eye"></i> Vista Previa
+                            </h5>
+                            
+                            <div class="alert alert-secondary" id="previewSummary">
+                                <!-- Resumen dinámico -->
+                            </div>
+                            
+                            <div class="preview-table">
+                                <table class="table table-sm table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Fila</th>
+                                            <th>Código</th>
+                                            <th>Descripción</th>
+                                            <th>Activo</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="previewTableBody">
+                                        <!-- Datos dinámicos -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'frontend:reference_code_list' %}?category={{ category }}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <div>
+                                <button type="button" 
+                                        class="btn btn-info me-2" 
+                                        id="previewBtn"
+                                        disabled>
+                                    <span class="preview-spinner spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <i class="bi bi-eye preview-icon"></i> <span class="preview-text">Vista Previa</span>
+                                </button>
+                                <button type="submit" 
+                                        class="btn btn-success"
+                                        id="importBtn"
+                                        disabled>
+                                    <span class="import-spinner spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                                    <i class="bi bi-upload import-icon"></i> <span class="import-text">Importar Códigos</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('id_csv_file');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const previewBtn = document.getElementById('previewBtn');
+    const importBtn = document.getElementById('importBtn');
+    const previewSection = document.getElementById('previewSection');
+    const errorAlert = document.getElementById('errorAlert');
+    const errorMessage = document.getElementById('errorMessage');
+    const importForm = document.getElementById('importForm');
+    const category = '{{ category }}';
+    
+    // Formatos válidos
+    const validExtensions = ['.csv', '.xls', '.xlsx'];
+    const maxFileSize = 5 * 1024 * 1024; // 5MB
+    
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorAlert.classList.remove('d-none');
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+            errorAlert.classList.add('d-none');
+        }, 10000);
+    }
+    
+    function hideError() {
+        errorAlert.classList.add('d-none');
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function validateFile(file) {
+        hideError();
+        
+        if (!file) {
+            showError('No se seleccionó ningún archivo');
+            return false;
+        }
+        
+        // Validar extensión
+        const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        if (!validExtensions.includes(ext)) {
+            showError(`Formato no válido: ${ext}. Use CSV, XLS o XLSX.`);
+            return false;
+        }
+        
+        // Validar tamaño
+        if (file.size > maxFileSize) {
+            showError(`El archivo es demasiado grande: ${formatFileSize(file.size)}. Máximo: 5MB`);
+            return false;
+        }
+        
+        return true;
+    }
+    
+    function setPreviewLoading(loading) {
+        const spinner = previewBtn.querySelector('.preview-spinner');
+        const icon = previewBtn.querySelector('.preview-icon');
+        const text = previewBtn.querySelector('.preview-text');
+        
+        if (loading) {
+            spinner.classList.remove('d-none');
+            icon.classList.add('d-none');
+            text.textContent = 'Cargando...';
+            previewBtn.disabled = true;
+        } else {
+            spinner.classList.add('d-none');
+            icon.classList.remove('d-none');
+            text.textContent = 'Vista Previa';
+            previewBtn.disabled = false;
+        }
+    }
+    
+    function setImportLoading(loading) {
+        const spinner = importBtn.querySelector('.import-spinner');
+        const icon = importBtn.querySelector('.import-icon');
+        const text = importBtn.querySelector('.import-text');
+        
+        if (loading) {
+            spinner.classList.remove('d-none');
+            icon.classList.add('d-none');
+            text.textContent = 'Importando...';
+            importBtn.disabled = true;
+            previewBtn.disabled = true;
+        } else {
+            spinner.classList.add('d-none');
+            icon.classList.remove('d-none');
+            text.textContent = 'Importar Códigos';
+            importBtn.disabled = false;
+            previewBtn.disabled = false;
+        }
+    }
+    
+    // Click en área de carga
+    uploadArea.addEventListener('click', function() {
+        fileInput.click();
+    });
+    
+    // Cambio de archivo
+    fileInput.addEventListener('change', function() {
+        hideError();
+        previewSection.classList.add('d-none');
+        
+        if (this.files.length > 0) {
+            const file = this.files[0];
+            
+            if (validateFile(file)) {
+                fileName.textContent = `Archivo: ${file.name}`;
+                fileSize.textContent = `Tamaño: ${formatFileSize(file.size)}`;
+                previewBtn.disabled = false;
+                importBtn.disabled = false;
+            } else {
+                fileName.textContent = '';
+                fileSize.textContent = '';
+                previewBtn.disabled = true;
+                importBtn.disabled = true;
+                this.value = ''; // Clear input
+            }
+        }
+    });
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', function() {
+        this.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('dragover');
+        hideError();
+        previewSection.classList.add('d-none');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            
+            if (validateFile(file)) {
+                fileInput.files = files;
+                fileName.textContent = `Archivo: ${file.name}`;
+                fileSize.textContent = `Tamaño: ${formatFileSize(file.size)}`;
+                previewBtn.disabled = false;
+                importBtn.disabled = false;
+            }
+        }
+    });
+    
+    // Vista previa
+    previewBtn.addEventListener('click', function() {
+        if (!fileInput.files[0]) {
+            showError('Selecciona un archivo primero');
+            return;
+        }
+        
+        setPreviewLoading(true);
+        hideError();
+        
+        const formData = new FormData();
+        formData.append('csv_file', fileInput.files[0]);
+        formData.append('category', category);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch('{% url "frontend:reference_code_import_preview" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || `Error ${response.status}: ${response.statusText}`);
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                showPreview(data.preview, data.summary);
+            } else {
+                showError(data.error || 'Error desconocido al generar vista previa');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Error al generar vista previa: ' + error.message);
+        })
+        .finally(() => {
+            setPreviewLoading(false);
+        });
+    });
+    
+    // Importar - manejo del formulario
+    importForm.addEventListener('submit', function(e) {
+        if (!fileInput.files[0]) {
+            e.preventDefault();
+            showError('Selecciona un archivo primero');
+            return;
+        }
+        
+        setImportLoading(true);
+        // El formulario se enviará normalmente
+    });
+    
+    function showPreview(preview, summary) {
+        // Mostrar resumen
+        const summaryDiv = document.getElementById('previewSummary');
+        const tbody = document.getElementById('previewTableBody');
+        const previewSection = document.getElementById('previewSection');
+        
+        console.log('summaryDiv:', summaryDiv);
+        console.log('tbody:', tbody);
+        console.log('previewSection:', previewSection);
+        
+        if (!summaryDiv || !tbody || !previewSection) {
+            console.error('No se encontraron elementos de preview');
+            console.error('summaryDiv:', summaryDiv, 'tbody:', tbody, 'previewSection:', previewSection);
+            showError('Error interno: No se pueden mostrar los resultados. Por favor recarga la página.');
+            return;
+        }
+        
+        const summaryHtml = `
+            <strong>Resumen del archivo:</strong><br>
+            Total de filas: ${summary.total}<br>
+            Códigos nuevos: <span class="text-success">${summary.new}</span><br>
+            Códigos duplicados: <span class="text-warning">${summary.duplicates}</span><br>
+            Errores: <span class="text-danger">${summary.errors}</span>
+        `;
+        summaryDiv.innerHTML = summaryHtml;
+        
+        // Mostrar tabla
+        tbody.innerHTML = '';
+        
+        preview.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.className = `status-${row.status}`;
+            tr.innerHTML = `
+                <td>${row.row}</td>
+                <td>${escapeHtml(row.code)}</td>
+                <td>${escapeHtml(row.description)}</td>
+                <td>${escapeHtml(row.is_active)}</td>
+                <td>${escapeHtml(row.message)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+        
+        previewSection.classList.remove('d-none');
+        
+        // Scroll a la vista previa
+        previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    // Función para escapar HTML y prevenir XSS
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+});
+</script>
+{% endblock %}

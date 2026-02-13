@@ -1,0 +1,598 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ client.name|default:"Cliente" }} - MovIAx{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/client-detail.css' %}">
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item"><a href="{% url 'frontend:client_list' %}">Clientes</a></li>
+    <li class="breadcrumb-item active">{{ client.name|default:"Cliente" }}</li>
+{% endblock %}
+
+{% block content %}
+{% if client %}
+    <!-- Client Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card enhanced-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center client-avatar" 
+                                 style="width: 60px; height: 60px;">
+                                <i class="bi bi-person" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h1 class="h3 mb-1">{{ client.name }}</h1>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-hash me-1"></i>
+                                Cliente ID: {{ client.client_id }}
+                                {% if client.client_code %}
+                                    | Código: {{ client.client_code }}
+                                {% endif %}
+                            </p>
+                            {% if client.type %}
+                                <small class="badge bg-light text-dark">
+                                    {{ client.type|title }}
+                                </small>
+                            {% endif %}
+                        </div>
+                        <div class="flex-shrink-0">
+                            {% if client.credit_status %}
+                                <span class="badge bg-{{ client.credit_status_class|default:"secondary" }} fs-6">
+                                    <span class="status-indicator {{ client.credit_status_class|default:"secondary" }}"></span>
+                                    {{ client.credit_status_label|default:"Sin estado" }}
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary fs-6">
+                                    <i class="bi bi-question-circle me-1"></i>
+                                    Estado Desconocido
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{% url 'frontend:client_update' client.client_id %}" class="btn btn-primary">
+                    <i class="bi bi-pencil me-1"></i>
+                    Editar
+                </a>
+                <button type="button" class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split" 
+                        data-bs-toggle="dropdown">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'frontend:workorder_create' %}?client={{ client.client_id }}">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Nueva Orden de Trabajo
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" onclick="printClientInfo()">
+                            <i class="bi bi-printer me-2"></i>
+                            Imprimir Información
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="#" onclick="confirmDelete()">
+                            <i class="bi bi-trash me-2"></i>
+                            Eliminar Cliente
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Information Cards -->
+    <div class="row">
+        <!-- Contact Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card enhanced-card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-lines-fill me-2"></i>
+                        Información de Contacto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label text-muted">Correo Electrónico</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-envelope me-2 text-primary"></i>
+                                {% if client.email %}
+                                    <a href="mailto:{{ client.email }}" class="text-decoration-none">
+                                        {{ client.email }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">No especificado</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label text-muted">Teléfono</label>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-telephone me-2 text-primary"></i>
+                                {% if client.phone %}
+                                    <a href="tel:{{ client.phone }}" class="text-decoration-none">
+                                        {{ client.phone }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">No especificado</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label text-muted">Dirección</label>
+                            <div class="d-flex align-items-start">
+                                <i class="bi bi-geo-alt me-2 text-primary mt-1"></i>
+                                <div>
+                                    {% if client.address %}
+                                        {{ client.address|linebreaks }}
+                                    {% else %}
+                                        <span class="text-muted">No especificada</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Financial Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card enhanced-card credit-status-card status-{{ client.credit_status_class|default:"secondary" }} h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-credit-card me-2"></i>
+                        Información Financiera
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="form-label text-muted">Límite de Crédito</label>
+                            <div class="h4 text-primary mb-0">
+                                ${{ client.credit_limit|floatformat:2|default:"0.00" }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-6">
+                            <label class="form-label text-muted">Balance Actual</label>
+                            <div class="h4 mb-0 text-{{ client.credit_status_class|default:"secondary" }}">
+                                ${{ client.current_balance|floatformat:2|default:"0.00" }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label text-muted">Crédito Disponible</label>
+                            <div class="h5 mb-0 text-{{ client.credit_status_class|default:"secondary" }}">
+                                ${{ client.available_credit|default:"0.00"|floatformat:2 }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-muted">Uso del límite de crédito</small>
+                                <small class="text-muted">{{ client.credit_utilization|floatformat:1|default:"0" }}%</small>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                {% if client.credit_limit > 0 %}
+                                    {% widthratio client.current_balance client.credit_limit 100 as usage_percent %}
+                                    <div class="progress-bar bg-{{ client.credit_status_class|default:"secondary" }}" 
+                                         style="width: {% if usage_percent > 100 %}100{% else %}{{ usage_percent }}{% endif %}%">
+                                    </div>
+                                {% else %}
+                                    <div class="progress-bar bg-secondary" style="width: 100%"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="alert alert-{{ client.credit_status_class|default:"secondary" }} py-2 mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Estado:</strong> {{ client.credit_status_label|default:"Sin información" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics and Work Orders Section -->
+    <div class="row">
+        <!-- Work Order Statistics -->
+        <div class="col-md-4 mb-4">
+            <div class="card enhanced-card stats-card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>
+                        Estadísticas de Órdenes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 text-center">
+                        <div class="col-6">
+                            <div class="h4 text-primary mb-0">{{ workorder_stats.total }}</div>
+                            <small class="text-muted">Total</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 text-success mb-0">{{ workorder_stats.completed }}</div>
+                            <small class="text-muted">Completadas</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 text-info mb-0">{{ workorder_stats.in_progress }}</div>
+                            <small class="text-muted">En Progreso</small>
+                        </div>
+                        <div class="col-6">
+                            <div class="h4 text-warning mb-0">{{ workorder_stats.pending }}</div>
+                            <small class="text-muted">Pendientes</small>
+                        </div>
+                        <div class="col-12">
+                            <div class="progress mt-2" style="height: 8px;">
+                                <div class="progress-bar bg-success" 
+                                     style="width: {{ workorder_stats.completion_rate }}%">
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ workorder_stats.completion_rate|floatformat:1 }}% Completadas</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Services -->
+        <div class="col-md-8 mb-4">
+            <div class="card enhanced-card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Servicios Recientes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_services %}
+                        <div class="list-group list-group-flush">
+                            {% for service in recent_services %}
+                                <div class="list-group-item px-0 py-2">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">{{ service.description|truncatechars:50 }}</h6>
+                                            <p class="mb-1 text-muted">
+                                                {% if service.equipment.brand %}
+                                                    {{ service.equipment.brand }} {{ service.equipment.model|default:"" }}
+                                                {% else %}
+                                                    Equipo no especificado
+                                                {% endif %}
+                                            </p>
+                                            <small class="text-muted">
+                                                {% if service.date %}
+                                                    {{ service.date|date:"d/m/Y" }}
+                                                {% else %}
+                                                    Fecha no disponible
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        {% if service.total_amount %}
+                                            <span class="badge bg-success">${{ service.total_amount|floatformat:2 }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="bi bi-clock text-muted" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2 mb-0">No hay servicios completados recientes</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Work Orders Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-clipboard-check me-2"></i>
+                            Órdenes de Trabajo
+                            {% if workorders %}
+                                <span class="badge bg-primary ms-2">{{ workorders|length }}</span>
+                            {% endif %}
+                        </h5>
+                        <a href="{% url 'frontend:workorder_create' %}?client={{ client.client_id }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Nueva Orden
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if workorders %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Orden #</th>
+                                        <th>Equipo</th>
+                                        <th>Estado</th>
+                                        <th>Fecha Creación</th>
+                                        <th>Fecha Estimada</th>
+                                        <th>Descripción</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for workorder in workorders %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'frontend:workorder_detail' workorder.id %}" 
+                                                   class="text-decoration-none fw-bold">
+                                                    #{{ workorder.id }}
+                                                </a>
+                                            </td>
+                                            <td>
+                                                {% if workorder.equipment %}
+                                                    <div>
+                                                        <strong>{{ workorder.equipment.brand|default:"" }} {{ workorder.equipment.model|default:"" }}</strong>
+                                                        {% if workorder.equipment.serial_number %}
+                                                            <br><small class="text-muted">S/N: {{ workorder.equipment.serial_number }}</small>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">No especificado</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-{{ workorder.status_class|default:"secondary" }}">
+                                                    {{ workorder.status_label|default:workorder.status|title }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if workorder.created_date %}
+                                                    {{ workorder.created_date|date:"d/m/Y" }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if workorder.estimated_completion %}
+                                                    {{ workorder.estimated_completion|date:"d/m/Y" }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if workorder.description %}
+                                                    {{ workorder.description|truncatechars:40 }}
+                                                {% else %}
+                                                    <span class="text-muted">Sin descripción</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="{% url 'frontend:workorder_detail' workorder.id %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-clipboard-x display-4 text-muted"></i>
+                            <h5 class="mt-3">No hay órdenes de trabajo</h5>
+                            <p class="text-muted">Este cliente aún no tiene órdenes de trabajo registradas.</p>
+                            <a href="{% url 'frontend:workorder_create' %}?client={{ client.client_id }}" class="btn btn-primary">
+                                <i class="bi bi-plus-lg me-1"></i>
+                                Crear Primera Orden
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Equipment Section -->
+    {% if equipment %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-gear me-2"></i>
+                            Equipos Registrados
+                            <span class="badge bg-primary ms-2">{{ equipment|length }}</span>
+                        </h5>
+                        <a href="{% url 'frontend:equipment_create' %}?client={{ client.client_id }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Registrar Equipo
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for item in equipment %}
+                            <div class="col-md-6 col-lg-4 mb-3">
+                                <div class="card border">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0">
+                                                <i class="bi bi-gear-fill text-primary" style="font-size: 1.5rem;"></i>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="card-title mb-1">
+                                                    {{ item.brand|default:"Sin marca" }} {{ item.model|default:"" }}
+                                                </h6>
+                                                {% if item.serial_number %}
+                                                    <p class="card-text text-muted mb-1">
+                                                        <small>S/N: {{ item.serial_number }}</small>
+                                                    </p>
+                                                {% endif %}
+                                                {% if item.year %}
+                                                    <p class="card-text text-muted mb-1">
+                                                        <small>Año: {{ item.year }}</small>
+                                                    </p>
+                                                {% endif %}
+                                                <a href="{% url 'frontend:equipment_detail' item.id %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye me-1"></i>Ver Detalles
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- System Information -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Información del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <small class="text-muted">Fecha de Registro:</small>
+                            <div>
+                                {% if client.created_date %}
+                                    {{ client.created_date|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    No disponible
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Última Actualización:</small>
+                            <div>
+                                {% if client.updated_date %}
+                                    {{ client.updated_date|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    No disponible
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Total de Órdenes:</small>
+                            <div>{{ workorders|length }} orden{{ workorders|length|pluralize:"es" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                    </div>
+                    <p>¿Estás seguro de que deseas eliminar al cliente <strong>{{ client.name }}</strong>?</p>
+                    <p class="text-muted">
+                        Se eliminarán todos los datos asociados incluyendo:
+                    </p>
+                    <ul class="text-muted">
+                        <li>{{ workorders|length }} orden{{ workorders|length|pluralize:"es" }} de trabajo</li>
+                        <li>Historial de servicios</li>
+                        <li>Información financiera</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form method="post" action="{% url 'frontend:client_delete' client.client_id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>
+                            Eliminar Cliente
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% else %}
+    <!-- Client Not Found -->
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-person-x display-1 text-muted"></i>
+                    <h3 class="mt-3">Cliente No Encontrado</h3>
+                    <p class="text-muted">El cliente que buscas no existe o no tienes permisos para verlo.</p>
+                    <a href="{% url 'frontend:client_list' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver a la Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+function printClientInfo() {
+    window.print();
+}
+
+// Add print styles
+const printStyles = `
+    @media print {
+        .btn, .dropdown, .card-header .btn-group { display: none !important; }
+        .card { border: 1px solid #dee2e6 !important; box-shadow: none !important; }
+        .badge { border: 1px solid currentColor; }
+    }
+`;
+
+const styleSheet = document.createElement("style");
+styleSheet.innerText = printStyles;
+document.head.appendChild(styleSheet);
+</script>
+{% endblock %}

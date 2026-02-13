@@ -1,0 +1,377 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Proveedores - MovIAx{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/client-list.css' %}">
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item active">Proveedores</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-truck me-2 text-primary"></i>
+            Gestión de Proveedores
+        </h1>
+        <p class="text-muted mb-0">Administra la información de tus proveedores</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'frontend:supplier_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>
+            Nuevo Proveedor
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="search-filter-bar">
+    <form method="get" class="row g-3">
+        <div class="col-md-3">
+            <label for="{{ filter_form.search.id_for_label }}" class="form-label small text-muted">{{ filter_form.search.label }}</label>
+            {{ filter_form.search }}
+        </div>
+        
+        <div class="col-md-2">
+            <label for="{{ filter_form.search_by.id_for_label }}" class="form-label small text-muted">{{ filter_form.search_by.label }}</label>
+            {{ filter_form.search_by }}
+        </div>
+        
+        <div class="col-md-2">
+            <label for="{{ filter_form.status.id_for_label }}" class="form-label small text-muted">{{ filter_form.status.label }}</label>
+            {{ filter_form.status }}
+        </div>
+        
+        <div class="col-md-2">
+            <label for="{{ filter_form.sort_by.id_for_label }}" class="form-label small text-muted">{{ filter_form.sort_by.label }}</label>
+            {{ filter_form.sort_by }}
+        </div>
+        
+        <div class="col-md-3">
+            <div class="d-flex align-items-end gap-2 h-100">
+                <div class="form-check">
+                    {{ filter_form.show_inactive }}
+                    <label class="form-check-label small" for="{{ filter_form.show_inactive.id_for_label }}">
+                        {{ filter_form.show_inactive.label }}
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-funnel me-1"></i>
+                    Filtrar
+                </button>
+                
+                {% if request.GET %}
+                    <a href="{% url 'frontend:supplier_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+    
+    <!-- Results summary -->
+    <div class="row mt-2">
+        <div class="col">
+            <small class="text-muted">
+                {% if pagination.count > 0 %}
+                    Mostrando {{ pagination.start_index }}-{{ pagination.end_index }} de {{ pagination.count }} proveedor{{ pagination.count|pluralize:"es" }}
+                    {% if filters.search %}
+                        para "{{ filters.search }}"
+                    {% endif %}
+                {% else %}
+                    No se encontraron proveedores
+                    {% if filters.search %}
+                        para "{{ filters.search }}"
+                    {% endif %}
+                {% endif %}
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Indicator -->
+<div id="loadingIndicator" class="text-center py-5" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2 text-muted">Cargando proveedores...</p>
+</div>
+
+<!-- Suppliers Table -->
+<div class="card" id="suppliersTable">
+    <div class="card-body p-0">
+        {% if suppliers %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Proveedor</th>
+                            <th>Contacto</th>
+                            <th>Calificación</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supplier in suppliers %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0">
+                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px;">
+                                                <i class="bi bi-truck"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-0">
+                                                {% if supplier.supplier_id %}
+                                                    <a href="{% url 'frontend:supplier_detail' supplier.supplier_id %}" 
+                                                       class="text-decoration-none">
+                                                        {{ supplier.name }}
+                                                    </a>
+                                                {% else %}
+                                                    {{ supplier.name }}
+                                                {% endif %}
+                                                {% if supplier.is_preferred %}
+                                                    <span class="badge bg-warning text-dark ms-1">
+                                                        <i class="bi bi-star-fill"></i> Preferido
+                                                    </span>
+                                                {% endif %}
+                                            </h6>
+                                            <small class="text-muted">Código: {{ supplier.supplier_code|default:"N/A" }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>
+                                        <i class="bi bi-envelope me-1 text-muted"></i>
+                                        {{ supplier.contact_email|default:"No especificado" }}
+                                    </div>
+                                    <div>
+                                        <i class="bi bi-telephone me-1 text-muted"></i>
+                                        {{ supplier.contact_phone|default:"No especificado" }}
+                                    </div>
+                                    {% if supplier.contact_person %}
+                                    <div>
+                                        <i class="bi bi-person me-1 text-muted"></i>
+                                        {{ supplier.contact_person }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            {% if supplier.rating %}
+                                                {% with rating=supplier.rating|floatformat:1 %}
+                                                    <span class="badge bg-{% if rating >= 4.5 %}success{% elif rating >= 3.5 %}warning{% else %}danger{% endif %}">
+                                                        {{ rating }} ⭐
+                                                    </span>
+                                                {% endwith %}
+                                            {% else %}
+                                                <span class="text-muted">Sin calificación</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if supplier.status == 'ACTIVE' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            Activo
+                                        </span>
+                                    {% elif supplier.status == 'INACTIVE' %}
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-x-circle me-1"></i>
+                                            Inactivo
+                                        </span>
+                                    {% elif supplier.status == 'SUSPENDED' %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>
+                                            Suspendido
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark">
+                                            {{ supplier.status|default:"N/A" }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        {% if supplier.supplier_id %}
+                                            <a href="{% url 'frontend:supplier_detail' supplier.supplier_id %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               data-bs-toggle="tooltip" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'frontend:supplier_update' supplier.supplier_id %}" 
+                                               class="btn btn-sm btn-outline-secondary"
+                                               data-bs-toggle="tooltip" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    data-bs-toggle="tooltip" title="Eliminar"
+                                                    onclick="confirmDelete({{ supplier.supplier_id }}, '{{ supplier.name }}')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        {% else %}
+                                            <span class="text-muted">Sin acciones</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-truck display-1 text-muted"></i>
+                <h4 class="mt-3">No se encontraron proveedores</h4>
+                {% if filters.search or filters.status %}
+                    <p class="text-muted">
+                        No hay resultados para los filtros aplicados
+                        {% if filters.search %}
+                            <br><strong>"{{ filters.search }}"</strong>
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'frontend:supplier_list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-funnel-fill me-1"></i>
+                        Limpiar filtros
+                    </a>
+                {% else %}
+                    <p class="text-muted">Comienza agregando tu primer proveedor</p>
+                    <a href="{% url 'frontend:supplier_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Crear Proveedor
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if pagination.total_pages > 1 %}
+    <nav aria-label="Paginación de proveedores" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <!-- Previous page -->
+            {% if pagination.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pagination.current_page|add:'-1' }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.order %}&order={{ filters.order }}{% endif %}">
+                        <i class="bi bi-chevron-left"></i>
+                        <span class="d-none d-sm-inline ms-1">Anterior</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        <i class="bi bi-chevron-left"></i>
+                        <span class="d-none d-sm-inline ms-1">Anterior</span>
+                    </span>
+                </li>
+            {% endif %}
+            
+            <!-- Page range -->
+            {% for page_num in pagination.page_range %}
+                {% if page_num == pagination.current_page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_num }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.order %}&order={{ filters.order }}{% endif %}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            <!-- Next page -->
+            {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pagination.current_page|add:'1' }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.status %}&status={{ filters.status }}{% endif %}{% if filters.sort %}&sort={{ filters.sort }}{% endif %}{% if filters.order %}&order={{ filters.order }}{% endif %}">
+                        <span class="d-none d-sm-inline me-1">Siguiente</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        <span class="d-none d-sm-inline me-1">Siguiente</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar al proveedor <strong id="deleteSupplierName"></strong>?</p>
+                <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(supplierId, supplierName) {
+    document.getElementById('deleteSupplierName').textContent = supplierName;
+    document.getElementById('deleteForm').action = "{% url 'frontend:supplier_delete' 0 %}".replace('0', supplierId);
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Show loading indicator during form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const filterForm = document.querySelector('.search-filter-bar form');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const suppliersTable = document.getElementById('suppliersTable');
+    
+    if (filterForm) {
+        filterForm.addEventListener('submit', function() {
+            if (loadingIndicator && suppliersTable) {
+                suppliersTable.style.display = 'none';
+                loadingIndicator.style.display = 'block';
+            }
+        });
+    }
+    
+    // Auto-submit form on filter change
+    const filterSelects = document.querySelectorAll('select[name="status"], select[name="sort_by"]');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            if (loadingIndicator && suppliersTable) {
+                suppliersTable.style.display = 'none';
+                loadingIndicator.style.display = 'block';
+            }
+            this.form.submit();
+        });
+    });
+});
+</script>
+{% endblock %}
+

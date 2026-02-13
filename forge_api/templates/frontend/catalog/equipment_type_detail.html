@@ -1,0 +1,425 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ equipment_type.name }} - Tipo de Equipo - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .info-card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .attribute-item {
+        padding: 0.75rem;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s ease;
+    }
+    .attribute-item:hover {
+        background-color: #f8f9fa;
+    }
+    .attribute-item:last-child {
+        border-bottom: none;
+    }
+    .taxonomy-breadcrumb {
+        background: #e3f2fd;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .stat-box {
+        text-align: center;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+    }
+    .action-buttons {
+        position: sticky;
+        top: 20px;
+        z-index: 100;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if equipment_type %}
+    <!-- Header -->
+    <div class="detail-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="{{ equipment_type.category_icon|default:'bi-gear-wide-connected' }} me-3" style="font-size: 2.5rem;"></i>
+                    <div>
+                        <h1 class="h2 mb-0">{{ equipment_type.name }}</h1>
+                        <p class="mb-0 opacity-75">
+                            <strong>Código:</strong> {{ equipment_type.type_code }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-light text-dark me-3 px-3 py-2">
+                        <i class="bi bi-tag me-1"></i>
+                        {{ equipment_type.category|title }}
+                    </span>
+                    {% if equipment_type.is_active %}
+                    <span class="badge bg-success px-3 py-2">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Activo
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger px-3 py-2">
+                        <i class="bi bi-x-circle me-1"></i>
+                        Inactivo
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-md-4 text-end">
+                <div class="stat-box bg-white text-dark">
+                    <div class="h3 mb-1 text-primary">{{ related_equipment_count|default:0 }}</div>
+                    <small>Equipos Registrados</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Taxonomy Information -->
+            {% if taxonomy_system %}
+            <div class="info-card card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-diagram-3 me-2"></i>
+                        Clasificación Taxonómica
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="taxonomy-breadcrumb">
+                        <nav aria-label="Taxonomía">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item">
+                                    <i class="{{ taxonomy_system.icon|default:'bi-gear' }} me-1"></i>
+                                    {{ taxonomy_system.name_es }}
+                                </li>
+                                {% if taxonomy_subsystem %}
+                                <li class="breadcrumb-item">
+                                    <i class="{{ taxonomy_subsystem.icon|default:'bi-gear' }} me-1"></i>
+                                    {{ taxonomy_subsystem.name_es }}
+                                </li>
+                                {% endif %}
+                                {% if taxonomy_group %}
+                                <li class="breadcrumb-item active" aria-current="page">
+                                    {{ taxonomy_group.name_es }}
+                                </li>
+                                {% endif %}
+                            </ol>
+                        </nav>
+                    </div>
+                    
+                    {% if taxonomy_group %}
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Descripción del Grupo</h6>
+                            <p class="mb-0">{{ taxonomy_group.description|default:"Sin descripción disponible" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if taxonomy_group.examples %}
+                            <h6 class="text-muted">Ejemplos</h6>
+                            <p class="mb-0">{{ taxonomy_group.examples }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Requirements -->
+                    {% if taxonomy_group.requires_position or taxonomy_group.requires_color or taxonomy_group.requires_finish or taxonomy_group.requires_side %}
+                    <div class="mt-3">
+                        <h6 class="text-muted">Atributos Requeridos</h6>
+                        <div class="d-flex flex-wrap">
+                            {% if taxonomy_group.requires_position %}
+                            <span class="badge bg-info me-2 mb-1">Posición</span>
+                            {% endif %}
+                            {% if taxonomy_group.requires_color %}
+                            <span class="badge bg-warning me-2 mb-1">Color</span>
+                            {% endif %}
+                            {% if taxonomy_group.requires_finish %}
+                            <span class="badge bg-success me-2 mb-1">Acabado</span>
+                            {% endif %}
+                            {% if taxonomy_group.requires_side %}
+                            <span class="badge bg-secondary me-2 mb-1">Lado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Description -->
+            {% if equipment_type.description %}
+            <div class="info-card card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-text me-2"></i>
+                        Descripción
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ equipment_type.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Attributes Schema -->
+            {% if attributes %}
+            <div class="info-card card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-tags me-2"></i>
+                        Esquema de Atributos
+                        <span class="badge bg-primary ms-2">{{ attributes|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% for attribute in attributes %}
+                    <div class="attribute-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <strong class="text-primary">{{ attribute.key }}</strong>
+                            </div>
+                            <div class="col-md-8">
+                                <span class="text-muted">{{ attribute.value }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Related Equipment Preview -->
+            {% if related_equipment_count > 0 %}
+            <div class="info-card card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-collection me-2"></i>
+                        Equipos Relacionados
+                    </h5>
+                    <a href="#" class="btn btn-outline-primary btn-sm">
+                        Ver Todos ({{ related_equipment_count }})
+                    </a>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-0">
+                        Hay {{ related_equipment_count }} equipo{{ related_equipment_count|pluralize }} registrado{{ related_equipment_count|pluralize }} 
+                        de este tipo en el sistema.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="action-buttons">
+                <!-- Action Buttons -->
+                <div class="card info-card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-tools me-2"></i>
+                            Acciones
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'frontend:equipment_type_edit' equipment_type.type_id %}" class="btn btn-primary">
+                                <i class="bi bi-pencil me-2"></i>
+                                Editar Tipo
+                            </a>
+                            <button class="btn btn-outline-success">
+                                <i class="bi bi-plus-lg me-2"></i>
+                                Agregar Equipo
+                            </button>
+                            <button class="btn btn-outline-info">
+                                <i class="bi bi-download me-2"></i>
+                                Exportar Datos
+                            </button>
+                            <hr>
+                            <a href="{% url 'frontend:equipment_type_delete' equipment_type.type_id %}" class="btn btn-outline-danger">
+                                <i class="bi bi-trash me-2"></i>
+                                Eliminar Tipo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div class="card info-card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Información del Sistema
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <small class="text-muted d-block">Fecha de Creación</small>
+                                <strong>{{ equipment_type.created_at|date:"d/m/Y H:i" }}</strong>
+                            </div>
+                            <div class="col-12">
+                                <small class="text-muted d-block">Última Actualización</small>
+                                <strong>{{ equipment_type.updated_at|date:"d/m/Y H:i" }}</strong>
+                            </div>
+                            {% if equipment_type.icon %}
+                            <div class="col-12">
+                                <small class="text-muted d-block">Icono</small>
+                                <i class="{{ equipment_type.icon }} me-2"></i>
+                                <code>{{ equipment_type.icon }}</code>
+                            </div>
+                            {% endif %}
+                            {% if equipment_type.color %}
+                            <div class="col-12">
+                                <small class="text-muted d-block">Color</small>
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded me-2" 
+                                         style="width: 20px; height: 20px; background-color: {{ equipment_type.color }};"></div>
+                                    <code>{{ equipment_type.color }}</code>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card info-card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-graph-up me-2"></i>
+                            Estadísticas Rápidas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 text-center">
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <div class="h4 mb-1 text-primary">{{ attributes|length|default:0 }}</div>
+                                    <small class="text-muted">Atributos</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <div class="h4 mb-1 text-success">{{ related_equipment_count|default:0 }}</div>
+                                    <small class="text-muted">Equipos</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Navegación de tipos de equipo">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'frontend:equipment_type_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Volver a la Lista
+                    </a>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary" title="Tipo Anterior">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" title="Tipo Siguiente">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Error State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">Tipo de Equipo No Encontrado</h4>
+                <p class="text-muted">
+                    El tipo de equipo solicitado no existe o no está disponible.
+                </p>
+                <a href="{% url 'frontend:equipment_type_list' %}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Volver a la Lista
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+    
+    // Attribute item hover effects
+    const attributeItems = document.querySelectorAll('.attribute-item');
+    attributeItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateX(5px)';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateX(0)';
+        });
+    });
+    
+    // Action button confirmations
+    const deleteButton = document.querySelector('.btn-outline-danger');
+    if (deleteButton) {
+        deleteButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (confirm('¿Está seguro de que desea eliminar este tipo de equipo? Esta acción no se puede deshacer.')) {
+                // Implement delete functionality
+                console.log('Delete confirmed');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

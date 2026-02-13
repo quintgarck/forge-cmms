@@ -1,0 +1,9 @@
+{
+	"client_code": "CLI-VALIDATION-001",
+	"type": "individual",
+	"name": "Cliente Validación Sistema",
+	"email": "correo@gmail.com",
+	"phone": "82363829",
+	"address": "Dirección de Validación 123, Colonia Prueba, Ciudad de México",
+	"credit_limit": "5000.00"
+}

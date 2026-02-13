@@ -1,0 +1,150 @@
+{% extends 'frontend/base_generic.html' %}
+
+{% load static %}
+
+{% block title %}Notificaciones{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-bell"></i> Notificaciones
+                    </h3>
+                    <div class="d-flex gap-2">
+                        {% if unread_count > 0 %}
+                        <form method="post" action="{% url 'frontend:notification_list' %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="mark_all_read">
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-check-double"></i> Marcar todas como leídas
+                            </button>
+                        </form>
+                        {% endif %}
+                        <a href="{% url 'frontend:notification_list' %}?limit=50" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="limitSelect" class="form-label">Mostrar</label>
+                                <select id="limitSelect" class="form-select" onchange="location = '?limit=' + this.value;">
+                                    <option value="20" {% if current_filters.limit == '20' %}selected{% endif %}>20 por página</option>
+                                    <option value="50" {% if current_filters.limit == '50' or current_filters.limit == 50 %}selected{% endif %}>50 por página</option>
+                                    <option value="100" {% if current_filters.limit == '100' %}selected{% endif %}>100 por página</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="unreadFilter" class="form-label">Estado</label>
+                                <select id="unreadFilter" class="form-select" onchange="location = '?limit={{ current_filters.limit }}&unread=' + (this.value === 'unread' ? 'true' : '');">
+                                    <option value="">Todas las notificaciones</option>
+                                    <option value="unread" {% if current_filters.unread %}selected{% endif %}>Solo no leídas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="searchDate" class="form-label">Desde Fecha</label>
+                                <input type="date" id="searchDate" class="form-control" value="{{ current_filters.since }}" 
+                                       onchange="location = '?limit={{ current_filters.limit }}&unread={% if current_filters.unread %}true{% endif %}&since=' + this.value;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ total_count }}</h5>
+                                    <p class="card-text text-muted">Total</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ unread_count }}</h5>
+                                    <p class="card-text">No leídas</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">{{ total_count|add:'-'|add:unread_count }}</h5>
+                                    <p class="card-text">Leídas</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de notificaciones -->
+                    {% if notifications %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Estado</th>
+                                    <th>Tipo</th>
+                                    <th>Asunto</th>
+                                    <th>Detalle</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for notification in notifications %}
+                                <tr class="{{ notification.css_class }}">
+                                    <td>
+                                        {% if notification.is_read %}
+                                            <span class="badge bg-secondary">Leído</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">No leído</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <i class="fas {{ notification.icon }}"></i>
+                                        <span class="text-capitalize">{{ notification.alert_type|default:"General" }}</span>
+                                    </td>
+                                    <td>{{ notification.title|default:"Notificación"|truncatechars:50 }}</td>
+                                    <td>{{ notification.message|default:"Sin detalle"|truncatechars:100 }}</td>
+                                    <td>{{ notification.created_at|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        {% if not notification.is_read %}
+                                        <form method="post" action="{% url 'frontend:notification_list' %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="mark_read">
+                                            <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Marcar como leída">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        <a href="#" class="btn btn-sm btn-outline-info" title="Ver detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                        <h5>No hay notificaciones</h5>
+                        <p class="text-muted">No se encontraron notificaciones con los filtros aplicados.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

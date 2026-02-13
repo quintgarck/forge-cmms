@@ -1,0 +1,152 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - MovIAx</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+    
+    {% load static %}
+    <link href="{% static 'frontend/css/main.css' %}" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+            border: none;
+        }
+        
+        .login-header {
+            background: var(--forge-primary);
+            color: white;
+            border-radius: 1rem 1rem 0 0;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .login-body {
+            padding: 2rem;
+        }
+        
+        .brand-logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-floating .form-control {
+            border-radius: 0.5rem;
+        }
+        
+        .btn-login {
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-4">
+                <div class="card login-card">
+                    <div class="login-header">
+                        <div class="brand-logo">
+                            <i class="bi bi-gear-fill"></i>
+                        </div>
+                        <h2 class="mb-0">MovIAx</h2>
+                        <p class="mb-0 opacity-75">Sistema de Gestión de Talleres</p>
+                    </div>
+                    
+                    <div class="login-body">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <form method="post" id="loginForm">
+                            {% csrf_token %}
+                            
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       placeholder="Usuario" required>
+                                <label for="username">
+                                    <i class="bi bi-person me-2"></i>Usuario
+                                </label>
+                            </div>
+                            
+                            <div class="form-floating mb-4">
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Contraseña" required>
+                                <label for="password">
+                                    <i class="bi bi-lock me-2"></i>Contraseña
+                                </label>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-login">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                                    Iniciar Sesión
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check me-1"></i>
+                                Acceso seguro con autenticación JWT
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4">
+                    <small class="text-white-50">
+                        © 2026 MovIAx - Sistema de Gestión de Talleres Automotrices
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Add loading state to login button
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            const button = this.querySelector('button[type="submit"]');
+            const originalText = button.innerHTML;
+            
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Iniciando sesión...';
+            
+            // Re-enable button after 5 seconds as fallback
+            setTimeout(() => {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }, 5000);
+        });
+        
+        // Focus on username field
+        document.getElementById('username').focus();
+    </script>
+</body>
+</html>

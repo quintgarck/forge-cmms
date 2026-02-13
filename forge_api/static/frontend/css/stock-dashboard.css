@@ -1,0 +1,186 @@
+/* Stock Dashboard Styles */
+
+.card {
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+    border-radius: 0.35rem;
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+/* Summary Cards */
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+
+.border-left-danger {
+    border-left: 0.25rem solid #e74a3b !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+.text-xs {
+    font-size: 0.7rem;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+/* Movement badges */
+.movement-in {
+    background-color: #1cc88a;
+    color: white;
+}
+
+.movement-out {
+    background-color: #e74a3b;
+    color: white;
+}
+
+.movement-adjustment {
+    background-color: #f6c23e;
+    color: #212529;
+}
+
+.movement-transfer {
+    background-color: #36b9cc;
+    color: white;
+}
+
+/* Table styling */
+.table-responsive {
+    border-radius: 0.35rem;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #5a5c69;
+    font-size: 0.85rem;
+}
+
+.table td {
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+/* Empty state */
+.fa-3x {
+    font-size: 3rem;
+    opacity: 0.3;
+}
+
+/* Warehouse summary cards */
+.card.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .col-xl-3.col-md-6 {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Loading states */
+.spinner-border {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+/* Button styling */
+.btn {
+    border-radius: 0.35rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.btn-primary:hover {
+    background-color: #2e59d9;
+    border-color: #2653d4;
+}
+
+.btn-outline-primary {
+    color: #4e73df;
+    border-color: #4e73df;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+/* Badge styling */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+    border-radius: 0.375rem;
+}
+
+/* Auto-refresh indicator */
+.auto-refresh-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.auto-refresh-indicator.show {
+    opacity: 1;
+}
+
+/* Print styles */
+@media print {
+    .btn, .dropdown {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+    
+    .badge {
+        border: 1px solid #000 !important;
+        color: #000 !important;
+        background: transparent !important;
+    }
+}

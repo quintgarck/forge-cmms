@@ -1,0 +1,111 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Catálogos para productos - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'frontend:catalog_index' %}">Catálogos</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Catálogos para productos</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-box-seam text-primary me-2"></i>
+                Catálogos para productos (interno)
+            </h1>
+            <p class="text-muted mb-0">Datos maestros que se usan al crear un producto en inventario: tipos de marca, categoría y tipo de producto</p>
+        </div>
+        <a href="{% url 'frontend:catalog_index' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Volver a Catálogos
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Tipos de marca -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 catalog-module-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-tag"></i> Tipos de marca
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text small">
+                        Catálogo de tipos de marca (ej. OEM, aftermarket) usados al dar de alta marcas.
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'frontend:product_catalog_brand_type_list' %}" class="btn btn-info btn-sm flex-grow-1">
+                            <i class="bi bi-list"></i> Lista
+                        </a>
+                        <a href="{% url 'frontend:product_catalog_brand_type_create' %}" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-plus"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categorías de producto -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 catalog-module-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-folder2"></i> Categorías de producto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text small">
+                        Categorías para productos de inventario (repuesto, material, servicio, etc.).
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'frontend:product_catalog_category_list' %}" class="btn btn-success btn-sm flex-grow-1">
+                            <i class="bi bi-list"></i> Lista
+                        </a>
+                        <a href="{% url 'frontend:product_catalog_category_create' %}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-plus"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tipos de producto -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 catalog-module-card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-box"></i> Tipos de producto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text small">
+                        Tipos de producto (repuesto, material, servicio) usados en inventario.
+                    </p>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex gap-1">
+                        <a href="{% url 'frontend:product_catalog_type_list' %}" class="btn btn-warning btn-sm flex-grow-1">
+                            <i class="bi bi-list"></i> Lista
+                        </a>
+                        <a href="{% url 'frontend:product_catalog_type_create' %}" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-plus"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

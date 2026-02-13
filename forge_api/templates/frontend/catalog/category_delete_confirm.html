@@ -1,0 +1,166 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb Navigation -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'frontend:dashboard' %}" class="text-decoration-none">
+                            <i class="bi bi-house-door me-1"></i>Inicio
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'frontend:catalog_index' %}" class="text-decoration-none">
+                            <i class="bi bi-book me-1"></i>Catálogos
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'frontend:category_list' %}" class="text-decoration-none">
+                            <i class="bi bi-folder-category me-1"></i>Categorías
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        {{ title }}
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                        {{ title }}
+                    </h1>
+                    <p class="text-muted mb-0">Confirmación de eliminación permanente de categoría</p>
+                </div>
+                <div>
+                    <a href="{% url 'frontend:category_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver a Categorías
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Card -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Advertencia de Eliminación Permanente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-octagon me-2"></i>
+                            ¡Esta acción es irreversible!
+                        </h5>
+                        <p class="mb-0">
+                            Está a punto de eliminar permanentemente la categoría "<strong>{{ category.name }}</strong>" 
+                            (código: {{ category.category_code }}). Esta acción:
+                        </p>
+                    </div>
+                    
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item">
+                            <i class="bi bi-x-circle text-danger me-2"></i>
+                            <strong>Eliminará permanentemente</strong> todos los datos de esta categoría
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-shield-exclamation text-warning me-2"></i>
+                            <strong>No podrá deshacerse</strong> una vez confirmada
+                        </li>
+                        <li class="list-group-item">
+                            <i class="bi bi-info-circle text-info me-2"></i>
+                            Solo usuarios DBA tienen permiso para esta acción
+                        </li>
+                    </ul>
+                    
+                    <!-- Category Details -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">Detalles de la Categoría:</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-3">Código:</dt>
+                                <dd class="col-sm-9">{{ category.category_code }}</dd>
+                                
+                                <dt class="col-sm-3">Nombre:</dt>
+                                <dd class="col-sm-9">{{ category.name }}</dd>
+                                
+                                <dt class="col-sm-3">Estado:</dt>
+                                <dd class="col-sm-9">
+                                    {% if category.is_active %}
+                                    <span class="badge bg-success">Activa</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactiva</span>
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-3">Equipos Asociados:</dt>
+                                <dd class="col-sm-9">
+                                    {% if category.equipment_type_count > 0 %}
+                                    <span class="text-danger">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        {{ category.equipment_type_count }} tipos de equipo
+                                    </span>
+                                    {% else %}
+                                    <span class="text-success">Ninguno</span>
+                                    {% endif %}
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    <!-- Alternative Options -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-lightbulb me-2"></i>
+                            Alternativas recomendadas:
+                        </h6>
+                        <p class="mb-2">En lugar de eliminar permanentemente, considere:</p>
+                        <ul class="mb-0">
+                            <li><strong>Desactivar la categoría</strong> - Los datos se mantienen pero no aparecen en listas</li>
+                            <li><strong>Contactar al administrador</strong> - Para revisiones adicionales antes de eliminar</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'frontend:category_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i>
+                            Cancelar y Volver
+                        </a>
+                        
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" 
+                                    onclick="return confirm('¿CONFIRMA que desea ELIMINAR PERMANENTEMENTE esta categoría?\\n\\nEsta acción NO se puede deshacer.')">
+                                <i class="bi bi-trash me-1"></i>
+                                Eliminar Permanentemente
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

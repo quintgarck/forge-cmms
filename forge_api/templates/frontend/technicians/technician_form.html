@@ -1,0 +1,734 @@
+{% extends "frontend/base/base.html" %}
+
+{% block title %}{{ form_title|default:'Técnico' }} - MovIAx{% endblock %}
+
+{% block body_class %}technician-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">MovIAx</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'frontend:technician_list' %}">Técnicos</a></li>
+                        <li class="breadcrumb-item active">{{ form_title|default:'Técnico' }}</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">{{ form_title|default:'Técnico' }}</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ form_title|default:'Técnico' }}</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Stepper Header -->
+                    <div class="bs-stepper">
+                        <div class="bs-stepper-header mb-4" role="tablist">
+                            <div class="step" data-target="#step-1">
+                                <button type="button" class="step-trigger" role="tab" id="stepper1-trigger" aria-controls="step-1">
+                                    <span class="bs-stepper-circle">1</span>
+                                    <span class="bs-stepper-label">Datos Generales</span>
+                                </button>
+                            </div>
+                            <div class="line"></div>
+                            <div class="step" data-target="#step-2">
+                                <button type="button" class="step-trigger" role="tab" id="stepper2-trigger" aria-controls="step-2">
+                                    <span class="bs-stepper-circle">2</span>
+                                    <span class="bs-stepper-label">Experiencia y Compensación</span>
+                                </button>
+                            </div>
+                            <div class="line"></div>
+                            <div class="step" data-target="#step-3">
+                                <button type="button" class="step-trigger" role="tab" id="stepper3-trigger" aria-controls="step-3">
+                                    <span class="bs-stepper-circle">3</span>
+                                    <span class="bs-stepper-label">Especialidades</span>
+                                </button>
+                            </div>
+                            <div class="line"></div>
+                            <div class="step" data-target="#step-4">
+                                <button type="button" class="step-trigger" role="tab" id="stepper4-trigger" aria-controls="step-4">
+                                    <span class="bs-stepper-circle">4</span>
+                                    <span class="bs-stepper-label">Certificados y Métricas</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Form -->
+                        <form method="post" id="technicianForm">
+                            {% csrf_token %}
+                            
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger" role="alert">
+                                    {% for error in form.non_field_errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div class="bs-stepper-content">
+                                <!-- Step 1: Datos Generales -->
+                                <div id="step-1" class="content" role="tabpanel" aria-labelledby="stepper1-trigger">
+                                    <h5 class="mb-3 text-primary"><i class="fas fa-user me-2"></i>Datos Generales</h5>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.employee_code.id_for_label }}" class="form-label">{{ form.employee_code.label }} <span class="text-danger">*</span></label>
+                                                {{ form.employee_code }}
+                                                {% if form.employee_code.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.employee_code.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">{{ form.employee_code.help_text }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.status.id_for_label }}" class="form-label">{{ form.status.label }}</label>
+                                                {{ form.status }}
+                                                {% if form.status.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.status.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.first_name.id_for_label }}" class="form-label">{{ form.first_name.label }} <span class="text-danger">*</span></label>
+                                                {{ form.first_name }}
+                                                {% if form.first_name.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.first_name.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.last_name.id_for_label }}" class="form-label">{{ form.last_name.label }} <span class="text-danger">*</span></label>
+                                                {{ form.last_name }}
+                                                {% if form.last_name.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.last_name.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                                        {{ form.email }}
+                                        {% if form.email.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.email.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.phone.id_for_label }}" class="form-label">{{ form.phone.label }}</label>
+                                                {{ form.phone }}
+                                                {% if form.phone.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.phone.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.birth_date.id_for_label }}" class="form-label">Fecha de Nacimiento</label>
+                                                {{ form.birth_date }}
+                                                {% if form.birth_date.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.birth_date.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">Debe tener al menos 18 años</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <div>
+                                            <!-- Espacio vacío en el primer paso -->
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-save me-1"></i> Guardar Cambios
+                                            </button>
+                                            <button type="button" class="btn btn-primary" onclick="stepper.next()">
+                                                Siguiente <i class="fas fa-arrow-right ms-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Step 2: Experiencia y Compensación -->
+                                <div id="step-2" class="content" role="tabpanel" aria-labelledby="stepper2-trigger">
+                                    <h5 class="mb-3 text-primary"><i class="fas fa-briefcase me-2"></i>Experiencia y Compensación</h5>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.hire_date.id_for_label }}" class="form-label">{{ form.hire_date.label }} <span class="text-danger">*</span></label>
+                                                {{ form.hire_date }}
+                                                {% if form.hire_date.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.hire_date.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="{{ form.certification_level.id_for_label }}" class="form-label">Nivel de Certificación</label>
+                                                {{ form.certification_level }}
+                                                {% if form.certification_level.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.certification_level.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">Ej: Junior, Senior, Master</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="mb-3 mt-3"><i class="fas fa-dollar-sign me-2"></i>Tasas y Compensación</h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="{{ form.hourly_rate.id_for_label }}" class="form-label">Tarifa por Hora</label>
+                                                {{ form.hourly_rate }}
+                                                {% if form.hourly_rate.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.hourly_rate.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">$/hora</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="{{ form.daily_rate.id_for_label }}" class="form-label">Tarifa Diaria</label>
+                                                {{ form.daily_rate }}
+                                                {% if form.daily_rate.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.daily_rate.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">$/día</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="{{ form.overtime_multiplier.id_for_label }}" class="form-label">Multiplicador Horas Extra</label>
+                                                {{ form.overtime_multiplier }}
+                                                {% if form.overtime_multiplier.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.overtime_multiplier.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">Ej: 1.5 = 150%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h6 class="mb-3 mt-3"><i class="fas fa-clock me-2"></i>Horario de Trabajo Semanal</h6>
+                                    <p class="text-muted small">Seleccione el horario de entrada y salida en formato 24hrs. Deje vacío para días de descanso.</p>
+                                    
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-sm">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th style="width: 20%;">Día</th>
+                                                    <th style="width: 40%;">Hora Entrada</th>
+                                                    <th style="width: 40%;">Hora Salida</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="align-middle"><strong>Lunes</strong></td>
+                                                    <td>
+                                                        <input type="time" id="monday_start" name="monday_start" class="form-control form-control-sm" 
+                                                               value="{{ form.monday_schedule.value|slice:':5' }}">
+                                                    </td>
+                                                    <td>
+                                                        <input type="time" id="monday_end" name="monday_end" class="form-control form-control-sm" 
+                                                               value="{{ form.monday_schedule.value|slice:'6:' }}">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="align-middle"><strong>Martes</strong></td>
+                                                    <td>
+                                                        <input type="time" id="tuesday_start" name="tuesday_start" class="form-control form-control-sm" 
+                                                               value="{{ form.tuesday_schedule.value|slice:':5' }}">
+                                                    </td>
+                                                    <td>
+                                                        <input type="time" id="tuesday_end" name="tuesday_end" class="form-control form-control-sm" 
+                                                               value="{{ form.tuesday_schedule.value|slice:'6:' }}">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="align-middle"><strong>Miércoles</strong></td>
+                                                    <td>
+                                                        <input type="time" id="wednesday_start" name="wednesday_start" class="form-control form-control-sm" 
+                                                               value="{{ form.wednesday_schedule.value|slice:':5' }}">
+                                                    </td>
+                                                    <td>
+                                                        <input type="time" id="wednesday_end" name="wednesday_end" class="form-control form-control-sm" 
+                                                               value="{{ form.wednesday_schedule.value|slice:'6:' }}">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="align-middle"><strong>Jueves</strong></td>
+                                                    <td>
+                                                        <input type="time" id="thursday_start" name="thursday_start" class="form-control form-control-sm" 
+                                                               value="{{ form.thursday_schedule.value|slice:':5' }}">
+                                                    </td>
+                                                    <td>
+                                                        <input type="time" id="thursday_end" name="thursday_end" class="form-control form-control-sm" 
+                                                               value="{{ form.thursday_schedule.value|slice:'6:' }}">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="align-middle"><strong>Viernes</strong></td>
+                                                    <td>
+                                                        <input type="time" id="friday_start" name="friday_start" class="form-control form-control-sm" 
+                                                               value="{{ form.friday_schedule.value|slice:':5' }}">
+                                                    </td>
+                                                    <td>
+                                                        <input type="time" id="friday_end" name="friday_end" class="form-control form-control-sm" 
+                                                               value="{{ form.friday_schedule.value|slice:'6:' }}">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="align-middle"><strong>Sábado</strong></td>
+                                                    <td>
+                                                        <input type="time" id="saturday_start" name="saturday_start" class="form-control form-control-sm" 
+                                                               value="{{ form.saturday_schedule.value|slice:':5' }}">
+                                                    </td>
+                                                    <td>
+                                                        <input type="time" id="saturday_end" name="saturday_end" class="form-control form-control-sm" 
+                                                               value="{{ form.saturday_schedule.value|slice:'6:' }}">
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="align-middle"><strong>Domingo</strong></td>
+                                                    <td>
+                                                        <input type="time" id="sunday_start" name="sunday_start" class="form-control form-control-sm" 
+                                                               value="{{ form.sunday_schedule.value|slice:':5' }}">
+                                                    </td>
+                                                    <td>
+                                                        <input type="time" id="sunday_end" name="sunday_end" class="form-control form-control-sm" 
+                                                               value="{{ form.sunday_schedule.value|slice:'6:' }}">
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- Hidden fields para mantener compatibilidad con el formulario -->
+                                    <input type="hidden" id="monday_schedule" name="monday_schedule" value="{{ form.monday_schedule.value|default:'' }}">
+                                    <input type="hidden" id="tuesday_schedule" name="tuesday_schedule" value="{{ form.tuesday_schedule.value|default:'' }}">
+                                    <input type="hidden" id="wednesday_schedule" name="wednesday_schedule" value="{{ form.wednesday_schedule.value|default:'' }}">
+                                    <input type="hidden" id="thursday_schedule" name="thursday_schedule" value="{{ form.thursday_schedule.value|default:'' }}">
+                                    <input type="hidden" id="friday_schedule" name="friday_schedule" value="{{ form.friday_schedule.value|default:'' }}">
+                                    <input type="hidden" id="saturday_schedule" name="saturday_schedule" value="{{ form.saturday_schedule.value|default:'' }}">
+                                    <input type="hidden" id="sunday_schedule" name="sunday_schedule" value="{{ form.sunday_schedule.value|default:'' }}">
+
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="button" class="btn btn-secondary" onclick="stepper.previous()">
+                                            <i class="fas fa-arrow-left me-1"></i> Anterior
+                                        </button>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-save me-1"></i> Guardar Cambios
+                                            </button>
+                                            <button type="button" class="btn btn-primary" onclick="stepper.next()">
+                                                Siguiente <i class="fas fa-arrow-right ms-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Step 3: Especialidades -->
+                                <div id="step-3" class="content" role="tabpanel" aria-labelledby="stepper3-trigger">
+                                    <h5 class="mb-3 text-primary"><i class="fas fa-tools me-2"></i>Especialidades</h5>
+                                    
+                                    <div class="mb-3">
+                                        <label for="{{ form.specialization.id_for_label }}" class="form-label">Especialización</label>
+                                        {{ form.specialization }}
+                                        {% if form.specialization.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.specialization.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <div class="form-text">Separe múltiples especialidades con comas (Ej: Motores eléctricos, Sistemas hidráulicos)</div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="{{ form.certifications.id_for_label }}" class="form-label">{{ form.certifications.label }}</label>
+                                        {{ form.certifications }}
+                                        {% if form.certifications.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.certifications.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <div class="form-text">{{ form.certifications.help_text }}</div>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                            Técnico Activo
+                                        </label>
+                                        {% if form.is_active.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.is_active.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="button" class="btn btn-secondary" onclick="stepper.previous()">
+                                            <i class="fas fa-arrow-left me-1"></i> Anterior
+                                        </button>
+                                        <div class="d-flex gap-2">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-save me-1"></i> Guardar Cambios
+                                            </button>
+                                            <button type="button" class="btn btn-primary" onclick="stepper.next()">
+                                                Siguiente <i class="fas fa-arrow-right ms-1"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Step 4: Certificados y Métricas -->
+                                <div id="step-4" class="content" role="tabpanel" aria-labelledby="stepper4-trigger">
+                                    <h5 class="mb-3 text-primary"><i class="fas fa-chart-line me-2"></i>Métricas de Desempeño</h5>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="{{ form.efficiency_avg.id_for_label }}" class="form-label">Eficiencia Promedio</label>
+                                                {{ form.efficiency_avg }}
+                                                {% if form.efficiency_avg.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.efficiency_avg.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">% (100 = normal)</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="{{ form.quality_score.id_for_label }}" class="form-label">Puntuación de Calidad</label>
+                                                {{ form.quality_score }}
+                                                {% if form.quality_score.errors %}
+                                                    <div class="text-danger">
+                                                        {% for error in form.quality_score.errors %}
+                                                            <small>{{ error }}</small>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                                <div class="form-text">% (0-100)</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label class="form-label">Trabajos Completados</label>
+                                                <input type="text" class="form-control" value="{{ object.jobs_completed|default:'0' }}" readonly>
+                                                <div class="form-text">Solo lectura</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="{{ form.notes.id_for_label }}" class="form-label">Notas</label>
+                                        {{ form.notes }}
+                                        {% if form.notes.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.notes.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                        <div class="form-text">Notas adicionales sobre el técnico</div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between mt-4">
+                                        <button type="button" class="btn btn-secondary" onclick="stepper.previous()">
+                                            <i class="fas fa-arrow-left me-1"></i> Anterior
+                                        </button>
+                                        <div>
+                                            <a href="{% url 'frontend:technician_list' %}" class="btn btn-light me-2">
+                                                <i class="fas fa-times"></i> Cancelar
+                                            </a>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-save"></i> Guardar Técnico
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bs-stepper-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .step {
+        flex: 1;
+        text-align: center;
+    }
+
+    .step-trigger {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: none;
+        border: none;
+        padding: 10px;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .bs-stepper-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .step.active .bs-stepper-circle {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .step.completed .bs-stepper-circle {
+        background-color: #198754;
+        color: white;
+    }
+
+    .bs-stepper-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        transition: all 0.3s ease;
+    }
+
+    .step.active .bs-stepper-label {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+
+    .step.completed .bs-stepper-label {
+        color: #198754;
+    }
+
+    .line {
+        flex: 1;
+        height: 2px;
+        background-color: #e9ecef;
+        margin: 0 10px;
+        align-self: flex-start;
+        margin-top: 20px;
+    }
+
+    .step.completed ~ .line {
+        background-color: #198754;
+    }
+
+    .bs-stepper-content .content {
+        display: none;
+    }
+
+    .bs-stepper-content .content.active {
+        display: block;
+        animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+        .bs-stepper-label {
+            font-size: 0.7rem;
+        }
+        .bs-stepper-circle {
+            width: 30px;
+            height: 30px;
+            font-size: 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentStep = 1;
+    const totalSteps = 4;
+
+    const stepper = {
+        next: function() {
+            if (currentStep < totalSteps) {
+                // Mark current as completed
+                document.querySelector(`[data-target="#step-${currentStep}"]`).classList.add('completed');
+                
+                currentStep++;
+                this.showStep(currentStep);
+            }
+        },
+        previous: function() {
+            if (currentStep > 1) {
+                // Remove completed from current
+                document.querySelector(`[data-target="#step-${currentStep}"]`).classList.remove('active');
+                
+                currentStep--;
+                this.showStep(currentStep);
+            }
+        },
+        showStep: function(stepNum) {
+            // Hide all contents
+            document.querySelectorAll('.bs-stepper-content .content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active from all steps
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+
+            // Show current content
+            document.getElementById(`step-${stepNum}`).classList.add('active');
+
+            // Activate current step
+            document.querySelector(`[data-target="#step-${stepNum}"]`).classList.add('active');
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        },
+        goToStep: function(stepNum) {
+            if (stepNum >= 1 && stepNum <= totalSteps) {
+                currentStep = stepNum;
+                this.showStep(stepNum);
+            }
+        }
+    };
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        stepper.showStep(1);
+
+        // Allow clicking on step headers
+        document.querySelectorAll('.step-trigger').forEach((trigger, index) => {
+            trigger.addEventListener('click', function() {
+                stepper.goToStep(index + 1);
+            });
+        });
+
+        // Show loading overlay on form submit
+        const form = document.getElementById('technicianForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Combinar campos de horario (entrada-salida) en formato HH:MM-HH:MM
+                const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                
+                days.forEach(day => {
+                    const startInput = document.getElementById(`${day}_start`);
+                    const endInput = document.getElementById(`${day}_end`);
+                    const hiddenField = document.getElementById(`${day}_schedule`);
+                    
+                    if (hiddenField) {
+                        if (startInput && endInput && startInput.value && endInput.value) {
+                            // Ambos campos tienen valor, combinar
+                            hiddenField.value = `${startInput.value}-${endInput.value}`;
+                        } else if (startInput && endInput) {
+                            // Si ambos inputs existen pero están vacíos, limpiar
+                            hiddenField.value = '';
+                        }
+                        // Si solo existe el hidden field (sin inputs), mantener valor actual
+                    }
+                });
+                
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.remove('d-none');
+                    const loadingMessage = document.getElementById('loading-message');
+                    if (loadingMessage) {
+                        loadingMessage.textContent = 'Guardando técnico...';
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

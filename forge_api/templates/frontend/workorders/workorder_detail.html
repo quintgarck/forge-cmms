@@ -1,0 +1,570 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if workorder %}
+        Orden de Trabajo #{{ workorder.wo_number|default:workorder.id }} - MovIAx
+    {% else %}
+        Orden de Trabajo - MovIAx
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/workorder-detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if workorder %}
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h2 class="mb-1">
+                            <i class="bi bi-wrench me-2 text-primary"></i>
+                            Orden de Trabajo #{{ workorder.wo_number|default:workorder.id }}
+                        </h2>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge bg-{{ workorder.status_info.class }} fs-6">
+                                <i class="{{ workorder.status_info.icon }} me-1"></i>
+                                {{ workorder.status_info.label }}
+                            </span>
+                            <span class="text-muted">
+                                <i class="bi bi-calendar me-1"></i>
+                                Creada: {{ workorder.created_date|date:"d/m/Y H:i" }}
+                            </span>
+                            {% if workorder.priority %}
+                                <span class="badge bg-{% if workorder.priority == 'urgent' %}danger{% elif workorder.priority == 'high' %}warning{% elif workorder.priority == 'normal' %}info{% else %}success{% endif %}">
+                                    <i class="bi bi-{% if workorder.priority == 'urgent' %}exclamation-triangle{% elif workorder.priority == 'high' %}arrow-up{% elif workorder.priority == 'normal' %}dash{% else %}arrow-down{% endif %} me-1"></i>
+                                    {{ workorder.priority|capfirst }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'frontend:workorder_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Volver a Lista
+                        </a>
+                        <a href="{% url 'frontend:workorder_update' pk=workorder.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-1"></i>
+                            Editar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Progreso de la Orden</h6>
+                            <span class="text-muted">{{ workorder.progress_percentage }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-{{ workorder.status_info.class }}" 
+                                 role="progressbar" 
+                                 style="width: {{ workorder.progress_percentage }}%"
+                                 aria-valuenow="{{ workorder.progress_percentage }}" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100">
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ workorder.status_info.description }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-lg-8">
+                <!-- Work Order Details -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Detalles del Trabajo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-item mb-3">
+                                    <label class="detail-label">Descripción:</label>
+                                    <p class="detail-value">{{ workorder.description|default:"Sin descripción" }}</p>
+                                </div>
+                                
+                                {% if workorder.complaint %}
+                                    <div class="detail-item mb-3">
+                                        <label class="detail-label">Queja del Cliente:</label>
+                                        <p class="detail-value">{{ workorder.complaint }}</p>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if workorder.estimated_hours %}
+                                    <div class="detail-item mb-3">
+                                        <label class="detail-label">Horas Estimadas:</label>
+                                        <p class="detail-value">{{ workorder.estimated_hours }} horas</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                {% if workorder.scheduled_date %}
+                                    <div class="detail-item mb-3">
+                                        <label class="detail-label">Fecha Programada:</label>
+                                        <p class="detail-value">
+                                            <i class="bi bi-calendar-event me-1"></i>
+                                            {{ workorder.scheduled_date|date:"d/m/Y H:i" }}
+                                        </p>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if workorder.started_date %}
+                                    <div class="detail-item mb-3">
+                                        <label class="detail-label">Fecha de Inicio:</label>
+                                        <p class="detail-value">
+                                            <i class="bi bi-play-circle me-1"></i>
+                                            {{ workorder.started_date|date:"d/m/Y H:i" }}
+                                        </p>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if workorder.completed_date %}
+                                    <div class="detail-item mb-3">
+                                        <label class="detail-label">Fecha de Finalización:</label>
+                                        <p class="detail-value">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            {{ workorder.completed_date|date:"d/m/Y H:i" }}
+                                        </p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client and Equipment Information -->
+                <div class="row mb-4">
+                    <!-- Client Info -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-person me-2"></i>
+                                    Cliente
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                {% if client %}
+                                    <div class="client-info">
+                                        <h6>{{ client.name }}</h6>
+                                        <div class="text-muted small mb-2">{{ client.client_code }}</div>
+                                        {% if client.email %}
+                                            <div class="mb-1">
+                                                <i class="bi bi-envelope me-1"></i>
+                                                <a href="mailto:{{ client.email }}">{{ client.email }}</a>
+                                            </div>
+                                        {% endif %}
+                                        {% if client.phone %}
+                                            <div class="mb-1">
+                                                <i class="bi bi-telephone me-1"></i>
+                                                <a href="tel:{{ client.phone }}">{{ client.phone }}</a>
+                                            </div>
+                                        {% endif %}
+                                        <div class="mt-2">
+                                            <a href="{% url 'frontend:client_detail' pk=client.id %}" class="btn btn-sm btn-outline-primary">
+                                                Ver Cliente
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">Información del cliente no disponible</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Equipment Info -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-gear me-2"></i>
+                                    Equipo
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                {% if equipment %}
+                                    <div class="equipment-info">
+                                        <h6>{{ equipment.year }} {{ equipment.make }} {{ equipment.model }}</h6>
+                                        <div class="text-muted small mb-2">{{ equipment.equipment_code }}</div>
+                                        {% if equipment.vin %}
+                                            <div class="mb-1">
+                                                <strong>VIN:</strong> {{ equipment.vin }}
+                                            </div>
+                                        {% endif %}
+                                        {% if equipment.license_plate %}
+                                            <div class="mb-1">
+                                                <strong>Placas:</strong> {{ equipment.license_plate }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">Información del equipo no disponible</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Services and Parts -->
+                {% if workorder.services or workorder.parts %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-tools me-2"></i>
+                                Servicios y Partes
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% if workorder.services %}
+                                    <div class="col-md-6">
+                                        <h6>Servicios:</h6>
+                                        <div class="services-list">
+                                            {% for service in workorder.services %}
+                                                <div class="service-item mb-2 p-2 border rounded">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span>{{ service.name }} x{{ service.quantity }}</span>
+                                                        <span class="text-success">${{ service.price|floatformat:2 }}</span>
+                                                    </div>
+                                                    {% if service.estimated_hours %}
+                                                        <small class="text-muted">{{ service.estimated_hours }}h estimadas</small>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if workorder.parts %}
+                                    <div class="col-md-6">
+                                        <h6>Partes:</h6>
+                                        <div class="parts-list">
+                                            {% for part in workorder.parts %}
+                                                <div class="part-item mb-2 p-2 border rounded">
+                                                    <div class="d-flex justify-content-between">
+                                                        <span>{{ part.name }} x{{ part.quantity }}</span>
+                                                        <span class="text-success">${{ part.price|floatformat:2 }}</span>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Timeline -->
+                {% if timeline %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-clock-history me-2"></i>
+                                Historial de Eventos
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="timeline">
+                                {% for event in timeline %}
+                                    <div class="timeline-item">
+                                        <div class="timeline-marker bg-{{ event.class }}">
+                                            <i class="{{ event.icon }}"></i>
+                                        </div>
+                                        <div class="timeline-content">
+                                            <h6 class="timeline-title">{{ event.title }}</h6>
+                                            <p class="timeline-description">{{ event.description }}</p>
+                                            <small class="text-muted">{{ event.date|date:"d/m/Y H:i" }}</small>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Status Management -->
+                {% if workorder.available_transitions %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-arrow-repeat me-2"></i>
+                                Gestión de Estado
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="update_status">
+                                
+                                <div class="mb-3">
+                                    <label for="new_status" class="form-label">Cambiar Estado:</label>
+                                    <select class="form-select" id="new_status" name="new_status" required>
+                                        <option value="">Seleccionar nuevo estado...</option>
+                                        {% for transition in workorder.available_transitions %}
+                                            <option value="{{ transition.value }}">
+                                                {{ transition.info.label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="status_notes" class="form-label">Notas (opcional):</label>
+                                    <textarea class="form-control" id="status_notes" name="status_notes" rows="3" placeholder="Agregar notas sobre el cambio de estado..."></textarea>
+                                </div>
+                                
+                                <!-- Conditional fields for specific statuses -->
+                                <div id="status_fields"></div>
+                                
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-check me-1"></i>
+                                    Actualizar Estado
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Technician Assignment -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-person-gear me-2"></i>
+                            Asignación de Técnico
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        {% if assigned_technician %}
+                            <div class="assigned-technician mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle me-3">
+                                        {{ assigned_technician.first_name.0 }}{{ assigned_technician.last_name.0 }}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ assigned_technician.first_name }} {{ assigned_technician.last_name }}</h6>
+                                        <small class="text-muted">{{ assigned_technician.employee_code }}</small>
+                                    </div>
+                                </div>
+                                <form method="post" class="mt-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="unassign_technician">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-x me-1"></i>
+                                        Desasignar
+                                    </button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="assign_technician">
+                                
+                                <div class="mb-3">
+                                    <label for="technician_id" class="form-label">Asignar Técnico:</label>
+                                    <select class="form-select" id="technician_id" name="technician_id" required>
+                                        <option value="">Seleccionar técnico...</option>
+                                        {% for technician in available_technicians %}
+                                            <option value="{{ technician.id }}">
+                                                {{ technician.first_name }} {{ technician.last_name }} - {{ technician.employee_code }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="bi bi-person-plus me-1"></i>
+                                    Asignar Técnico
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-lightning me-2"></i>
+                            Acciones Rápidas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            {% if workorder.status == 'scheduled' %}
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="update_status">
+                                    <input type="hidden" name="new_status" value="in_progress">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-play me-1"></i>
+                                        Iniciar Trabajo
+                                    </button>
+                                </form>
+                            {% endif %}
+                            
+                            {% if workorder.status == 'in_progress' %}
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="update_status">
+                                    <input type="hidden" name="new_status" value="completed">
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="bi bi-check me-1"></i>
+                                        Marcar Completado
+                                    </button>
+                                </form>
+                                
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="update_status">
+                                    <input type="hidden" name="new_status" value="on_hold">
+                                    <button type="submit" class="btn btn-warning w-100">
+                                        <i class="bi bi-pause me-1"></i>
+                                        Pausar Trabajo
+                                    </button>
+                                </form>
+                            {% endif %}
+                            
+                            {% if workorder.status == 'on_hold' %}
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="update_status">
+                                    <input type="hidden" name="new_status" value="in_progress">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-play me-1"></i>
+                                        Reanudar Trabajo
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Notes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-chat-text me-2"></i>
+                            Agregar Nota
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="add_note">
+                            
+                            <div class="mb-3">
+                                <textarea class="form-control" name="note_text" rows="3" placeholder="Escribir una nota sobre esta orden de trabajo..." required></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-plus me-1"></i>
+                                Agregar Nota
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- Error State -->
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-warning text-center">
+                    <i class="bi bi-exclamation-triangle fs-1 mb-3"></i>
+                    <h4>Orden de Trabajo No Encontrada</h4>
+                    <p>La orden de trabajo solicitada no existe o no tienes permisos para verla.</p>
+                    <a href="{% url 'frontend:workorder_list' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver a Lista de Órdenes
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle status change conditional fields
+    const statusSelect = document.getElementById('new_status');
+    const statusFields = document.getElementById('status_fields');
+    
+    if (statusSelect && statusFields) {
+        statusSelect.addEventListener('change', function() {
+            const selectedStatus = this.value;
+            statusFields.innerHTML = '';
+            
+            if (selectedStatus === 'in_progress') {
+                statusFields.innerHTML = `
+                    <div class="mb-3">
+                        <label for="started_date" class="form-label">Fecha de Inicio:</label>
+                        <input type="datetime-local" class="form-control" id="started_date" name="started_date" value="${new Date().toISOString().slice(0, 16)}">
+                    </div>
+                `;
+            } else if (selectedStatus === 'completed') {
+                statusFields.innerHTML = `
+                    <div class="mb-3">
+                        <label for="completed_date" class="form-label">Fecha de Finalización:</label>
+                        <input type="datetime-local" class="form-control" id="completed_date" name="completed_date" value="${new Date().toISOString().slice(0, 16)}">
+                    </div>
+                `;
+            }
+        });
+    }
+    
+    // Confirmation for status changes
+    const statusForms = document.querySelectorAll('form[method="post"]');
+    statusForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const action = form.querySelector('input[name="action"]').value;
+            
+            if (action === 'update_status') {
+                const newStatus = form.querySelector('select[name="new_status"]')?.value || 
+                                form.querySelector('input[name="new_status"]')?.value;
+                
+                if (newStatus) {
+                    const statusLabels = {
+                        'pending': 'Pendiente',
+                        'scheduled': 'Programada',
+                        'in_progress': 'En Progreso',
+                        'on_hold': 'En Espera',
+                        'completed': 'Completada',
+                        'cancelled': 'Cancelada'
+                    };
+                    
+                    const statusLabel = statusLabels[newStatus] || newStatus;
+                    const confirmed = confirm(`¿Está seguro de cambiar el estado a "${statusLabel}"?`);
+                    
+                    if (!confirmed) {
+                        e.preventDefault();
+                    }
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

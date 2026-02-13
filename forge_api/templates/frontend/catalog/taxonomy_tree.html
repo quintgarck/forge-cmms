@@ -1,0 +1,702 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Sistema de Taxonomía - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'frontend/css/taxonomy-tree.css' %}" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header con breadcrumbs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'frontend:catalog_index' %}">
+                            <i class="bi bi-house"></i> Catálogos
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <i class="bi bi-diagram-3"></i> Sistema de Taxonomía
+                    </li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-diagram-3 text-primary"></i>
+                        Sistema de Taxonomía Jerárquica
+                    </h1>
+                    <p class="text-muted mb-0">Gestión completa de la estructura taxonómica</p>
+                </div>
+                
+                <div class="btn-group" role="group">
+                    <a href="{% url 'frontend:taxonomy_system_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Nuevo Sistema
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary" data-action="expand-all">
+                        <i class="bi bi-arrows-expand"></i> Expandir Todo
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-action="collapse-all">
+                        <i class="bi bi-arrows-collapse"></i> Colapsar Todo
+                    </button>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear"></i> Acciones
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'frontend:taxonomy_system_list' %}">
+                                <i class="bi bi-list"></i> Ver Lista de Sistemas
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" data-action="import">
+                                <i class="bi bi-upload"></i> Importar Taxonomía
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" data-action="export">
+                                <i class="bi bi-download"></i> Exportar Taxonomía
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" data-action="validate">
+                                <i class="bi bi-check-circle"></i> Validar Integridad
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Sistemas</h5>
+                            <h3 class="mb-0">{{ taxonomy_stats.systems_count|default:0 }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-diagram-2 fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Subsistemas</h5>
+                            <h3 class="mb-0">{{ taxonomy_stats.subsystems_count|default:0 }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-diagram-3 fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Grupos</h5>
+                            <h3 class="mb-0">{{ taxonomy_stats.groups_count|default:0 }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-collection fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title">Total Nodos</h5>
+                            <h3 class="mb-0">{{ taxonomy_stats.total_nodes|default:0 }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-nodes fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="row">
+        <!-- Árbol de taxonomía con filtros integrados -->
+        <div class="col-md-9">
+            <div class="card h-100">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                        <div>
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-diagram-3"></i> Estructura Jerárquica
+                            </h5>
+                        </div>
+                        
+                        <!-- Filtros compactos en el header -->
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="input-group input-group-sm" style="width: 140px;">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="search-input" 
+                                       placeholder="Buscar..." autocomplete="off">
+                                <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                            
+                            <select class="form-select form-select-sm" id="level-filter" style="width: 90px;">
+                                <option value="">Todo</option>
+                                <option value="system">Sist.</option>
+                                <option value="subsystem">Sub.</option>
+                                <option value="group">Grp.</option>
+                            </select>
+                            
+                            <select class="form-select form-select-sm" id="status-filter" style="width: 80px;">
+                                <option value="">Act</option>
+                                <option value="true">Sí</option>
+                                <option value="false">No</option>
+                            </select>
+                            
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-secondary" data-action="refresh-tree" title="Refrescar">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" data-action="expand-all" title="Expandir">
+                                    <i class="bi bi-arrows-expand"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" data-action="collapse-all" title="Colapsar">
+                                    <i class="bi bi-arrows-collapse"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resultados de búsqueda (compacto) -->
+                    <div id="search-results" style="display: none;">
+                        <div id="search-results-list" class="list-group list-group-flush small">
+                            <!-- Resultados dinámicos -->
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="taxonomy-tree-container" class="taxonomy-tree-container">
+                        {% if taxonomy_tree %}
+                            <div id="taxonomy-tree" class="taxonomy-tree">
+                                {% for system in taxonomy_tree %}
+                                    <div class="tree-node system-node" data-node-id="{{ system.system_code }}" data-node-type="system" data-expanded="false">
+                                        <div class="node-content">
+                                            <div class="node-toggle" title="Clic para expandir/colapsar">
+                                                <i class="bi bi-chevron-right"></i>
+                                            </div>
+                                            <div class="node-icon">
+                                                <i class="bi bi-diagram-2 text-primary"></i>
+                                            </div>
+                                            <div class="node-info">
+                                                <div class="node-title">
+                                                    <strong>{{ system.name_es }}</strong>
+                                                    <span class="badge bg-light text-dark border ms-2">{{ system.system_code }}</span>
+                                                    {% if not system.is_active %}
+                                                        <span class="badge bg-warning text-dark ms-1"><i class="bi bi-pause-circle"></i> Inactivo</span>
+                                                    {% endif %}
+                                                    {% if system.subsystems %}
+                                                        <span class="badge bg-success ms-1"><i class="bi bi-diagram-3"></i> {{ system.subsystems|length }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="node-description text-muted small">
+                                                    {{ system.scope|default:"Sin descripción" }}
+                                                </div>
+                                            </div>
+                                            <div class="node-actions always-visible">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{% url 'frontend:taxonomy_subsystem_create' system.system_code %}" 
+                                                       class="btn btn-outline-primary" title="Agregar subsistema">
+                                                        <i class="bi bi-plus"></i>
+                                                    </a>
+                                                    <a href="{% url 'frontend:taxonomy_system_edit' system.system_code %}" 
+                                                       class="btn btn-outline-secondary" title="Editar sistema">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <a href="{% url 'frontend:taxonomy_system_detail' system.system_code %}" 
+                                                       class="btn btn-outline-info" title="Ver detalles">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Subsistemas -->
+                                        {% if system.subsystems %}
+                                            <div class="node-children" style="display: none;" data-system-code="{{ system.system_code }}">
+                                                {% for subsystem in system.subsystems %}
+                                                    <div class="tree-node subsystem-node" data-node-id="{{ subsystem.subsystem_code }}" data-node-type="subsystem" data-expanded="false">
+                                                        <div class="node-content">
+                                                            <div class="node-toggle" title="Clic para expandir/colapsar">
+                                                                <i class="bi bi-chevron-right"></i>
+                                                            </div>
+                                                            <div class="node-icon">
+                                                                <i class="bi bi-diagram-3 text-success"></i>
+                                                            </div>
+                                                            <div class="node-info">
+                                                                <div class="node-title">
+                                                                    <strong>{{ subsystem.name_es }}</strong>
+                                                                    <span class="badge bg-light text-success border ms-2">{{ subsystem.subsystem_code }}</span>
+                                                                    {% if not subsystem.is_active %}
+                                                                        <span class="badge bg-warning text-dark ms-1"><i class="bi bi-pause-circle"></i> Inactivo</span>
+                                                                    {% endif %}
+                                                                    {% if subsystem.groups %}
+                                                                        <span class="badge bg-info ms-1"><i class="bi bi-collection"></i> {{ subsystem.groups|length }}</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div class="node-description text-muted small">
+                                                                    {{ subsystem.scope|default:"Sin descripción" }}
+                                                                </div>
+                                                            </div>
+                                                            <div class="node-actions always-visible">
+                                                                <div class="btn-group btn-group-sm" role="group">
+                                                                    <a href="{% url 'frontend:taxonomy_group_create' subsystem.subsystem_code %}" 
+                                                                       class="btn btn-outline-primary" title="Agregar grupo">
+                                                                        <i class="bi bi-plus"></i>
+                                                                    </a>
+                                                                    <a href="{% url 'frontend:taxonomy_subsystem_edit' system.system_code subsystem.subsystem_code %}" 
+                                                                       class="btn btn-outline-secondary" title="Editar subsistema">
+                                                                        <i class="bi bi-pencil"></i>
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Grupos -->
+                                                        {% if subsystem.groups %}
+                                                            <div class="node-children" style="display: none;">
+                                                                {% for group in subsystem.groups %}
+                                                                    <div class="tree-node group-node" data-node-id="{{ group.group_code }}" data-node-type="group">
+                                                                        <div class="node-content">
+                                                                            <div class="node-icon">
+                                                                                <i class="bi bi-collection text-info"></i>
+                                                                            </div>
+                                                                            <div class="node-info">
+                                                                                <div class="node-title">
+                                                                                    <strong>{{ group.name_es }}</strong>
+                                                                                    <span class="badge bg-light text-info border ms-2">{{ group.group_code }}</span>
+                                                                                    {% if not group.is_active %}
+                                                                                        <span class="badge bg-warning text-dark ms-1"><i class="bi bi-pause-circle"></i> Inactivo</span>
+                                                                                    {% endif %}
+                                                                                </div>
+                                                                                <div class="node-description text-muted small">
+                                                                                    {{ group.scope|default:"Sin descripción" }}
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="node-actions always-visible">
+                                                                                <div class="btn-group btn-group-sm" role="group">
+                                                                                    <a href="{% url 'frontend:taxonomy_group_edit' subsystem.subsystem_code group.group_code %}" 
+                                                                                       class="btn btn-outline-secondary" title="Editar grupo">
+                                                                                        <i class="bi bi-pencil"></i>
+                                                                                    </a>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                {% endfor %}
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-diagram-3 text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-3">No hay sistemas de taxonomía</h5>
+                                <p class="text-muted">Comience creando su primer sistema de taxonomía</p>
+                                                                <a href="{% url 'frontend:taxonomy_system_create' %}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Crear Primer Sistema
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Columna derecha (3 cols): Panel de información y acciones -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle text-primary"></i> Información y Acciones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Estado vacío -->
+                    <div class="text-center py-4" id="node-details-empty">
+                        <i class="bi bi-diagram-3 text-muted" style="font-size: 2.5rem;"></i>
+                        <p class="text-muted mt-3 mb-0">
+                            <strong>Seleccione un nodo</strong>
+                        </p>
+                        <p class="small text-muted mt-2">
+                            Haga clic en cualquier sistema, subsistema o grupo para ver sus detalles y acciones disponibles.
+                        </p>
+                    </div>
+                    
+                    <!-- Contenido del nodo seleccionado -->
+                    <div id="node-details-content" style="display: none;">
+                        <!-- Header con icono -->
+                        <div class="text-center mb-3 pb-3 border-bottom">
+                            <i id="detail-node-icon" class="bi" style="font-size: 2.5rem;"></i>
+                            <h6 id="detail-node-type" class="text-muted mt-2 mb-0 text-uppercase small"></h6>
+                            <h5 id="detail-node-name" class="fw-bold mt-1 mb-0"></h5>
+                            <span id="detail-node-code" class="badge bg-secondary mt-2"></span>
+                        </div>
+                        
+                        <!-- Descripción -->
+                        <div class="mb-3" id="detail-description-container">
+                            <label class="text-muted small mb-1">Descripción</label>
+                            <p id="detail-node-description" class="small text-muted mb-0 fst-italic"></p>
+                        </div>
+                        
+                        <!-- Estadísticas -->
+                        <div class="mb-3" id="detail-stats-container">
+                            <label class="text-muted small mb-2">Contenido</label>
+                            <div class="row g-2">
+                                <div class="col-6" id="detail-subsystems-count-container">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body p-2 text-center">
+                                            <h5 id="detail-subsystems-count" class="mb-0">0</h5>
+                                            <small style="font-size: 0.7rem;">Subsistemas</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6" id="detail-groups-count-container">
+                                    <div class="card bg-info text-white">
+                                        <div class="card-body p-2 text-center">
+                                            <h5 id="detail-groups-count" class="mb-0">0</h5>
+                                            <small style="font-size: 0.7rem;">Grupos</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="mb-3">
+                            <label class="text-muted small mb-1">Estado</label>
+                            <div id="detail-node-status"></div>
+                        </div>
+                        
+                        <!-- Acciones Contextuales -->
+                        <div class="mb-3">
+                            <label class="text-muted small mb-2">Acciones Disponibles</label>
+                            <div class="d-grid gap-2">
+                                <!-- Agregar Subsistema (solo para Sistemas) -->
+                                <a id="detail-add-subsystem-link" href="#" class="btn btn-success btn-sm" style="display: none;">
+                                    <i class="bi bi-plus-circle"></i> Agregar Subsistema
+                                </a>
+                                
+                                <!-- Agregar Grupo (solo para Subsistemas) -->
+                                <a id="detail-add-group-link" href="#" class="btn btn-info btn-sm" style="display: none;">
+                                    <i class="bi bi-plus-circle"></i> Agregar Grupo
+                                </a>
+                                
+                                <!-- Ver Detalles (todos) -->
+                                <a id="detail-view-link" href="#" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i> Ver Detalles Completos
+                                </a>
+                                
+                                <!-- Editar (todos) -->
+                                <a id="detail-edit-link" href="#" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-3">
+                    
+                    <!-- Acciones Globales (siempre visibles) -->
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'frontend:taxonomy_system_list' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-list-ul"></i> Ver Lista Completa
+                        </a>
+                        
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-action="validate-hierarchy">
+                            <i class="bi bi-check-circle"></i> Validar Jerarquía
+                        </button>
+                        
+                        <button type="button" class="btn btn-outline-warning btn-sm" data-action="show-statistics">
+                            <i class="bi bi-bar-chart"></i> Ver Estadísticas
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+>
+
+
+<!-- Modal eliminado - redirección directa a creación de sistema -->
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing taxonomy tree with direct DOM manipulation...');
+    
+    // Función para expandir/contraer nodos
+    function toggleNode(element) {
+        const nodeId = element.dataset.nodeId;
+        const nodeType = element.dataset.nodeType;
+        const toggle = element.querySelector('.node-toggle');
+        const children = element.querySelector('.node-children');
+        
+        if (!children) return;
+        
+        const isExpanded = element.getAttribute('data-expanded') === 'true';
+        
+        if (isExpanded) {
+            // Contraer
+            children.style.display = 'none';
+            element.setAttribute('data-expanded', 'false');
+            if (toggle) {
+                const icon = toggle.querySelector('i');
+                if (icon) {
+                    icon.className = 'bi bi-chevron-right';
+                }
+                toggle.classList.remove('expanded');
+            }
+        } else {
+            // Expandir
+            children.style.display = 'block';
+            element.setAttribute('data-expanded', 'true');
+            if (toggle) {
+                const icon = toggle.querySelector('i');
+                if (icon) {
+                    icon.className = 'bi bi-chevron-down';
+                }
+                toggle.classList.add('expanded');
+            }
+        }
+    }
+    
+    // Función para seleccionar un nodo y actualizar el panel derecho
+    function selectNode(element) {
+        // Remover selección anterior
+        const previousSelected = document.querySelector('.node-content.selected');
+        if (previousSelected) {
+            previousSelected.classList.remove('selected');
+        }
+        
+        // Agregar selección al nodo actual
+        const nodeContent = element.querySelector('.node-content');
+        if (nodeContent) {
+            nodeContent.classList.add('selected');
+        }
+        
+        // Actualizar panel derecho con la información del nodo
+        updateNodeDetailsPanel(element);
+    }
+    
+    // Función para actualizar el panel derecho
+    function updateNodeDetailsPanel(nodeElement) {
+        const nodeType = nodeElement.dataset.nodeType;
+        const nodeId = nodeElement.dataset.nodeId;
+        const nodeTitle = nodeElement.querySelector('.node-title strong')?.textContent || nodeId;
+        const nodeDescription = nodeElement.querySelector('.node-description')?.textContent?.trim() || 'Sin descripción';
+        const isActive = !nodeElement.querySelector('.badge.bg-warning');
+        const codeElement = nodeElement.querySelector('.badge.bg-light');
+        const nodeCode = codeElement ? codeElement.textContent : nodeId;
+        
+        // Mostrar el contenedor de contenido y ocultar el estado vacío
+        document.getElementById('node-details-empty').style.display = 'none';
+        document.getElementById('node-details-content').style.display = 'block';
+        
+        // Actualizar icono según tipo de nodo
+        let iconClass = '';
+        let iconColor = '';
+        let typeLabel = '';
+        let addSubsystemUrl = '';
+        let addGroupUrl = '';
+        
+        switch(nodeType) {
+            case 'system':
+                iconClass = 'bi-diagram-2';
+                iconColor = 'text-primary';
+                typeLabel = 'Sistema';
+                addSubsystemUrl = `/catalog/taxonomy/systems/${nodeId}/subsystems/create/`;
+                break;
+            case 'subsystem':
+                iconClass = 'bi-diagram-3';
+                iconColor = 'text-success';
+                typeLabel = 'Subsistema';
+                addGroupUrl = `/catalog/taxonomy/subsystems/${nodeId}/groups/create/`;
+                break;
+            case 'group':
+                iconClass = 'bi-collection';
+                iconColor = 'text-info';
+                typeLabel = 'Grupo';
+                break;
+        }
+        
+        // Actualizar elementos del panel
+        document.getElementById('detail-node-icon').className = `bi ${iconClass} ${iconColor}`;
+        document.getElementById('detail-node-type').textContent = typeLabel;
+        document.getElementById('detail-node-name').textContent = nodeTitle;
+        document.getElementById('detail-node-code').textContent = nodeCode;
+        document.getElementById('detail-node-description').textContent = nodeDescription;
+        
+        // Actualizar estado
+        const statusBadge = isActive 
+            ? '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Activo</span>'
+            : '<span class="badge bg-warning"><i class="bi bi-pause-circle"></i> Inactivo</span>';
+        document.getElementById('detail-node-status').innerHTML = statusBadge;
+        
+        // Mostrar/ocultar contadores según tipo
+        document.getElementById('detail-subsystems-count-container').style.display = 
+            (nodeType === 'system') ? 'block' : 'none';
+        document.getElementById('detail-groups-count-container').style.display = 
+            (nodeType === 'system' || nodeType === 'subsystem') ? 'block' : 'none';
+        
+        // Actualizar conteos (esto requiere contar los nodos hijos)
+        const childrenContainer = nodeElement.querySelector('.node-children');
+        let subsystemsCount = 0;
+        let groupsCount = 0;
+        
+        if (childrenContainer) {
+            if (nodeType === 'system') {
+                subsystemsCount = childrenContainer.querySelectorAll('.subsystem-node').length;
+            }
+            if (nodeType === 'subsystem' || nodeType === 'system') {
+                // Para contar grupos, necesitamos buscar en todos los subsistemas si es un sistema
+                if (nodeType === 'system') {
+                    const subsystems = childrenContainer.querySelectorAll('.subsystem-node');
+                    subsystems.forEach(subsystem => {
+                        const groupsContainer = subsystem.querySelector('.node-children');
+                        if (groupsContainer) {
+                            groupsCount += groupsContainer.querySelectorAll('.group-node').length;
+                        }
+                    });
+                } else if (nodeType === 'subsystem') {
+                    const groupsContainer = childrenContainer.querySelector('.node-children');
+                    if (groupsContainer) {
+                        groupsCount = groupsContainer.querySelectorAll('.group-node').length;
+                    }
+                }
+            }
+        }
+        
+        document.getElementById('detail-subsystems-count').textContent = subsystemsCount;
+        document.getElementById('detail-groups-count').textContent = groupsCount;
+        
+        // Actualizar links de acciones condicionales
+        const addSubsystemLink = document.getElementById('detail-add-subsystem-link');
+        const addGroupLink = document.getElementById('detail-add-group-link');
+        
+        if (addSubsystemLink) {
+            addSubsystemLink.href = addSubsystemUrl;
+            addSubsystemLink.style.display = (nodeType === 'system') ? 'block' : 'none';
+        }
+        
+        if (addGroupLink) {
+            addGroupLink.href = addGroupUrl;
+            addGroupLink.style.display = (nodeType === 'subsystem') ? 'block' : 'none';
+        }
+        
+        // Actualizar links de ver y editar
+        let viewUrl = '';
+        let editUrl = '';
+        
+        switch(nodeType) {
+            case 'system':
+                viewUrl = `/catalog/taxonomy/systems/${nodeId}/`;
+                editUrl = `/catalog/taxonomy/systems/${nodeId}/edit/`;
+                break;
+            case 'subsystem':
+                const parentSystem = nodeElement.closest('.system-node');
+                const parentSystemId = parentSystem ? parentSystem.dataset.nodeId : '';
+                viewUrl = `/catalog/taxonomy/systems/${parentSystemId}/subsystems/${nodeId}/`;
+                editUrl = `/catalog/taxonomy/systems/${parentSystemId}/subsystems/${nodeId}/edit/`;
+                break;
+            case 'group':
+                const parentSubsystem = nodeElement.closest('.subsystem-node');
+                const parentSubsystemId = parentSubsystem ? parentSubsystem.dataset.nodeId : '';
+                viewUrl = `/catalog/taxonomy/subsystems/${parentSubsystemId}/groups/${nodeId}/`;
+                editUrl = `/catalog/taxonomy/subsystems/${parentSubsystemId}/groups/${nodeId}/edit/`;
+                break;
+        }
+        
+        document.getElementById('detail-view-link').href = viewUrl;
+        document.getElementById('detail-edit-link').href = editUrl;
+    }
+    
+    // Asociar eventos a los toggles de expansión
+    const toggleElements = document.querySelectorAll('.node-toggle');
+    toggleElements.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation(); // Evitar que se propague al node-content
+            const nodeElement = this.closest('.tree-node');
+            toggleNode(nodeElement);
+        });
+    });
+    
+    // Asociar eventos de clic a los contenidos de nodo para selección
+    const nodeContentElements = document.querySelectorAll('.node-content');
+    nodeContentElements.forEach(content => {
+        content.addEventListener('click', function() {
+            const nodeElement = this.closest('.tree-node');
+            
+            // Si se hizo clic en el toggle, ya se manejó arriba, no hacer nada más
+            if (event.target.closest('.node-toggle')) {
+                return;
+            }
+            
+            // Si se hizo clic en acciones, tampoco seleccionar
+            if (event.target.closest('.node-actions')) {
+                return;
+            }
+            
+            // Seleccionar el nodo
+            selectNode(nodeElement);
+            
+            // Si el nodo tiene hijos y no está expandido, expandirlo al seleccionar
+            const children = nodeElement.querySelector('.node-children');
+            if (children && nodeElement.getAttribute('data-expanded') !== 'true') {
+                setTimeout(() => {
+                    toggleNode(nodeElement);
+                }, 100); // Pequeño delay para que la selección se complete primero
+            }
+        });
+    });
+    
+    console.log('Taxonomy tree with direct DOM manipulation initialized successfully');
+    console.log('Toggle elements found:', toggleElements.length);
+    console.log('Node content elements found:', nodeContentElements.length);
+});
+</script>
+{% endblock %}

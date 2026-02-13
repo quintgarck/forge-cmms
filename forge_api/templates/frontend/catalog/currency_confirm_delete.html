@@ -1,0 +1,131 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-confirmation {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .warning-box {
+        background: #FFF3CD;
+        border: 2px solid #FFC107;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .currency-info {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .currency-code-display {
+        font-family: 'Courier New', monospace;
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2563EB;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="delete-confirmation">
+        <!-- Header -->
+        <div class="text-center mb-4">
+            <i class="bi bi-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+            <h1 class="h3 mt-3">{{ title }}</h1>
+        </div>
+
+        <!-- Warning Box -->
+        <div class="warning-box">
+            <div class="d-flex align-items-start">
+                <i class="bi bi-exclamation-triangle-fill text-warning me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                    <h5 class="mb-2">¿Está seguro de que desea eliminar esta moneda?</h5>
+                    <p class="mb-0">
+                        Esta acción no se puede deshacer. La moneda será eliminada permanentemente del sistema.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Currency Information -->
+        <div class="currency-info">
+            <h5 class="mb-3">
+                <i class="bi bi-info-circle me-2"></i>
+                Información de la Moneda
+            </h5>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="text-muted small">Código</div>
+                    <div class="currency-code-display">{{ object.currency_code }}</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="text-muted small">Nombre</div>
+                    <div class="fw-bold">{{ object.name }}</div>
+                </div>
+                {% if object.symbol %}
+                <div class="col-md-6 mb-3">
+                    <div class="text-muted small">Símbolo</div>
+                    <div class="fw-bold">{{ object.symbol }}</div>
+                </div>
+                {% endif %}
+                <div class="col-md-6 mb-3">
+                    <div class="text-muted small">Tipo de Cambio</div>
+                    <div class="fw-bold">{{ object.exchange_rate|floatformat:4 }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dependencies Warning -->
+        {% if has_dependencies %}
+        <div class="alert alert-danger">
+            <h6 class="alert-heading">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                No se puede eliminar
+            </h6>
+            <p class="mb-0">
+                Esta moneda está siendo utilizada en:
+            </p>
+            <ul class="mb-0 mt-2">
+                {% for dependency in dependencies %}
+                <li>{{ dependency }}</li>
+                {% endfor %}
+            </ul>
+            <p class="mb-0 mt-2">
+                Por favor, actualice o elimine estas referencias antes de eliminar la moneda.
+            </p>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            <div class="d-flex justify-content-between">
+                <a href="{{ cancel_url }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-2"></i>
+                    Cancelar
+                </a>
+                {% if not has_dependencies %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-trash me-2"></i>
+                    Sí, Eliminar Moneda
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-danger" disabled>
+                    <i class="bi bi-trash me-2"></i>
+                    No se puede eliminar
+                </button>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

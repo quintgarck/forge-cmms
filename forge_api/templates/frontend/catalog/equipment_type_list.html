@@ -1,0 +1,405 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Tipos de Equipo - MovIAx{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'frontend:catalog_index' %}" class="text-decoration-none">
+            <i class="bi bi-collection me-1"></i>Catálogos
+        </a>
+    </li>
+    <li class="breadcrumb-item active">Tipos de Equipo</li>
+{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .equipment-type-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    .equipment-type-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .category-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .attribute-tag {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+        margin: 0.1rem;
+        border-radius: 0.25rem;
+    }
+    .search-filters {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-gear-wide-connected text-primary me-2"></i>
+                        Tipos de Equipo
+                    </h1>
+                    <p class="text-muted mb-0">Gestión de categorías y tipos de equipos</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-success dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-download me-1"></i>
+                            Exportar
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'frontend:equipment_type_export_xls' %}">
+                                    <i class="bi bi-filetype-xlsx text-success me-2"></i>
+                                    Exportar a Excel (.xlsx)
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'frontend:equipment_type_export_pdf' %}">
+                                    <i class="bi bi-filetype-pdf text-danger me-2"></i>
+                                    Exportar a PDF
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <a href="{% url 'frontend:equipment_type_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Nuevo Tipo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Card -->
+    {% if pagination.count %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stats-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="mb-1">
+                            <i class="bi bi-collection me-2"></i>
+                            {{ pagination.count }} Tipos de Equipo Registrados
+                        </h5>
+                        <p class="mb-0 opacity-75">
+                            Mostrando {{ pagination.start_index }}-{{ pagination.end_index }} de {{ pagination.count }} resultados
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="d-flex justify-content-end">
+                            {% for category in category_options %}
+                                {% if category.value %}
+                                <div class="me-3 text-center">
+                                    <div class="h4 mb-0">{{ category.count|default:0 }}</div>
+                                    <small class="opacity-75">{{ category.label }}</small>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Search and Filters -->
+    <div class="search-filters">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">
+                    <i class="bi bi-search me-1"></i>
+                    Buscar
+                </label>
+                <input type="text" 
+                       class="form-control" 
+                       id="search" 
+                       name="search" 
+                       value="{{ filters.search }}"
+                       placeholder="Buscar por nombre o código...">
+            </div>
+            <div class="col-md-3">
+                <label for="category" class="form-label">
+                    <i class="bi bi-funnel me-1"></i>
+                    Categoría
+                </label>
+                <select class="form-select" id="category" name="category">
+                    {% for option in category_options %}
+                    <option value="{{ option.value }}" 
+                            {% if option.value == filters.category %}selected{% endif %}>
+                        {{ option.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="sort" class="form-label">
+                    <i class="bi bi-sort-down me-1"></i>
+                    Ordenar por
+                </label>
+                <select class="form-select" id="sort" name="sort">
+                    <option value="name" {% if filters.sort == 'name' %}selected{% endif %}>Nombre</option>
+                    <option value="category" {% if filters.sort == 'category' %}selected{% endif %}>Categoría</option>
+                    <option value="created_at" {% if filters.sort == 'created_at' %}selected{% endif %}>Fecha</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="order" class="form-label">Orden</label>
+                <select class="form-select" id="order" name="order">
+                    <option value="asc" {% if filters.order == 'asc' %}selected{% endif %}>Ascendente</option>
+                    <option value="desc" {% if filters.order == 'desc' %}selected{% endif %}>Descendente</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-funnel"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Equipment Types Grid -->
+    {% if equipment_types %}
+    <div class="row">
+        {% for equipment_type in equipment_types %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card equipment-type-card h-100" 
+                 style="border-left-color: var(--bs-{{ equipment_type.category_class }});">
+                <div class="card-header bg-transparent border-0 pb-0">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="d-flex align-items-center">
+                            <i class="{{ equipment_type.category_icon }} text-{{ equipment_type.category_class }} me-2 fs-4"></i>
+                            <div>
+                                <h6 class="card-title mb-0">{{ equipment_type.name }}</h6>
+                                <small class="text-muted">{{ equipment_type.type_code }}</small>
+                            </div>
+                        </div>
+                        <span class="badge bg-{{ equipment_type.category_class }} category-badge">
+                            {{ equipment_type.category|title }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if equipment_type.description %}
+                    <p class="card-text text-muted small mb-3">
+                        {{ equipment_type.description|truncatechars:100 }}
+                    </p>
+                    {% endif %}
+                    
+                    <!-- Attributes Preview -->
+                    {% if equipment_type.attribute_count > 0 %}
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">
+                            <i class="bi bi-tags me-1"></i>
+                            Atributos ({{ equipment_type.attribute_count }})
+                        </small>
+                        <div class="d-flex flex-wrap">
+                            {% for attr in equipment_type.key_attributes %}
+                            <span class="badge bg-light text-dark attribute-tag">{{ attr }}</span>
+                            {% endfor %}
+                            {% if equipment_type.attribute_count > 3 %}
+                            <span class="badge bg-secondary attribute-tag">
+                                +{{ equipment_type.attribute_count|add:"-3" }} más
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Status and Metadata -->
+                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                        <div>
+                            {% if equipment_type.is_active %}
+                            <i class="bi bi-check-circle text-success me-1"></i>
+                            Activo
+                            {% else %}
+                            <i class="bi bi-x-circle text-danger me-1"></i>
+                            Inactivo
+                            {% endif %}
+                        </div>
+                        <div>
+                            <i class="bi bi-calendar me-1"></i>
+                            {{ equipment_type.created_at|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-transparent border-0">
+                    <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'frontend:equipment_type_detail' equipment_type.type_id %}"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye me-1"></i>
+                                Ver
+                            </a>
+                            <a href="{% url 'frontend:equipment_type_edit' equipment_type.type_id %}"
+                               class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-pencil me-1"></i>
+                                Editar
+                            </a>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <!-- Toggle Active Button -->
+                            <form method="post" action="{% url 'frontend:equipment_type_toggle_active' equipment_type.type_id %}" class="d-inline m-0">
+                                {% csrf_token %}
+                                <button type="submit"
+                                        class="btn btn-sm {% if equipment_type.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %}"
+                                        title="{% if equipment_type.is_active %}Desactivar{% else %}Activar{% endif %} tipo de equipo">
+                                    <i class="bi {% if equipment_type.is_active %}bi-toggle-off{% else %}bi-toggle-on{% endif %} me-1"></i>
+                                    {% if equipment_type.is_active %}Desactivar{% else %}Activar{% endif %}
+                                </button>
+                            </form>
+
+                            <!-- Delete button - only visible to DBA users -->
+                            {% if user.is_staff or user.is_superuser %}
+                            <a href="{% url 'frontend:equipment_type_delete' equipment_type.type_id %}"
+                               class="btn btn-outline-danger btn-sm"
+                               onclick="return confirm('¿Estás seguro de que deseas eliminar este tipo de equipo? Esta acción solo debe realizarse por personal autorizado.')">
+                                <i class="bi bi-trash me-1"></i>
+                                Eliminar
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.total_pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Paginación de tipos de equipo">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'-1' }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.page_range %}
+                    <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'1' }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.total_pages }}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-gear-wide-connected text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No se encontraron tipos de equipo</h4>
+                <p class="text-muted">
+                    {% if filters.search or filters.category %}
+                    No hay tipos de equipo que coincidan con los filtros aplicados.
+                    <br>
+                    <a href="?" class="btn btn-outline-primary mt-2">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Limpiar Filtros
+                    </a>
+                    {% else %}
+                    Comienza agregando el primer tipo de equipo al sistema.
+                    <br>
+                    <a href="{% url 'frontend:equipment_type_create' %}" class="btn btn-primary mt-2">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Agregar Tipo de Equipo
+                    </a>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form on filter change
+    const filterSelects = document.querySelectorAll('#category, #sort, #order');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Search input debounce
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            this.form.submit();
+        }, 500);
+    });
+    
+    // Equipment type card hover effects
+    const cards = document.querySelectorAll('.equipment-type-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.borderLeftWidth = '6px';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.borderLeftWidth = '4px';
+        });
+    });
+});
+</script>
+{% endblock %}

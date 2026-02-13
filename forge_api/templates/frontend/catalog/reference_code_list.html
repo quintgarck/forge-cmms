@@ -1,0 +1,344 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Códigos de Referencia - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .category-sidebar {
+        background: #f8f9fa;
+        border-right: 1px solid #dee2e6;
+        height: calc(100vh - 120px);
+        overflow-y: auto;
+    }
+    
+    .category-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+        transition: all 0.2s;
+    }
+    
+    .category-item:hover {
+        background: #e9ecef;
+    }
+    
+    .category-item.active {
+        background: #fff;
+        border-left-color: var(--bs-primary);
+        font-weight: 500;
+    }
+    
+    .category-icon {
+        font-size: 1.5rem;
+        margin-right: 12px;
+    }
+    
+    .category-count {
+        font-size: 0.875rem;
+        opacity: 0.7;
+    }
+    
+    .code-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .code-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .code-badge {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    
+    .search-box {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+        padding: 16px;
+        border-bottom: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            {% for crumb in breadcrumbs %}
+                {% if crumb.url %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% else %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <!-- Sidebar de Categorías -->
+        <div class="col-md-3">
+            <div class="category-sidebar">
+                <div class="p-3 border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-tags"></i> Categorías
+                    </h5>
+                </div>
+                
+                {% for cat_key, cat_data in categories.items %}
+                <a href="?category={{ cat_key }}" class="text-decoration-none text-dark">
+                    <div class="category-item {% if cat_key == selected_category %}active{% endif %}">
+                        <div class="d-flex align-items-center">
+                            <i class="category-icon {{ cat_data.icon }} text-{{ cat_data.color }}"></i>
+                            <div class="flex-grow-1">
+                                <div>{{ cat_data.title }}</div>
+                                <small class="text-muted">{{ cat_data.description }}</small>
+                            </div>
+                            <span class="badge bg-{{ cat_data.color }} category-count">
+                                {{ cat_data.count }}
+                            </span>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Contenido Principal -->
+        <div class="col-md-9">
+            <!-- Barra de búsqueda y acciones -->
+            <div class="search-box">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h4 class="mb-0">
+                            <i class="{{ category_config.icon }} text-{{ category_config.color }}"></i>
+                            {{ category_config.title }}
+                        </h4>
+                        <small class="text-muted">{{ category_config.description }}</small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        {% if is_product_catalog_category %}
+                        <a href="{% url product_catalog_create_url_name %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Nuevo
+                        </a>
+                        <a href="{% url 'frontend:reference_code_import' %}?category={{ selected_category }}" 
+                           class="btn btn-outline-info">
+                            <i class="bi bi-upload"></i> Importar
+                        </a>
+                        <a href="{% url 'frontend:reference_code_export' %}?category={{ selected_category }}&format=csv" 
+                           class="btn btn-outline-success">
+                            <i class="bi bi-download"></i> Exportar
+                        </a>
+                        {% else %}
+                        <a href="{% url 'frontend:reference_code_create' %}?category={{ selected_category }}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Nuevo Código
+                        </a>
+                        <a href="{% url 'frontend:reference_code_import' %}?category={{ selected_category }}" 
+                           class="btn btn-outline-info">
+                            <i class="bi bi-upload"></i> Importar
+                        </a>
+                        <a href="{% url 'frontend:reference_code_export' %}?category={{ selected_category }}&format=csv" 
+                           class="btn btn-outline-success">
+                            <i class="bi bi-download"></i> Exportar
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <form method="get" id="searchForm">
+                            <input type="hidden" name="category" value="{{ selected_category }}">
+                            
+                            <div class="row g-2">
+                                <!-- Búsqueda -->
+                                <div class="col-md-5">
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-search"></i>
+                                        </span>
+                                        <input type="search" 
+                                               name="search" 
+                                               class="form-control" 
+                                               placeholder="Buscar por código o descripción..."
+                                               value="{{ search_query }}">
+                                    </div>
+                                </div>
+                                
+                                <!-- Filtro de estado -->
+                                <div class="col-md-2">
+                                    <select name="status" class="form-select" onchange="this.form.submit()">
+                                        <option value="">Todos</option>
+                                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Activos</option>
+                                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactivos</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Ordenar por -->
+                                <div class="col-md-2">
+                                    <select name="sort" class="form-select" onchange="this.form.submit()">
+                                        <option value="code" {% if sort_by == 'code' %}selected{% endif %}>Por Código</option>
+                                        <option value="description" {% if sort_by == 'description' %}selected{% endif %}>Por Descripción</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Orden -->
+                                <div class="col-md-1">
+                                    <select name="order" class="form-select" onchange="this.form.submit()">
+                                        <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>↑</option>
+                                        <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>↓</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Botones -->
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-funnel"></i> Filtrar
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Filtros activos -->
+                            {% if has_filters %}
+                            <div class="mt-2">
+                                <small class="text-muted">Filtros activos:</small>
+                                {% for filter in active_filters %}
+                                <span class="badge bg-secondary">{{ filter }}</span>
+                                {% endfor %}
+                                <a href="?category={{ selected_category }}" class="btn btn-sm btn-outline-danger ms-2">
+                                    <i class="bi bi-x"></i> Limpiar filtros
+                                </a>
+                            </div>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lista de Códigos -->
+            <div class="p-3">
+                {% if categories %}
+                    {% for cat_key, cat_data in categories.items %}
+                        {% if cat_key == selected_category %}
+                            {% if cat_data.codes %}
+                            <div class="row">
+                                {% for code in cat_data.codes %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card code-card h-100">
+                                        <div class="card-body">
+                                             <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <span class="badge bg-{{ category_config.color }} code-badge">
+                                                    {{ code.code }}
+                                                </span>
+                                                <div>
+                                                    {% if code.is_active %}
+                                                    <span class="badge bg-success">Activo</span>
+                                                    {% else %}
+                                                    <span class="badge bg-secondary">Inactivo</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            
+                                            <p class="card-text mb-3">{{ code.description }}</p>
+                                            
+                                            <div class="d-flex gap-2">
+                                                {% if is_product_catalog_category %}
+                                                <a href="{% url 'frontend:reference_code_detail' category=selected_category pk=code.code %}" 
+                                                   class="btn btn-sm btn-outline-info"
+                                                   title="Ver detalle">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url product_catalog_edit_url_name code=code.code %}" 
+                                                   class="btn btn-sm btn-outline-primary"
+                                                   title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <a href="{% url product_catalog_delete_url_name code=code.code %}" 
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   title="Eliminar">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                                {% else %}
+                                                <a href="{% url 'frontend:reference_code_detail' category=selected_category pk=code.pk %}" 
+                                                   class="btn btn-sm btn-outline-info"
+                                                   title="Ver detalle">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'frontend:reference_code_edit' category=selected_category pk=code.pk %}" 
+                                                   class="btn btn-sm btn-outline-primary"
+                                                   title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                {% if user.is_staff %}
+                                                <a href="{% url 'frontend:reference_code_delete' category=selected_category pk=code.pk %}" 
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   title="Eliminar (solo admin)">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                                {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info text-center">
+                                <i class="bi bi-info-circle fs-1 d-block mb-3"></i>
+                                <h5>No hay registros en esta categoría</h5>
+                                <p class="mb-3">Comienza agregando el primero.</p>
+                                {% if is_product_catalog_category %}
+                                <a href="{% url product_catalog_create_url_name %}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Crear
+                                </a>
+                                {% else %}
+                                <a href="{% url 'frontend:reference_code_create' %}?category={{ selected_category }}" 
+                                   class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Crear Primer Código
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    No se pudieron cargar los códigos de referencia
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Búsqueda en tiempo real (opcional)
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                // Auto-submit después de 500ms de inactividad
+                // this.form.submit();
+            }, 500);
+        });
+    }
+});
+</script>
+{% endblock %}

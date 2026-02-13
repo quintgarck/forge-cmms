@@ -1,0 +1,10 @@
+<div class="btn-group" role="group" aria-label="Acciones rápidas">
+    {% for action in actions %}
+        <a href="{{ action.url }}" class="btn {{ action.class|default:'btn-outline-secondary' }}">
+            {% if action.icon %}
+                <i class="bi bi-{{ action.icon }}"></i>
+            {% endif %}
+            {{ action.name }}
+        </a>
+    {% endfor %}
+</div>

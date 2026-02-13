@@ -1,0 +1,296 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Catálogo de Partes OEM - MovIAx{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/client-list.css' %}">
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'frontend:oem_catalog_index' %}" class="text-decoration-none">
+            <i class="bi bi-diagram-3 me-1"></i>Catálogo OEM
+        </a>
+    </li>
+    <li class="breadcrumb-item active">Catálogo Partes</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-gear me-2 text-primary"></i>
+            Catálogo de Partes OEM
+        </h1>
+        <p class="text-muted mb-0">Administración de partes y referencias originales</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'frontend:oem_catalog_item_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>
+            Nueva Parte
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="search-filter-bar mb-4">
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control" name="search" 
+                       placeholder="Buscar por número de parte o descripción..." 
+                       value="{{ filters.search|default:'' }}">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" name="manufacturer">
+                <option value="">Todos los fabricantes</option>
+                {% if manufacturers %}
+                {% for mfg in manufacturers %}
+                <option value="{{ mfg.oem_code }}" 
+                        {% if filters.manufacturer == mfg.oem_code %}selected{% endif %}>
+                    {{ mfg.name }}
+                </option>
+                {% endfor %}
+                {% endif %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select class="form-select" name="category">
+                <option value="">Todas las categorías</option>
+                {% for opt in category_options %}
+                    <option value="{{ opt.value }}" {% if filters.category == opt.value %}selected{% endif %}>
+                        {{ opt.label }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary flex-grow-1">
+                    <i class="bi bi-search me-1"></i>
+                    Buscar
+                </button>
+                {% if filters.search or filters.manufacturer %}
+                    <a href="{% url 'frontend:oem_part_catalog' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+    
+    <!-- Results summary -->
+    {% if parts %}
+    <div class="row mt-2">
+        <div class="col">
+            <small class="text-muted">
+                Mostrando {{ pagination.count }} parte{{ pagination.count|pluralize }}
+                {% if filters.search %} para "{{ filters.search }}"{% endif %}
+            </small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Parts Table -->
+<div class="card">
+    <div class="card-body p-0">
+        {% if parts %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Parte</th>
+                            <th>Fabricante</th>
+                            <th>Descripción</th>
+                            <th>Disponibilidad</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for part in parts %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            <i class="bi bi-gear fs-4 text-muted"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-0">
+                                                <a href="{% url 'frontend:oem_catalog_item_detail' part.catalog_id %}" 
+                                                   class="text-decoration-none fw-semibold">
+                                                    {{ part.part_number }}
+                                                </a>
+                                            </h6>
+                                            <small class="text-muted">ID: #{{ part.catalog_id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                        {{ part.oem_code }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 300px;" title="{{ part.description_es }}">
+                                        {{ part.description_es }}
+                                    </div>
+                                    {% if part.weight_kg %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-box me-1"></i>{{ part.weight_kg }} kg
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% with status=part.availability_status|default:'' %}
+                                    {% if status == 'IN_STOCK' %}
+                                        <span class="badge bg-success bg-opacity-10 text-success">
+                                            <i class="bi bi-check-circle me-1"></i>En Stock
+                                        </span>
+                                    {% elif status == 'LOW_STOCK' %}
+                                        <span class="badge bg-warning bg-opacity-10 text-warning">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>Stock Bajo
+                                        </span>
+                                    {% elif status == 'OUT_OF_STOCK' %}
+                                        <span class="badge bg-danger bg-opacity-10 text-danger">
+                                            <i class="bi bi-x-circle me-1"></i>Agotado
+                                        </span>
+                                    {% elif status == 'ON_ORDER' %}
+                                        <span class="badge bg-info bg-opacity-10 text-info">
+                                            <i class="bi bi-clock me-1"></i>En Pedido
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary">
+                                            <i class="bi bi-dash-circle me-1"></i>No disponible
+                                        </span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        {% if part.catalog_id %}
+                                            <a href="{% url 'frontend:oem_catalog_item_detail' part.catalog_id %}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               data-bs-toggle="tooltip" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'frontend:oem_catalog_item_update' part.catalog_id %}" 
+                                               class="btn btn-sm btn-outline-secondary"
+                                               data-bs-toggle="tooltip" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="{% url 'frontend:oem_cross_reference_tool' %}?search={{ part.part_number }}" 
+                                               class="btn btn-sm btn-outline-info"
+                                               data-bs-toggle="tooltip" title="Referencias cruzadas">
+                                                <i class="bi bi-arrow-left-right"></i>
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">Sin acciones</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-gear display-1 text-muted"></i>
+                <h4 class="mt-3">No se encontraron partes</h4>
+                {% if filters.search or filters.manufacturer or filters.category %}
+                    <p class="text-muted">No hay resultados para los filtros aplicados</p>
+                    <a href="{% url 'frontend:oem_part_catalog' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-funnel-fill me-1"></i>
+                        Limpiar filtros
+                    </a>
+                {% else %}
+                    <p class="text-muted">Comienza agregando tu primera parte OEM</p>
+                    <a href="{% url 'frontend:oem_catalog_item_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Crear Parte
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if pagination.total_pages > 1 %}
+    <nav aria-label="Paginación de partes" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if pagination.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pagination.previous_page_number }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.manufacturer %}&manufacturer={{ filters.manufacturer }}{% endif %}{% if filters.availability %}&availability={{ filters.availability }}{% endif %}">
+                        <i class="bi bi-chevron-left"></i>
+                        <span class="d-none d-sm-inline ms-1">Anterior</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        <i class="bi bi-chevron-left"></i>
+                        <span class="d-none d-sm-inline ms-1">Anterior</span>
+                    </span>
+                </li>
+            {% endif %}
+            
+            {% for page_num in pagination.page_range %}
+                {% if page_num == pagination.current_page %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_num }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.manufacturer %}&manufacturer={{ filters.manufacturer }}{% endif %}{% if filters.availability %}&availability={{ filters.availability }}{% endif %}">
+                            {{ page_num }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pagination.next_page_number }}{% if filters.search %}&search={{ filters.search }}{% endif %}{% if filters.manufacturer %}&manufacturer={{ filters.manufacturer }}{% endif %}{% if filters.availability %}&availability={{ filters.availability }}{% endif %}">
+                        <span class="d-none d-sm-inline me-1">Siguiente</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        <span class="d-none d-sm-inline me-1">Siguiente</span>
+                        <i class="bi bi-chevron-right"></i>
+                    </span>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit when filters change
+    const filterSelects = document.querySelectorAll('select[name="manufacturer"], select[name="category"]');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

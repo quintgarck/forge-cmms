@@ -1,0 +1,249 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Inventario de Stock - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/stock-list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Inventario de Stock</h1>
+            <p class="text-muted">Gestión de niveles de inventario por almacén</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'frontend:stock_dashboard' %}" class="btn btn-outline-primary">
+                <i class="fas fa-chart-bar me-2"></i>Dashboard
+            </a>
+            <a href="{% url 'frontend:stock_movement_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Registrar Movimiento
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    {{ search_form.search.label_tag }}
+                    {{ search_form.search }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.warehouse_id.label_tag }}
+                    <select name="warehouse_id" class="form-select" id="warehouse-filter">
+                        <option value="">Todos los almacenes</option>
+                        {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}" 
+                                {% if request.GET.warehouse_id == warehouse.id|stringformat:"s" %}selected{% endif %}>
+                                {{ warehouse.code }} - {{ warehouse.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.category.label_tag }}
+                    {{ search_form.category }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.stock_status.label_tag }}
+                    {{ search_form.stock_status }}
+                </div>
+                <div class="col-md-1">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="col-md-2">
+                    {% if request.GET %}
+                        <label>&nbsp;</label>
+                        <a href="{% url 'frontend:stock_list' %}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-times me-2"></i>Limpiar
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="text-muted">
+            {% if pagination.count %}
+                Mostrando {{ stock_items|length }} de {{ pagination.count }} productos en stock
+            {% else %}
+                No se encontraron productos en stock
+            {% endif %}
+        </div>
+        <div class="stock-legend">
+            <span class="badge bg-success me-2">En Stock</span>
+            <span class="badge bg-warning me-2">Stock Bajo</span>
+            <span class="badge bg-danger">Sin Stock</span>
+        </div>
+    </div>
+
+    <!-- Stock Items List -->
+    {% if stock_items %}
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th>Almacén</th>
+                                <th>Stock Actual</th>
+                                <th>Stock Mínimo</th>
+                                <th>Stock Máximo</th>
+                                <th>Valor Stock</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in stock_items %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="product-icon me-3">
+                                                {% if item.product_category == 'service' %}
+                                                    <i class="fas fa-cogs text-primary"></i>
+                                                {% elif item.product_category == 'part' %}
+                                                    <i class="fas fa-wrench text-warning"></i>
+                                                {% elif item.product_category == 'material' %}
+                                                    <i class="fas fa-cube text-info"></i>
+                                                {% else %}
+                                                    <i class="fas fa-box text-secondary"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <strong>{{ item.product_name }}</strong><br>
+                                                <small class="text-muted">{{ item.product_code }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <strong>{{ item.warehouse_name }}</strong><br>
+                                        <small class="text-muted">{{ item.warehouse_code }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold stock-quantity">{{ item.current_stock|floatformat:2 }}</span>
+                                        <br><small class="text-muted">{{ item.unit_of_measure|default:"unidad" }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">{{ item.minimum_stock|floatformat:2|default:"--" }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-muted">{{ item.maximum_stock|floatformat:2|default:"--" }}</span>
+                                    </td>
+                                    <td>
+                                        <strong>${{ item.stock_value|floatformat:2|default:"0.00" }}</strong>
+                                        {% if item.unit_cost %}
+                                            <br><small class="text-muted">${{ item.unit_cost|floatformat:2 }}/u</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.current_stock <= 0 %}
+                                            <span class="badge bg-danger">Sin Stock</span>
+                                        {% elif item.minimum_stock and item.current_stock <= item.minimum_stock %}
+                                            <span class="badge bg-warning">Stock Bajo</span>
+                                        {% elif item.maximum_stock and item.current_stock >= item.maximum_stock %}
+                                            <span class="badge bg-info">Sobrestock</span>
+                                        {% else %}
+                                            <span class="badge bg-success">En Stock</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'frontend:product_detail' item.product_id %}" 
+                                               class="btn btn-sm btn-outline-primary" title="Ver Producto">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'frontend:stock_movement_create' %}?product_id={{ item.product_id }}&warehouse_id={{ item.warehouse_id }}" 
+                                               class="btn btn-sm btn-outline-success" title="Registrar Movimiento">
+                                                <i class="fas fa-exchange-alt"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.total_pages > 1 %}
+            <nav aria-label="Paginación de stock" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'-1' }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.page_range %}
+                        <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if pagination.next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'1' }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+            <h4>No hay productos en stock</h4>
+            <p class="text-muted">No se encontraron productos con los filtros aplicados.</p>
+            <div class="mt-3">
+                <a href="{% url 'frontend:stock_movement_create' %}" class="btn btn-primary me-2">
+                    <i class="fas fa-plus me-2"></i>Registrar Movimiento
+                </a>
+                <a href="{% url 'frontend:product_create' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-plus me-2"></i>Crear Producto
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form on filter change
+    const filterSelects = document.querySelectorAll('#warehouse-filter, #category-filter, #status-filter');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

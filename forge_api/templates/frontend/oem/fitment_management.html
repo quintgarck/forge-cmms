@@ -1,0 +1,211 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Fitments - Compatibilidad Productos-Equipos - MovIAx{% endblock %}
+
+{% block extra_css %}
+<style>
+    .fitment-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    .fitment-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: #28a745;
+    }
+    .score-badge {
+        font-size: 1.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: bold;
+    }
+    .score-high { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; }
+    .score-medium { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); color: white; }
+    .score-low { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; }
+    .equipment-badge { background: #6c3dc2; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
+    .product-badge { background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-plug text-success me-2"></i>
+                        Fitments - Compatibilidad Productos
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Gestión de compatibilidades entre productos y equipos/vehículos
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'frontend:fitment_auto_create' %}" class="btn btn-success me-2">
+                        <i class="bi bi-magic me-1"></i>
+                        Auto-Crear Fitments
+                    </a>
+                    <a href="{% url 'frontend:oem_import_dashboard' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-cloud-upload me-1"></i>
+                        Importar OEM
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    {% if stats %}
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ stats.total|default:0 }}</h3>
+                    <p class="card-text">Total Fitments</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ stats.by_score_ranges.high|default:0 }}</h3>
+                    <p class="card-text">Alta Compatibilidad (>80%)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ stats.primary_fit_count|default:0 }}</h3>
+                    <p class="card-text">Fitments Primarios</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ stats.equipment_coverage|default:0 }}</h3>
+                    <p class="card-text">Equipos Cubiertos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Error Message -->
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Filters -->
+    <form method="get" class="mb-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">ID de Equipo</label>
+                <input type="text" name="equipment_id" class="form-control" 
+                       placeholder="Buscar por equipo..." value="{{ filters.equipment_id }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">SKU de Producto</label>
+                <input type="text" name="internal_sku" class="form-control" 
+                       placeholder="Buscar por SKU..." value="{{ filters.internal_sku }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Fuente</label>
+                <select name="data_source" class="form-select">
+                    <option value="">Todas las fuentes</option>
+                    {% for value, label in data_sources %}
+                    <option value="{{ value }}" {% if filters.data_source == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Score Mín.</label>
+                <select name="min_score" class="form-select">
+                    <option value="">Cualquiera</option>
+                    <option value="80" {% if filters.min_score == '80' %}selected{% endif %}> > 80%</option>
+                    <option value="50" {% if filters.min_score == '50' %}selected{% endif %}> > 50%</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-1"></i> Buscar
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Results -->
+    {% if fitments %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Equipo</th>
+                    <th>Producto</th>
+                    <th class="text-center">Score</th>
+                    <th>Tipo</th>
+                    <th>Notas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fitment in fitments %}
+                <tr>
+                    <td>
+                        <span class="equipment-badge">{{ fitment.equipment|default:'N/A' }}</span>
+                    </td>
+                    <td>
+                        <span class="product-badge">{{ fitment.internal_sku|default:'N/A' }}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="score-badge score-{% if fitment.score >= 80 %}high{% elif fitment.score >= 50 %}medium{% else %}low{% endif %}">
+                            {{ fitment.score|default:0 }}%
+                        </span>
+                    </td>
+                    <td>
+                        {% if fitment.is_primary_fit %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-star-fill me-1"></i>Primario
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">Secundario</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ fitment.notes|truncatechars:30|default:'Sin notas' }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-plug text-muted" style="font-size: 4rem;"></i>
+        <h4 class="text-muted mt-3">No hay fitments configurados</h4>
+        <p class="text-muted">Cree compatibilidades entre productos y equipos manualmente o use la función auto-crear.</p>
+        <a href="{% url 'frontend:fitment_auto_create' %}" class="btn btn-success">
+            <i class="bi bi-magic me-2"></i>
+            Auto-Crear Fitments
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

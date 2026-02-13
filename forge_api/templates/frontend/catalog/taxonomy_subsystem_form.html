@@ -1,0 +1,213 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+{% load navigation_tags %}
+
+{% block title %}{{ title }} - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% render_breadcrumbs breadcrumbs %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{{ title }}</h5>
+                </div>
+                <div class="card-body">
+<form method="post" action=".">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <input type="hidden" name="system" value="{{ system_id }}">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Código <span class="text-danger">*</span></label>
+                                {{ form.subsystem_code }}
+                                {% if form.subsystem_code.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.subsystem_code.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Orden</label>
+                                {{ form.sort_order }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Español <span class="text-danger">*</span></label>
+                            {{ form.name_es }}
+                            {% if form.name_es.errors %}
+                                <div class="invalid-feedback d-block">{{ form.name_es.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Inglés</label>
+                            {{ form.name_en }}
+                            {% if form.name_en.errors %}
+                                <div class="invalid-feedback d-block">{{ form.name_en.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Icono</label>
+                            <div class="input-group">
+                                {{ form.icon }}
+                                <span class="input-group-text">
+                                    <i id="icon-preview" class="bi bi-gear" style="font-size: 1.2rem;"></i>
+                                </span>
+                            </div>
+                            {% if form.icon.errors %}
+                                <div class="invalid-feedback d-block">{{ form.icon.errors.0 }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                Ejemplos: bi bi-gear, fas fa-car, bi bi-diagram-3
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Alcance</label>
+                            {{ form.scope }}
+                            {% if form.scope.errors %}
+                                <div class="invalid-feedback d-block">{{ form.scope.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.is_active }}
+                                <label class="form-check-label">Activo</label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check"></i> Guardar
+                            </button>
+                            <a href="{% url 'frontend:taxonomy_subsystem_list' system_id=system_id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Información del Sistema Padre -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-diagram-2"></i> Sistema Padre
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if system %}
+                        <div class="text-center mb-3">
+                            <i class="bi bi-diagram-2 text-primary" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5 class="text-center mb-3">{{ system.name_es }}</h5>
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-hash"></i> Código:</span>
+                                <span class="badge bg-primary">{{ system.system_code }}</span>
+                            </div>
+                            {% if system.category %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-folder"></i> Categoría:</span>
+                                <span>{{ system.category }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-check-circle"></i> Estado:</span>
+                                {% if system.is_active %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Inactivo</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if system.scope %}
+                        <div class="mt-3">
+                            <small class="text-muted">{{ system.scope }}</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> No se pudo cargar la información del sistema
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Navegación rápida -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-compass"></i> Navegación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'frontend:taxonomy_system_detail' system_id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye"></i> Ver Detalles del Sistema
+                        </a>
+                        <a href="{% url 'frontend:taxonomy_subsystem_list' system_id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-list"></i> Lista de Subsistemas
+                        </a>
+                        <a href="{% url 'frontend:taxonomy_tree' %}" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-diagram-3"></i> Ver Árbol
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Icon preview functionality
+    const iconInput = document.querySelector('input[name="icon"]');
+    const iconPreview = document.getElementById('icon-preview');
+    
+    if (iconInput && iconPreview) {
+        iconInput.addEventListener('input', function() {
+            const iconClass = this.value.trim();
+            if (iconClass) {
+                iconPreview.className = iconClass;
+            } else {
+                iconPreview.className = 'bi bi-gear';
+            }
+        });
+        
+        // Initialize icon preview with current value
+        const initialIcon = iconInput.value.trim();
+        if (initialIcon) {
+            iconPreview.className = initialIcon;
+        }
+    }
+    
+    // Auto-uppercase for subsystem_code
+    const codeInput = document.querySelector('input[name="subsystem_code"]');
+    if (codeInput) {
+        codeInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+});
+</script>
+{% endblock %}

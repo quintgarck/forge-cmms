@@ -1,0 +1,82 @@
+{% extends 'frontend/base.html' %}
+
+{% block extra_css %}
+    <!-- Additional CSS for generic pages -->
+    <style>
+        .content-wrapper {
+            padding: 20px 0;
+        }
+        .page-header {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
+        }
+        .table th {
+            font-weight: 600;
+            background-color: #f8f9fa;
+        }
+        .btn-action {
+            margin-right: 5px;
+        }
+        .status-badge {
+            font-size: 0.8em;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container-fluid">
+        {% block page_header %}
+        <div class="page-header">
+            <h1>{% block title %}Página{% endblock %}</h1>
+        </div>
+        {% endblock %}
+        
+        {% block page_content %}
+        <!-- Main content goes here -->
+        {% endblock %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <!-- Additional JavaScript for generic pages -->
+    <script>
+        // Generic page initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Initialize popovers
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+                return new bootstrap.Popover(popoverTriggerEl);
+            });
+            
+            // Handle form submissions with loading states
+            document.querySelectorAll('form').forEach(function(form) {
+                form.addEventListener('submit', function() {
+                    var submitButtons = form.querySelectorAll('button[type="submit"]');
+                    submitButtons.forEach(function(button) {
+                        button.disabled = true;
+                        if (button.querySelector('.spinner-border') === null) {
+                            button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> ' + button.innerHTML;
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+    
+    {% block page_js %}
+    <!-- Page-specific JavaScript -->
+    {% endblock %}
+{% endblock %}

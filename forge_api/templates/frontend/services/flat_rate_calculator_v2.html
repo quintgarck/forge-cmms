@@ -1,0 +1,623 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Calculadora de Tarifas - MovIAx{% endblock %}
+
+{% block body_class %}service-page calculator-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calculator-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    .calculator-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .service-selector {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .service-card {
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .service-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        transform: translateY(-2px);
+    }
+    .service-card.selected {
+        border-color: #667eea;
+        background: #f0f4ff;
+    }
+    .calculation-panel {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        position: sticky;
+        top: 80px;
+    }
+    .price-display {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    .price-amount {
+        font-size: 3rem;
+        font-weight: bold;
+        margin: 0.5rem 0;
+    }
+    .price-breakdown {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .breakdown-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .breakdown-item:last-child {
+        border-bottom: none;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    .service-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    .quick-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+    .selected-services-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .selected-service-item {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .quantity-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid #dee2e6;
+        background: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .quantity-btn:hover {
+        background: #f8f9fa;
+        border-color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="calculator-container">
+        <!-- Header -->
+        <div class="calculator-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="h2 mb-0">
+                        <i class="bi bi-calculator me-3"></i>
+                        Calculadora de Tarifas
+                    </h1>
+                    <p class="mb-0 opacity-75">Cotiza servicios de manera precisa y profesional</p>
+                </div>
+                <div>
+                    <button class="btn btn-light" id="btn-clear-all">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Limpiar Todo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Left Column - Service Selection -->
+            <div class="col-lg-8">
+                <!-- Filters -->
+                <div class="service-selector">
+                    <h5 class="mb-3">
+                        <i class="bi bi-funnel me-2"></i>
+                        Buscar Servicios
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="search-service" 
+                                placeholder="Buscar por código o descripción..."
+                            >
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="filter-equipment-type">
+                                <option value="">Todos los Tipos</option>
+                                <option value="auto">Automóvil</option>
+                                <option value="truck">Camioneta</option>
+                                <option value="motorcycle">Motocicleta</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="filter-category">
+                                <option value="">Todas las Categorías</option>
+                                <option value="maintenance">Mantenimiento</option>
+                                <option value="repair">Reparación</option>
+                                <option value="diagnostic">Diagnóstico</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Services List -->
+                <div class="service-selector">
+                    <h5 class="mb-3">
+                        <i class="bi bi-list-check me-2"></i>
+                        Servicios Disponibles
+                    </h5>
+                    <div id="services-list">
+                        <!-- Services will be loaded dynamically from API -->
+                        <div class="text-center py-4" id="loading-services">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="text-muted mt-2">Cargando servicios disponibles...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Calculation Panel -->
+            <div class="col-lg-4">
+                <div class="calculation-panel">
+                    <!-- Price Display -->
+                    <div class="price-display">
+                        <div class="opacity-75">Total de la Cotización</div>
+                        <div class="price-amount" id="total-price">$0.00</div>
+                        <div class="opacity-75">
+                            <i class="bi bi-clock me-1"></i>
+                            <span id="total-time">0.0</span> horas
+                        </div>
+                    </div>
+
+                    <!-- Selected Services -->
+                    <h6 class="mb-3">
+                        <i class="bi bi-cart-check me-2"></i>
+                        Servicios Seleccionados (<span id="service-count">0</span>)
+                    </h6>
+                    <div class="selected-services-list" id="selected-services">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <p class="mb-0 mt-2">No hay servicios seleccionados</p>
+                        </div>
+                    </div>
+
+                    <!-- Price Breakdown -->
+                    <div class="price-breakdown mt-3" id="price-breakdown" style="display: none;">
+                        <h6 class="mb-3">Desglose de Precios</h6>
+                        <div class="breakdown-item">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">$0.00</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span>Descuento (<span id="discount-percent">0</span>%):</span>
+                            <span id="discount-amount">$0.00</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span>IVA (16%):</span>
+                            <span id="tax-amount">$0.00</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span>Total:</span>
+                            <span id="final-total">$0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Discount Control -->
+                    <div class="mt-3">
+                        <label class="form-label">Descuento (%)</label>
+                        <input 
+                            type="number" 
+                            class="form-control" 
+                            id="discount-input" 
+                            min="0" 
+                            max="100" 
+                            value="0"
+                            step="5"
+                        >
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="quick-actions mt-4">
+                        <button class="btn btn-success flex-fill" id="btn-save-quote">
+                            <i class="bi bi-save me-2"></i>
+                            Guardar
+                        </button>
+                        <button class="btn btn-primary flex-fill" id="btn-generate-pdf">
+                            <i class="bi bi-file-pdf me-2"></i>
+                            PDF
+                        </button>
+                    </div>
+                    <button class="btn btn-outline-primary w-100 mt-2" id="btn-convert-to-order">
+                        <i class="bi bi-arrow-right-circle me-2"></i>
+                        Convertir a Orden
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // State
+    let selectedServices = [];
+    let discountPercent = 0;
+    let allServices = []; // Store all services from API
+    const TAX_RATE = 0.16; // 16% IVA
+    const LABOR_RATE = 500.00; // Tarifa por hora de mano de obra (configurable)
+    
+    // Elements
+    const servicesList = document.getElementById('services-list');
+    const selectedServicesContainer = document.getElementById('selected-services');
+    const totalPriceEl = document.getElementById('total-price');
+    const totalTimeEl = document.getElementById('total-time');
+    const serviceCountEl = document.getElementById('service-count');
+    const priceBreakdownEl = document.getElementById('price-breakdown');
+    const discountInput = document.getElementById('discount-input');
+    
+    // Load services from API
+    loadServices();
+    
+    function loadServices() {
+        fetch('/api/flat-rate-standards/')
+            .then(response => response.json())
+            .then(data => {
+                allServices = data.results || [];
+                renderServices(allServices);
+            })
+            .catch(error => {
+                console.error('Error loading services:', error);
+                servicesList.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error al cargar los servicios. Por favor, recarga la página.
+                    </div>
+                `;
+            });
+    }
+    
+    function renderServices(services) {
+        if (services.length === 0) {
+            servicesList.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <p class="mb-0 mt-2">No hay servicios disponibles</p>
+                </div>
+            `;
+            return;
+        }
+        
+        servicesList.innerHTML = services.map(service => {
+            const standardHours = parseFloat(service.standard_hours || 0);
+            const price = standardHours * LABOR_RATE;
+            const categoryBadge = getCategoryBadge(service.group_code || 'general');
+            
+            return `
+                <div class="service-card" 
+                     data-service-id="${service.flat_rate_id}" 
+                     data-price="${price.toFixed(2)}" 
+                     data-time="${standardHours}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <strong class="me-2">${service.service_code || 'N/A'}</strong>
+                                ${categoryBadge}
+                            </div>
+                            <p class="mb-2">${service.description || 'Sin descripción'}</p>
+                            <div class="d-flex gap-3 text-muted small">
+                                <span><i class="bi bi-clock me-1"></i>${standardHours.toFixed(1)} hrs</span>
+                                <span><i class="bi bi-cash me-1"></i>$${price.toFixed(2)}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary add-service-btn">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function getCategoryBadge(groupCode) {
+        const categories = {
+            'maintenance': { class: 'bg-primary', label: 'Mantenimiento' },
+            'repair': { class: 'bg-warning text-dark', label: 'Reparación' },
+            'diagnostic': { class: 'bg-info text-white', label: 'Diagnóstico' },
+            'general': { class: 'bg-secondary', label: 'General' }
+        };
+        
+        const category = categories[groupCode] || categories.general;
+        return `<span class="service-badge ${category.class}">${category.label}</span>`;
+    }
+    
+    // Add service to cart
+    servicesList.addEventListener('click', function(e) {
+        const btn = e.target.closest('.add-service-btn');
+        if (!btn) return;
+        
+        const card = btn.closest('.service-card');
+        const serviceId = card.dataset.serviceId;
+        const price = parseFloat(card.dataset.price);
+        const time = parseFloat(card.dataset.time);
+        const code = card.querySelector('strong').textContent;
+        const description = card.querySelector('p').textContent;
+        
+        // Check if already added
+        const existing = selectedServices.find(s => s.id === serviceId);
+        if (existing) {
+            existing.quantity++;
+        } else {
+            selectedServices.push({
+                id: serviceId,
+                code: code,
+                description: description,
+                price: price,
+                time: time,
+                quantity: 1
+            });
+        }
+        
+        updateCalculation();
+        renderSelectedServices();
+    });
+    
+    // Remove service
+    selectedServicesContainer.addEventListener('click', function(e) {
+        const btn = e.target.closest('.btn-remove-service');
+        if (!btn) return;
+        
+        const serviceId = btn.dataset.serviceId;
+        selectedServices = selectedServices.filter(s => s.id !== serviceId);
+        
+        updateCalculation();
+        renderSelectedServices();
+    });
+    
+    // Update quantity
+    selectedServicesContainer.addEventListener('click', function(e) {
+        const btn = e.target.closest('.quantity-btn');
+        if (!btn) return;
+        
+        const serviceId = btn.dataset.serviceId;
+        const action = btn.dataset.action;
+        const service = selectedServices.find(s => s.id === serviceId);
+        
+        if (!service) return;
+        
+        if (action === 'increase') {
+            service.quantity++;
+        } else if (action === 'decrease' && service.quantity > 1) {
+            service.quantity--;
+        }
+        
+        updateCalculation();
+        renderSelectedServices();
+    });
+    
+    // Discount change
+    discountInput.addEventListener('input', function() {
+        discountPercent = parseFloat(this.value) || 0;
+        updateCalculation();
+    });
+    
+    // Clear all
+    document.getElementById('btn-clear-all').addEventListener('click', function() {
+        if (selectedServices.length === 0) return;
+        
+        if (confirm('¿Estás seguro de que deseas limpiar todos los servicios seleccionados?')) {
+            selectedServices = [];
+            discountPercent = 0;
+            discountInput.value = 0;
+            updateCalculation();
+            renderSelectedServices();
+        }
+    });
+    
+    // Render selected services
+    function renderSelectedServices() {
+        if (selectedServices.length === 0) {
+            selectedServicesContainer.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <p class="mb-0 mt-2">No hay servicios seleccionados</p>
+                </div>
+            `;
+            return;
+        }
+        
+        selectedServicesContainer.innerHTML = selectedServices.map(service => `
+            <div class="selected-service-item">
+                <div class="flex-grow-1">
+                    <strong>${service.code}</strong>
+                    <p class="mb-1 small">${service.description}</p>
+                    <div class="text-muted small">
+                        $${service.price.toFixed(2)} × ${service.quantity} = $${(service.price * service.quantity).toFixed(2)}
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="quantity-control">
+                        <button class="quantity-btn" data-service-id="${service.id}" data-action="decrease">
+                            <i class="bi bi-dash"></i>
+                        </button>
+                        <span class="px-2">${service.quantity}</span>
+                        <button class="quantity-btn" data-service-id="${service.id}" data-action="increase">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger btn-remove-service" data-service-id="${service.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    // Update calculation
+    function updateCalculation() {
+        const subtotal = selectedServices.reduce((sum, s) => sum + (s.price * s.quantity), 0);
+        const totalTime = selectedServices.reduce((sum, s) => sum + (s.time * s.quantity), 0);
+        const discountAmount = subtotal * (discountPercent / 100);
+        const afterDiscount = subtotal - discountAmount;
+        const taxAmount = afterDiscount * TAX_RATE;
+        const finalTotal = afterDiscount + taxAmount;
+        
+        // Update display
+        totalPriceEl.textContent = `$${finalTotal.toFixed(2)}`;
+        totalTimeEl.textContent = totalTime.toFixed(1);
+        serviceCountEl.textContent = selectedServices.length;
+        
+        // Update breakdown
+        if (selectedServices.length > 0) {
+            priceBreakdownEl.style.display = 'block';
+            document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('discount-percent').textContent = discountPercent.toFixed(0);
+            document.getElementById('discount-amount').textContent = `-$${discountAmount.toFixed(2)}`;
+            document.getElementById('tax-amount').textContent = `$${taxAmount.toFixed(2)}`;
+            document.getElementById('final-total').textContent = `$${finalTotal.toFixed(2)}`;
+        } else {
+            priceBreakdownEl.style.display = 'none';
+        }
+    }
+    
+    // Save quote
+    document.getElementById('btn-save-quote').addEventListener('click', function() {
+        if (selectedServices.length === 0) {
+            alert('Agrega al menos un servicio para guardar la cotización');
+            return;
+        }
+        
+        // TODO: Implement save functionality
+        alert('Funcionalidad de guardado en desarrollo');
+    });
+    
+    // Generate PDF
+    document.getElementById('btn-generate-pdf').addEventListener('click', function() {
+        if (selectedServices.length === 0) {
+            alert('Agrega al menos un servicio para generar el PDF');
+            return;
+        }
+        
+        // TODO: Implement PDF generation
+        alert('Generación de PDF en desarrollo');
+    });
+    
+    // Convert to order
+    document.getElementById('btn-convert-to-order').addEventListener('click', function() {
+        if (selectedServices.length === 0) {
+            alert('Agrega al menos un servicio para convertir a orden');
+            return;
+        }
+        
+        // TODO: Implement conversion to work order
+        alert('Conversión a orden de trabajo en desarrollo');
+    });
+    
+    // Search functionality
+    document.getElementById('search-service').addEventListener('input', debounce(function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const equipmentType = document.getElementById('filter-equipment-type').value;
+        const category = document.getElementById('filter-category').value;
+        
+        let filtered = allServices;
+        
+        // Filter by search term
+        if (searchTerm) {
+            filtered = filtered.filter(service => {
+                const code = (service.service_code || '').toLowerCase();
+                const description = (service.description || '').toLowerCase();
+                return code.includes(searchTerm) || description.includes(searchTerm);
+            });
+        }
+        
+        // Filter by equipment type
+        if (equipmentType) {
+            filtered = filtered.filter(service => 
+                service.equipment_type_id === parseInt(equipmentType)
+            );
+        }
+        
+        // Filter by category
+        if (category) {
+            filtered = filtered.filter(service => 
+                (service.group_code || '').toLowerCase() === category
+            );
+        }
+        
+        renderServices(filtered);
+    }, 300));
+    
+    // Filter change handlers
+    document.getElementById('filter-equipment-type').addEventListener('change', function() {
+        document.getElementById('search-service').dispatchEvent(new Event('input'));
+    });
+    
+    document.getElementById('filter-category').addEventListener('change', function() {
+        document.getElementById('search-service').dispatchEvent(new Event('input'));
+    });
+    
+    // Debounce helper
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+});
+</script>
+{% endblock %}

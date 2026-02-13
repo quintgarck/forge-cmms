@@ -1,0 +1,312 @@
+﻿{% extends "frontend/base/base.html" %}
+
+{% load static %}
+
+{% block title %}Dashboard de Inventario - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/inventory-dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="h3 mb-2 text-gray-800">
+                <i class="bi bi-boxes"></i> Dashboard de Inventario
+            </h1>
+            <p class="mb-4">Resumen de su gestión de inventario</p>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row">
+        <!-- Total de Productos -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Productos Totales
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_products|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-tag-fill fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Valor Total del Inventario -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Valor del Inventario
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${{ total_stock_value|floatformat:2|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Productos con Stock Bajo -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Stock Bajo
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ low_stock_items|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sin Stock -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Sin Stock
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ out_of_stock_items|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-x-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row">
+        <!-- Distribución por Categoría -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Distribución del Inventario por Categoría</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="inventoryCategoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Movimientos Recientes -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Movimientos Recientes</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="inventoryMovementsChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-primary"></i> Entradas
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-danger"></i> Salidas
+                        </span>
+                        <span class="mr-2">
+                            <i class="fas fa-circle text-warning"></i> Ajustes
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Productos Críticos</h6>
+                </div>
+                <div class="card-body">
+                    {% if critical_items %}
+                        <ul class="list-group list-group-flush">
+                            {% for item in critical_items %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <strong>{{ item.name }}</strong><br>
+                                    <small class="text-muted">Código: {{ item.product_code }}</small>
+                                </span>
+                                <span class="badge badge-danger badge-pill">{{ item.quantity_available }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No hay productos con niveles críticos de stock.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Transacciones Recientes</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_transactions %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Tipo</th>
+                                        <th>Cantidad</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for transaction in recent_transactions %}
+                                    <tr>
+                                        <td>{{ transaction.product.name }}</td>
+                                        <td>
+                                            <span class="badge badge-{{ transaction.type_class }}">{{ transaction.type_label }}</span>
+                                        </td>
+                                        <td>{{ transaction.quantity }}</td>
+                                        <td>{{ transaction.formatted_date }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No hay transacciones recientes registradas.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'frontend/vendor/chart.min.js' %}"></script>
+<script>
+// Configuración de gráficos
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de distribución por categoría
+    const categoryCtx = document.getElementById('inventoryCategoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'line', // Cambiado a línea si hay datos temporales
+        data: {
+            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Servicios',
+                data: [5, 8, 12, 10, 15, 18],
+                borderColor: 'rgba(78, 115, 223, 1)',
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                tension: 0.3
+            }, {
+                label: 'Partes',
+                data: [3, 5, 7, 9, 11, 13],
+                borderColor: 'rgba(28, 200, 138, 1)',
+                backgroundColor: 'rgba(28, 200, 138, 0.05)',
+                tension: 0.3
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 25,
+                    top: 25,
+                    bottom: 0
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false,
+                        drawBorder: false
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgb(234, 236, 244)',
+                        zeroLineColor: 'rgb(234, 236, 244)',
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true
+                },
+                tooltip: {
+                    backgroundColor: 'rgb(255, 255, 255)',
+                    bodyColor: 'rgb(85, 85, 85)',
+                    borderColor: 'rgb(221, 221, 221)',
+                    borderWidth: 1,
+                    titleColor: 'rgb(85, 85, 85)',
+                }
+            }
+        }
+    });
+
+    // Gráfico de movimientos
+    const movementsCtx = document.getElementById('inventoryMovementsChart').getContext('2d');
+    new Chart(movementsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Entradas', 'Salidas', 'Ajustes'],
+            datasets: [{
+                data: [55, 30, 15],
+                backgroundColor: ['#4e73df', '#e74a3b', '#f6c23e'],
+                hoverBackgroundColor: ['#2e59d9', '#d5281b', '#d3a625'],
+                hoverBorderColor: 'rgba(234, 236, 244, 1)'
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: 'rgb(255, 255, 255)',
+                bodyColor: 'rgb(85, 85, 85)',
+                borderColor: 'rgb(221, 221, 221)',
+                borderWidth: 1,
+                titleColor: 'rgb(85, 85, 85)',
+            },
+            legend: {
+                display: true,
+                position: 'bottom'
+            },
+            cutoutPercentage: 80
+        }
+    });
+});
+</script>
+{% endblock %}

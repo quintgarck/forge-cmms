@@ -1,0 +1,957 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ form_title }} - MovIAx{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/equipment-form.css' %}">
+{% endblock %}
+
+{% block breadcrumb_items %}
+<li class="breadcrumb-item">
+    <a href="{% url 'frontend:equipment_list' %}">Equipos</a>
+</li>
+{% if form_action == 'update' and equipment %}
+<li class="breadcrumb-item">
+    <a href="{% url 'frontend:equipment_detail' equipment.id %}">{{ equipment.equipment_code }}</a>
+</li>
+<li class="breadcrumb-item active">Editar</li>
+{% else %}
+<li class="breadcrumb-item active">Registrar Equipo</li>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="h3 mb-1">
+                    <i class="bi bi-tools me-2 text-primary"></i>
+                    {{ form_title }}
+                </h1>
+                <p class="text-muted mb-0">
+                    {% if form_action == 'update' %}
+                    Actualiza la información del equipo
+                    {% else %}
+                    Registra un nuevo equipo en el sistema
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-auto">
+                {% if form_action == 'update' and equipment %}
+                <a href="{% url 'frontend:equipment_detail' equipment.id %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Volver
+                </a>
+                {% else %}
+                <a href="{% url 'frontend:equipment_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>
+                    Volver
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="card">
+                <div class="card-body">
+                    <!-- Basic Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Información Básica
+                            </h5>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.equipment_code.id_for_label }}" class="form-label">
+                                    {{ form.equipment_code.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.equipment_code }}
+                                {% if form.equipment_code.help_text %}
+                                <div class="form-text">{{ form.equipment_code.help_text }}</div>
+                                {% endif %}
+                                {% if form.equipment_code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.equipment_code.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.client_id.id_for_label }}" class="form-label">
+                                    {{ form.client_id.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.client_id }}
+                                {% if form.client_id.help_text %}
+                                <div class="form-text">{{ form.client_id.help_text }}</div>
+                                {% endif %}
+                                {% if form.client_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.client_id.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Information Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-car-front me-2"></i>
+                                Información del Vehículo
+                            </h5>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.brand.id_for_label }}" class="form-label">
+                                    {{ form.brand.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.brand }}
+                                {% if form.brand.help_text %}
+                                <div class="form-text">{{ form.brand.help_text }}</div>
+                                {% endif %}
+                                {% if form.brand.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.brand.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.model.id_for_label }}" class="form-label">
+                                    {{ form.model.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.model }}
+                                {% if form.model.help_text %}
+                                <div class="form-text">{{ form.model.help_text }}</div>
+                                {% endif %}
+                                {% if form.model.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.model.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.year.id_for_label }}" class="form-label">
+                                    {{ form.year.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.year }}
+                                {% if form.year.help_text %}
+                                <div class="form-text">{{ form.year.help_text }}</div>
+                                {% endif %}
+                                {% if form.year.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.year.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.serial_number.id_for_label }}" class="form-label">
+                                    {{ form.serial_number.label }}
+                                </label>
+                                {{ form.serial_number }}
+                                {% if form.serial_number.help_text %}
+                                <div class="form-text">{{ form.serial_number.help_text }}</div>
+                                {% endif %}
+                                {% if form.serial_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.serial_number.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.vin.id_for_label }}" class="form-label">
+                                    {{ form.vin.label }}
+                                </label>
+                                {{ form.vin }}
+                                {% if form.vin.help_text %}
+                                <div class="form-text">{{ form.vin.help_text }}</div>
+                                {% endif %}
+                                {% if form.vin.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.vin.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.license_plate.id_for_label }}" class="form-label">
+                                    {{ form.license_plate.label }}
+                                </label>
+                                {{ form.license_plate }}
+                                {% if form.license_plate.help_text %}
+                                <div class="form-text">{{ form.license_plate.help_text }}</div>
+                                {% endif %}
+                                {% if form.license_plate.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.license_plate.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.color.id_for_label }}" class="form-label">
+                                    {{ form.color.label }}
+                                </label>
+                                {{ form.color }}
+                                {% if form.color.help_text %}
+                                <div class="form-text">{{ form.color.help_text }}</div>
+                                {% endif %}
+                                {% if form.color.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.color.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.current_mileage_hours.id_for_label }}" class="form-label">
+                                    {{ form.current_mileage_hours.label }}
+                                </label>
+                                {{ form.current_mileage_hours }}
+                                {% if form.current_mileage_hours.help_text %}
+                                <div class="form-text">{{ form.current_mileage_hours.help_text }}</div>
+                                {% endif %}
+                                {% if form.current_mileage_hours.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.current_mileage_hours.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.fuel_code.id_for_label }}" class="form-label">
+                                    {{ form.fuel_code.label }}
+                                </label>
+                                {{ form.fuel_code }}
+                                {% if form.fuel_code.help_text %}
+                                <div class="form-text">{{ form.fuel_code.help_text }}</div>
+                                {% endif %}
+                                {% if form.fuel_code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.fuel_code.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.submodel_trim.id_for_label }}" class="form-label">
+                                    {{ form.submodel_trim.label }}
+                                </label>
+                                {{ form.submodel_trim }}
+                                {% if form.submodel_trim.help_text %}
+                                <div class="form-text">{{ form.submodel_trim.help_text }}</div>
+                                {% endif %}
+                                {% if form.submodel_trim.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.submodel_trim.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.body_style.id_for_label }}" class="form-label">
+                                    {{ form.body_style.label }}
+                                </label>
+                                {{ form.body_style }}
+                                {% if form.body_style.help_text %}
+                                <div class="form-text">{{ form.body_style.help_text }}</div>
+                                {% endif %}
+                                {% if form.body_style.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.body_style.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.doors.id_for_label }}" class="form-label">
+                                    {{ form.doors.label }}
+                                </label>
+                                {{ form.doors }}
+                                {% if form.doors.help_text %}
+                                <div class="form-text">{{ form.doors.help_text }}</div>
+                                {% endif %}
+                                {% if form.doors.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.doors.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Technical Specifications Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-gear me-2"></i>
+                                Especificaciones Técnicas
+                            </h5>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.engine_desc.id_for_label }}" class="form-label">
+                                    {{ form.engine_desc.label }}
+                                </label>
+                                {{ form.engine_desc }}
+                                {% if form.engine_desc.help_text %}
+                                <div class="form-text">{{ form.engine_desc.help_text }}</div>
+                                {% endif %}
+                                {% if form.engine_desc.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.engine_desc.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.transmission_code.id_for_label }}" class="form-label">
+                                    {{ form.transmission_code.label }}
+                                </label>
+                                {{ form.transmission_code }}
+                                {% if form.transmission_code.help_text %}
+                                <div class="form-text">{{ form.transmission_code.help_text }}</div>
+                                {% endif %}
+                                {% if form.transmission_code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.transmission_code.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.aspiration_code.id_for_label }}" class="form-label">
+                                    {{ form.aspiration_code.label }}
+                                </label>
+                                {{ form.aspiration_code }}
+                                {% if form.aspiration_code.help_text %}
+                                <div class="form-text">{{ form.aspiration_code.help_text }}</div>
+                                {% endif %}
+                                {% if form.aspiration_code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.aspiration_code.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.drivetrain_code.id_for_label }}" class="form-label">
+                                    {{ form.drivetrain_code.label }}
+                                </label>
+                                {{ form.drivetrain_code }}
+                                {% if form.drivetrain_code.help_text %}
+                                <div class="form-text">{{ form.drivetrain_code.help_text }}</div>
+                                {% endif %}
+                                {% if form.drivetrain_code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.drivetrain_code.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status and Dates Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-calendar me-2"></i>
+                                Estado y Fechas
+                            </h5>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.status.id_for_label }}" class="form-label">
+                                    {{ form.status.label }}
+                                    <span class="text-danger">*</span>
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.help_text %}
+                                <div class="form-text">{{ form.status.help_text }}</div>
+                                {% endif %}
+                                {% if form.status.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.status.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.purchase_date.id_for_label }}" class="form-label">
+                                    {{ form.purchase_date.label }}
+                                </label>
+                                {{ form.purchase_date }}
+                                {% if form.purchase_date.help_text %}
+                                <div class="form-text">{{ form.purchase_date.help_text }}</div>
+                                {% endif %}
+                                {% if form.purchase_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.purchase_date.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.warranty_until.id_for_label }}" class="form-label">
+                                    {{ form.warranty_until.label }}
+                                </label>
+                                {{ form.warranty_until }}
+                                {% if form.warranty_until.help_text %}
+                                <div class="form-text">{{ form.warranty_until.help_text }}</div>
+                                {% endif %}
+                                {% if form.warranty_until.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.warranty_until.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="{{ form.last_service_date.id_for_label }}" class="form-label">
+                                    {{ form.last_service_date.label }}
+                                </label>
+                                {{ form.last_service_date }}
+                                {% if form.last_service_date.help_text %}
+                                <div class="form-text">{{ form.last_service_date.help_text }}</div>
+                                {% endif %}
+                                {% if form.last_service_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.last_service_date.errors %}
+                                    {{ error %}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="{{ form.next_service_date.id_for_label }}" class="form-label">
+                                    {{ form.next_service_date.label }}
+                                </label>
+                                {{ form.next_service_date }}
+                                {% if form.next_service_date.help_text %}
+                                <div class="form-text">{{ form.next_service_date.help_text }}</div>
+                                {% endif %}
+                                {% if form.next_service_date.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.next_service_date.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="{{ form.last_mileage_update.id_for_label }}" class="form-label">
+                                    {{ form.last_mileage_update.label }}
+                                </label>
+                                {{ form.last_mileage_update }}
+                                {% if form.last_mileage_update.help_text %}
+                                <div class="form-text">{{ form.last_mileage_update.help_text }}</div>
+                                {% endif %}
+                                {% if form.last_mileage_update.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.last_mileage_update.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notes Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-sticky me-2"></i>
+                                Notas Adicionales
+                            </h5>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                    {{ form.notes.label }}
+                                </label>
+                                {{ form.notes }}
+                                {% if form.notes.help_text %}
+                                <div class="form-text">{{ form.notes.help_text }}</div>
+                                {% endif %}
+                                {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.notes.errors %}
+                                    {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Errors -->
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Errores de Validación
+                        </h6>
+                        {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Form Actions -->
+                <div class="card-footer bg-light">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Los campos marcados con <span class="text-danger">*</span> son obligatorios
+                            </small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            {% if form_action == 'update' and equipment %}
+                            <a href="{% url 'frontend:equipment_detail' equipment.id %}" class="btn btn-secondary me-2">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Cancelar
+                            </a>
+                            {% else %}
+                            <a href="{% url 'frontend:equipment_list' %}" class="btn btn-secondary me-2">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Cancelar
+                            </a>
+                            {% endif %}
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                {% if form_action == 'update' %}
+                                Actualizar Equipo
+                                {% else %}
+                                Registrar Equipo
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // DEBUG: Force form submission by adding click handler directly to button
+    console.log('DEBUG: Equipment form script loaded');
+
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initFormHandler);
+    } else {
+        initFormHandler();
+    }
+
+    function initFormHandler() {
+        console.log('DEBUG: initFormHandler called');
+
+        // Get the equipment form specifically - look for form with method="post"
+        const forms = document.querySelectorAll('form');
+        let form = null;
+
+        // Find the form that has method="post" (our equipment form)
+        for (let i = 0; i < forms.length; i++) {
+            if (forms[i].method && forms[i].method.toLowerCase() === 'post') {
+                form = forms[i];
+                break;
+            }
+        }
+
+        if (!form) {
+            console.error('DEBUG: Equipment form not found!');
+            // Fallback: try to find any form without search in id
+            form = document.querySelector('form:not(#global-search-form)');
+        }
+
+        console.log('DEBUG: Equipment form found:', form);
+        console.log('DEBUG: Form action:', form ? form.action : 'N/A');
+        console.log('DEBUG: Form method:', form ? form.method : 'N/A');
+
+        if (!form) {
+            return;
+        }
+
+        // Add submit event handler to the form - use capture phase
+        form.addEventListener('submit', function (e) {
+            console.log('DEBUG: Form submit event FIRED (capture phase)');
+
+            if (!form.checkValidity()) {
+                console.log('DEBUG: Form is INVALID');
+                e.preventDefault();
+                form.classList.add('was-validated');
+                return false;
+            }
+
+            // Form is valid - prevent default and submit via fetch
+            e.preventDefault();
+            console.log('DEBUG: Form is valid, submitting via fetch...');
+
+            const formData = new FormData(form);
+            const url = form.action;
+            const method = form.method;
+
+            console.log('DEBUG: POST to:', url);
+
+            // Submit via fetch
+            fetch(url, {
+                method: method,
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    console.log('DEBUG: Response status:', response.status);
+                    if (response.redirected) {
+                        console.log('DEBUG: Redirect to:', response.url);
+                        window.location.href = response.url;
+                        return;
+                    }
+                    if (response.ok) {
+                        // Try to get redirect URL from response
+                        const redirectUrl = response.url;
+                        if (redirectUrl && redirectUrl.includes('/equipment/')) {
+                            console.log('DEBUG: Success - redirecting to:', redirectUrl);
+                            window.location.href = redirectUrl;
+                        } else {
+                            // Check for success message in response
+                            response.text().then(html => {
+                                if (html.includes('creado exitosamente') || html.includes('Éxito')) {
+                                    console.log('DEBUG: Equipment created successfully');
+                                    // Redirect to equipment list or show success
+                                    window.location.reload();
+                                } else {
+                                    console.log('DEBUG: Response received, reloading page');
+                                    window.location.reload();
+                                }
+                            });
+                        }
+                    } else {
+                        console.log('DEBUG: Error response:', response.status);
+                        response.text().then(html => {
+                            console.log('DEBUG: Error HTML:', html.substring(0, 500));
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('DEBUG: Fetch error:', error);
+                });
+
+            return false;
+        }, true); // Use capture phase - runs before other handlers
+
+        // Add click handler to submit button
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            console.log('DEBUG: Submit button found:', submitBtn);
+
+            submitBtn.addEventListener('click', function (e) {
+                console.log('DEBUG: Submit button clicked');
+
+                // Validate form manually
+                if (!form.checkValidity()) {
+                    console.log('DEBUG: Form is INVALID');
+
+                    // Show which fields are invalid
+                    const inputs = form.querySelectorAll('input, select, textarea');
+                    let invalidFields = [];
+                    inputs.forEach(input => {
+                        if (!input.checkValidity()) {
+                            const reason = input.validationMessage;
+                            invalidFields.push(`${input.name || input.id}: ${reason}`);
+                            console.log(`  INVALID: ${input.name || input.id} - ${reason}`);
+                        }
+                    });
+                    console.log('Invalid fields:', invalidFields);
+
+                    form.classList.add('was-validated');
+
+                    // Show alert with invalid fields
+                    alert('Por favor complete los campos requeridos:\n' + invalidFields.join('\n'));
+
+                    // Don't prevent default here - let the form submit event handle validation
+                } else {
+                    console.log('DEBUG: Form is VALID, form will submit');
+                }
+            });
+        }
+    }
+
+    // Auto-uppercase certain fields
+    const uppercaseFields = ['equipment_code', 'vin', 'license_plate'];
+    uppercaseFields.forEach(fieldName => {
+        const field = document.getElementById(`id_${fieldName}`);
+        if (field) {
+            field.addEventListener('input', function () {
+                this.value = this.value.toUpperCase();
+            });
+        }
+    });
+
+    // VIN validation helper
+    const vinField = document.getElementById('id_vin');
+    if (vinField) {
+        vinField.addEventListener('input', function () {
+            const vin = this.value.toUpperCase();
+            const invalidChars = ['I', 'O', 'Q'];
+            let hasInvalidChars = false;
+
+            invalidChars.forEach(char => {
+                if (vin.includes(char)) {
+                    hasInvalidChars = true;
+                }
+            });
+
+            if (hasInvalidChars && vin.length > 0) {
+                this.setCustomValidity('El VIN no puede contener las letras I, O, Q');
+            } else if (vin.length > 0 && vin.length !== 17) {
+                this.setCustomValidity('El VIN debe tener exactamente 17 caracteres');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+
+    // Year validation
+    const yearField = document.getElementById('id_year');
+    if (yearField) {
+        yearField.addEventListener('input', function () {
+            const year = parseInt(this.value);
+            const currentYear = new Date().getFullYear();
+
+            if (year > currentYear + 1) {
+                this.setCustomValidity(`El año no puede ser mayor que ${currentYear + 1}`);
+            } else if (year < 1900) {
+                this.setCustomValidity('El año no puede ser menor que 1900');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+
+    // Marca (OEMBrand) → Modelo (OEMCatalogItem)
+    const brandField = document.getElementById('id_brand');
+    const modelField = document.getElementById('id_model');
+
+    function setModelPlaceholder(text) {
+        if (!modelField) return;
+        modelField.innerHTML = '';
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = text;
+        opt.disabled = true;
+        opt.selected = true;
+        modelField.appendChild(opt);
+    }
+
+    async function loadModelsForBrand(oemCode) {
+        if (!modelField) return Promise.resolve();
+
+        if (!oemCode) {
+            setModelPlaceholder('Seleccione una marca primero');
+            modelField.disabled = true;
+            return Promise.resolve();
+        }
+
+        setModelPlaceholder('Cargando modelos...');
+        modelField.disabled = true;
+
+        const params = new URLSearchParams({
+            oem_code: oemCode,
+            item_type: 'VEHICLE_MODEL',
+            page_size: '1000'
+        });
+
+        try {
+            const response = await fetch(`/api/oem/models/?${params.toString()}`, {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            const results = data.results || data;
+
+            modelField.innerHTML = '';
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.textContent = 'Seleccione un modelo';
+            defaultOpt.disabled = true;
+            defaultOpt.selected = true;
+            modelField.appendChild(defaultOpt);
+
+            results.forEach(item => {
+                const opt = document.createElement('option');
+                const value = item.part_number || item.description_es || item.description_en || '';
+                let label = item.description_es || item.description_en || item.part_number || 'Modelo sin descripción';
+
+                const years = [];
+                if (item.year_start) years.push(item.year_start);
+                if (item.year_end) years.push(item.year_end);
+                const yearsStr = years.length ? ` (${years.join('–')})` : '';
+
+                if (item.body_style) {
+                    label = `${label} - ${item.body_style}${yearsStr}`;
+                } else {
+                    label = `${label}${yearsStr}`;
+                }
+
+                opt.value = value;
+                opt.textContent = label;
+                modelField.appendChild(opt);
+            });
+
+            modelField.disabled = false;
+            return Promise.resolve();
+        } catch (error) {
+            console.error('Error al cargar modelos OEM:', error);
+            setModelPlaceholder('Error al cargar modelos');
+            modelField.disabled = true;
+            return Promise.resolve();
+        }
+    }
+
+    if (brandField && modelField) {
+        // Si el modelo ya tiene un valor, cargar modelos para la marca actual
+        const selectedBrand = brandField.value;
+        const selectedModel = modelField.value;
+
+        if (selectedModel) {
+            // Hay modelo seleccionado - cargar modelos para la marca y luego seleccionar
+            if (selectedBrand) {
+                loadModelsForBrand(selectedBrand).then(() => {
+                    // Después de cargar, seleccionar el modelo
+                    if (modelField) {
+                        modelField.value = selectedModel;
+                    }
+                });
+            }
+        } else if (!selectedBrand) {
+            // No hay marca ni modelo - mostrar placeholder
+            setModelPlaceholder('Seleccione una marca primero');
+            modelField.disabled = true;
+        }
+
+        brandField.addEventListener('change', function () {
+            const newSelectedBrand = this.value;
+            loadModelsForBrand(newSelectedBrand);
+        });
+    }
+</script>
+{% endblock %}

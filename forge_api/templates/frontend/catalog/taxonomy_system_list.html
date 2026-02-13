@@ -1,0 +1,512 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Sistemas de Taxonomía - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'frontend/css/taxonomy.css' %}" rel="stylesheet">
+<link href="{% static 'frontend/css/taxonomy-optimized.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'frontend:catalog_index' %}">
+                    <i class="bi bi-house"></i> Catálogos
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'frontend:taxonomy_tree' %}">
+                    <i class="bi bi-diagram-3"></i> Taxonomía
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Sistemas
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-diagram-2 text-primary"></i>
+                Sistemas de Taxonomía
+            </h1>
+            <p class="text-muted mb-0">Gestión de sistemas principales de clasificación</p>
+        </div>
+        
+        <div class="btn-group" role="group">
+            <a href="{% url 'frontend:taxonomy_system_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Sistema
+            </a>
+            <a href="{% url 'frontend:taxonomy_tree' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-diagram-3"></i> Vista de Árbol
+            </a>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i> Acciones
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" data-action="bulk-activate">
+                        <i class="bi bi-check-circle"></i> Activar Seleccionados
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" data-action="bulk-deactivate">
+                        <i class="bi bi-x-circle"></i> Desactivar Seleccionados
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" data-action="export">
+                        <i class="bi bi-download"></i> Exportar Lista
+                    </a></li>
+                    <li><a class="dropdown-item" href="#" data-action="import">
+                        <i class="bi bi-upload"></i> Importar Sistemas
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+<div class="col-md-6">
+                    <label for="search" class="form-label">
+                        Buscar
+                        <i class="bi bi-question-circle text-info" 
+                           data-bs-toggle="tooltip" 
+                           title="Busca por código del sistema (ej: ENGINE) o nombre (ej: Motor). La búsqueda se ejecuta automáticamente después de escribir."></i>
+                    </label>
+                    <div class="input-group search-container">
+                        <span class="search-icon"><i class="bi bi-search"></i></span>
+                        <input type="text" 
+                               class="form-control" 
+                               id="search" 
+                               name="search" 
+                               value="{{ current_search }}" 
+                               placeholder="Ej: ENGINE, Motor, Transmisión..."
+                               autocomplete="off">
+                        <span class="search-clear"><i class="bi bi-x-circle"></i></span>
+                        <button class="btn btn-outline-secondary" type="submit" data-bs-toggle="tooltip" title="Buscar ahora (Enter)">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    <div class="form-text">Búsqueda en tiempo real • Presiona ESC para limpiar</div>
+                </div>
+                <div class="col-md-3">
+                    <label for="is_active" class="form-label">Estado</label>
+                    <select class="form-select" id="is_active" name="is_active">
+                        <option value="">Todos</option>
+                        <option value="true" {% if request.GET.is_active == 'true' %}selected{% endif %}>Activos</option>
+                        <option value="false" {% if request.GET.is_active == 'false' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-funnel"></i> Filtrar
+                    </button>
+                    <a href="{% url 'frontend:taxonomy_system_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x"></i> Limpiar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de sistemas -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-table"></i> Lista de Sistemas
+            </h5>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="select-all">
+                <label class="form-check-label" for="select-all">
+                    Seleccionar todo
+                </label>
+            </div>
+        </div>
+        
+        {% if systems %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50">
+                                <input type="checkbox" class="form-check-input" id="select-all-header">
+                            </th>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Subsistemas</th>
+                            <th>Estado</th>
+                            <th>Creado</th>
+                            <th width="150">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for system in systems %}
+                            <tr data-system-id="{{ system.system_code }}">
+                                <td>
+                                    <input type="checkbox" class="form-check-input row-select" 
+                                           value="{{ system.system_code }}">
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ system.system_code }}</span>
+                                </td>
+                                <td>
+                                    <strong>{{ system.name_es }}</strong>
+                                </td>
+                                <td>
+                                    <span class="text-muted">
+                                        {{ system.scope|default:"Sin descripción"|truncatechars:50 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        {{ system.subsystems_count|default:0 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if system.is_active %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Activo
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-pause-circle"></i> Inactivo
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ system.created_at|date:"d/m/Y" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{% url 'frontend:taxonomy_system_detail' system.system_code %}" 
+                                           class="btn btn-outline-info" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'frontend:taxonomy_system_edit' system.system_code %}" 
+                                           class="btn btn-outline-primary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-warning" 
+                                                data-action="toggle-status" data-system-id="{{ system.system_code }}"
+                                                title="{% if system.is_active %}Desactivar{% else %}Activar{% endif %}">
+                                            {% if system.is_active %}
+                                                <i class="bi bi-pause"></i>
+                                            {% else %}
+                                                <i class="bi bi-play"></i>
+                                            {% endif %}
+                                        </button>
+<a href="{% url 'frontend:taxonomy_system_delete' system.system_code %}" 
+                                           class="btn btn-outline-danger" title="Eliminar"
+                                           onclick="return confirm('¿Está seguro de eliminar este sistema?')">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Paginación -->
+            {% if is_paginated %}
+                <div class="card-footer">
+                    <nav aria-label="Paginación de sistemas">
+                        <ul class="pagination justify-content-center mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.is_active %}is_active={{ request.GET.is_active }}&{% endif %}page=1">
+                                        <i class="bi bi-chevron-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.is_active %}is_active={{ request.GET.is_active }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.is_active %}is_active={{ request.GET.is_active }}&{% endif %}page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.is_active %}is_active={{ request.GET.is_active }}&{% endif %}page={{ page_obj.next_page_number }}">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% if request.GET.search %}search={{ request.GET.search }}&{% endif %}{% if request.GET.is_active %}is_active={{ request.GET.is_active }}&{% endif %}page={{ page_obj.paginator.num_pages }}">
+                                        <i class="bi bi-chevron-double-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    
+                    <div class="text-center mt-2">
+                        <small class="text-muted">
+                            Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} 
+                            de {{ page_obj.paginator.count }} sistemas
+                        </small>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="card-body text-center py-5">
+                <i class="bi bi-diagram-2 text-muted" style="font-size: 3rem;"></i>
+                <h5 class="text-muted mt-3">No se encontraron sistemas</h5>
+                {% if current_search %}
+                    <p class="text-muted">
+                        No hay sistemas que coincidan con "{{ current_search }}"
+                    </p>
+                    <a href="{% url 'frontend:taxonomy_system_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x"></i> Limpiar búsqueda
+                    </a>
+                {% else %}
+                    <p class="text-muted">Comience creando su primer sistema de taxonomía</p>
+                    <a href="{% url 'frontend:taxonomy_system_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear Primer Sistema
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para acciones masivas -->
+<div class="modal fade" id="bulkActionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-gear"></i> Acción Masiva
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea realizar esta acción en los sistemas seleccionados?</p>
+                <div id="selected-systems-list" class="alert alert-info">
+                    <!-- Lista de sistemas seleccionados -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirm-bulk-action">
+                    <i class="bi bi-check"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Optimized Taxonomy CRUD JavaScript -->
+<script src="{% static 'frontend/js/taxonomy-optimized.js' %}"></script>
+
+<!-- Legacy inline script for compatibility (will be phased out) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+    
+    // Legacy code - will be migrated to taxonomy-optimized.js
+    const selectAllCheckbox = document.getElementById('select-all');
+    const selectAllHeaderCheckbox = document.getElementById('select-all-header');
+    const rowCheckboxes = document.querySelectorAll('.row-select');
+    
+    // Sincronizar checkboxes de "seleccionar todo"
+    [selectAllCheckbox, selectAllHeaderCheckbox].forEach(checkbox => {
+        if (checkbox) {
+            checkbox.addEventListener('change', function() {
+                const isChecked = this.checked;
+                rowCheckboxes.forEach(cb => cb.checked = isChecked);
+                
+                // Sincronizar el otro checkbox
+                const otherCheckbox = this === selectAllCheckbox ? selectAllHeaderCheckbox : selectAllCheckbox;
+                if (otherCheckbox) otherCheckbox.checked = isChecked;
+                
+                updateBulkActionButtons();
+            });
+        }
+    });
+    
+    // Actualizar estado de "seleccionar todo" cuando se cambian filas individuales
+    rowCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const checkedCount = document.querySelectorAll('.row-select:checked').length;
+            const allChecked = checkedCount === rowCheckboxes.length;
+            const someChecked = checkedCount > 0;
+            
+            [selectAllCheckbox, selectAllHeaderCheckbox].forEach(cb => {
+                if (cb) {
+                    cb.checked = allChecked;
+                    cb.indeterminate = someChecked && !allChecked;
+                }
+            });
+            
+            updateBulkActionButtons();
+        });
+    });
+    
+    // Actualizar botones de acciones masivas
+    function updateBulkActionButtons() {
+        const selectedCount = document.querySelectorAll('.row-select:checked').length;
+        const bulkActionButtons = document.querySelectorAll('[data-action^="bulk-"]');
+        
+        bulkActionButtons.forEach(button => {
+            button.disabled = selectedCount === 0;
+            if (selectedCount > 0) {
+                button.classList.remove('disabled');
+            } else {
+                button.classList.add('disabled');
+            }
+        });
+    }
+    
+    // Acciones masivas
+    document.addEventListener('click', function(e) {
+        if (e.target.matches('[data-action^="bulk-"]')) {
+            e.preventDefault();
+            const action = e.target.dataset.action;
+            const selectedIds = Array.from(document.querySelectorAll('.row-select:checked'))
+                                   .map(cb => cb.value);
+            
+            if (selectedIds.length === 0) {
+                alert('Debe seleccionar al menos un sistema.');
+                return;
+            }
+            
+            handleBulkAction(action, selectedIds);
+        }
+        
+        // Toggle status individual
+        if (e.target.matches('[data-action="toggle-status"]') || 
+            e.target.closest('[data-action="toggle-status"]')) {
+            e.preventDefault();
+            const button = e.target.closest('[data-action="toggle-status"]');
+            const systemId = button.dataset.systemId;
+            toggleSystemStatus(systemId);
+        }
+    });
+    
+    // Manejar acciones masivas
+    function handleBulkAction(action, selectedIds) {
+        let actionText = '';
+        let confirmText = '';
+        
+        switch (action) {
+            case 'bulk-activate':
+                actionText = 'activar';
+                confirmText = 'Los sistemas seleccionados serán activados.';
+                break;
+            case 'bulk-deactivate':
+                actionText = 'desactivar';
+                confirmText = 'Los sistemas seleccionados serán desactivados.';
+                break;
+            case 'bulk-export':
+                exportSystems(selectedIds);
+                return;
+            case 'bulk-delete':
+                actionText = 'eliminar';
+                confirmText = 'Los sistemas seleccionados serán eliminados permanentemente.';
+                break;
+        }
+        
+        // Mostrar modal de confirmación
+        const modal = new bootstrap.Modal(document.getElementById('bulkActionModal'));
+        document.querySelector('#bulkActionModal .modal-title').innerHTML = 
+            `<i class="bi bi-gear"></i> ${actionText.charAt(0).toUpperCase() + actionText.slice(1)} Sistemas`;
+        document.querySelector('#bulkActionModal .modal-body p').textContent = confirmText;
+        document.getElementById('selected-systems-list').innerHTML = 
+            `<strong>${selectedIds.length}</strong> sistemas seleccionados`;
+        
+        document.getElementById('confirm-bulk-action').onclick = function() {
+            executeBulkAction(action, selectedIds);
+            modal.hide();
+        };
+        
+        modal.show();
+    }
+    
+    // Ejecutar acción masiva
+    function executeBulkAction(action, selectedIds) {
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('selected_ids', selectedIds.join(','));
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch('{% url "frontend:taxonomy_bulk_action" %}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al ejecutar la acción');
+        });
+    }
+    
+    // Toggle status individual
+    function toggleSystemStatus(systemId) {
+        const formData = new FormData();
+        formData.append('action', 'toggle_active');
+        formData.append('node_id', systemId);
+        formData.append('node_type', 'system');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        
+        fetch('{% url "frontend:taxonomy_node_action" %}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cambiar el estado');
+        });
+    }
+    
+    // Inicializar estado de botones
+    updateBulkActionButtons();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,332 @@
+﻿{% extends "frontend/base/base.html" %}
+
+{% load static %}
+
+{% block title %}Productos - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/inventory.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-tags"></i> Gestión de Productos
+        </h1>
+        <a href="{% url 'frontend:product_create' %}" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Nuevo Producto
+        </a>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filtros de Búsqueda</h6>
+        </div>
+        <div class="card-body">
+            <form method="get">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="search" class="form-label">Buscar</label>
+                        <input type="text" class="form-control" id="search" name="search" value="{{ filters.search }}" placeholder="Buscar por nombre, código...">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="category" class="form-label">Categoría</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">Todas las categorías</option>
+                            {% for option in category_options %}
+                                <option value="{{ option.value }}" {% if filters.category == option.value %}selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="type" class="form-label">Tipo</label>
+                        <select class="form-select" id="type" name="type">
+                            <option value="">Todos los tipos</option>
+                            {% for option in type_options %}
+                                <option value="{{ option.value }}" {% if filters.type == option.value %}selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="status" class="form-label">Estado</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Todos los estados</option>
+                            {% for option in status_options %}
+                                <option value="{{ option.value }}" {% if filters.status == option.value %}selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="sort" class="form-label">Ordenar por</label>
+                        <div class="d-flex">
+                            <select class="form-select me-2" id="sort" name="sort">
+                                {% for option in sort_options %}
+                                    <option value="{{ option.value }}" {% if filters.sort == option.value %}selected{% endif %}>{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                            <select class="form-select" name="order">
+                                <option value="asc" {% if filters.order != 'desc' %}selected{% endif %}>Asc</option>
+                                <option value="desc" {% if filters.order == 'desc' %}selected{% endif %}>Desc</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="price_min" class="form-label">Precio Mínimo</label>
+                        <input type="number" step="0.01" class="form-control" id="price_min" name="price_min" value="{{ filters.price_min }}" placeholder="Min">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="price_max" class="form-label">Precio Máximo</label>
+                        <input type="number" step="0.01" class="form-control" id="price_max" name="price_max" value="{{ filters.price_max }}" placeholder="Max">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="supplier" class="form-label">Proveedor</label>
+                        <input type="text" class="form-control" id="supplier" name="supplier" value="{{ filters.supplier }}" placeholder="Buscar por proveedor">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label>&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Filtrar</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Products Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Catálogo de Productos</h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                    <div class="dropdown-header">Opciones:</div>
+                    <a class="dropdown-item" href="#"><i class="bi bi-download"></i> Exportar</a>
+                    <a class="dropdown-item" href="#"><i class="bi bi-upload"></i> Importar</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item text-danger" href="#"><i class="bi bi-exclamation-triangle"></i> Acción Peligrosa</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Product Count -->
+            <div class="mb-3">
+                <span class="text-muted">Mostrando {{ pagination.start_index }} a {{ pagination.end_index }} de {{ pagination.count }} productos</span>
+            </div>
+            
+            <!-- Products Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered" id="productsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Categoría</th>
+                            <th>Tipo</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>
+                                <strong>{{ product.product_code }}</strong>
+                                {% if product.barcode %}
+                                    <br><small class="text-muted">({{ product.barcode }})</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi {{ product.category_icon }} me-2 text-{{ product.category_class }}"></i>
+                                    <div>
+                                        {{ product.name }}
+                                        {% if product.description %}
+                                            <br><small class="text-muted">{{ product.description|truncatewords:10 }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ product.category_class }}">
+                                    <i class="bi {{ product.category_icon }}"></i> {{ product.category|title }}
+                                </span>
+                            </td>
+                            <td>{{ product.get_type_display|default:product.type|title }}</td>
+                            <td>${{ product.price|floatformat:2 }}</td>
+                            <td>
+                                <span class="badge bg-{{ product.stock_class }}">
+                                    <i class="bi bi-box-seam"></i> {{ product.quantity_available|default:0 }}
+                                    {% if product.stock_label != "En Stock" %}
+                                        <br><small>{{ product.stock_label }}</small>
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if product.is_active %}success{% else %}secondary{% endif %}">
+                                    {% if product.is_active %}<i class="bi bi-check-circle"></i> Activo{% else %}<i class="bi bi-x-circle"></i> Inactivo{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'frontend:product_detail' product.id %}" class="btn btn-sm btn-primary" title="Ver Detalles">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'frontend:product_update' product.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% if product.quantity_on_hand > 0 %}
+                                    <button type="button" class="btn btn-sm btn-info" title="Registrar Movimiento" data-bs-toggle="modal" data-bs-target="#movementModal" data-product-id="{{ product.id }}">
+                                        <i class="bi bi-arrow-left-right"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-5">
+                                <i class="bi bi-inboxes" style="font-size: 3rem;"></i>
+                                <p class="mt-3">No hay productos registrados aún.</p>
+                                <a href="{% url 'frontend:product_create' %}" class="btn btn-primary">Crear primer producto</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if pagination.total_pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.has_previous }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.page_range %}
+                        {% if page_num == pagination.current_page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}">{{ page_num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.has_next }}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.total_pages }}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Movement Modal -->
+<div class="modal fade" id="movementModal" tabindex="-1" aria-labelledby="movementModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="movementModalLabel">Registrar Movimiento de Inventario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="movementForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="productId" name="product_id">
+                    <div class="mb-3">
+                        <label for="transactionType" class="form-label">Tipo de Transacción</label>
+                        <select class="form-select" id="transactionType" name="transaction_type">
+                            <option value="issue">Salida de Inventario</option>
+                            <option value="transfer">Transferencia</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Cantidad</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="warehouse" class="form-label">Almacén</label>
+                        <select class="form-select" id="warehouse" name="warehouse_id">
+                            <option value="">Seleccionar almacén...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="saveMovementBtn">Registrar Movimiento</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'frontend/js/inventory-products.js' %}"></script>
+<script>
+// Modal management
+document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+    button.addEventListener('click', function() {
+        const productId = this.getAttribute('data-product-id');
+        document.getElementById('productId').value = productId;
+    });
+});
+
+// Save movement
+document.getElementById('saveMovementBtn').addEventListener('click', function() {
+    const form = document.getElementById('movementForm');
+    const formData = new FormData(form);
+    
+    fetch('{% url "frontend:stock_movement_create" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Movimiento registrado exitosamente');
+            location.reload();
+        } else {
+            alert('Error al registrar el movimiento: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al registrar el movimiento');
+    });
+});
+</script>
+{% endblock %}

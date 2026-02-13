@@ -1,0 +1,149 @@
+{% extends "frontend/base/base.html" %}
+
+{% block title %}Alertas del Sistema - MovIAx{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Alertas del Sistema</h2>
+                <div>
+                    <a href="{% url 'frontend:service_dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Volver al Dashboard
+                    </a>
+                    <a href="{% url 'frontend:service_alert_thresholds' %}" class="btn btn-outline-info ms-2">
+                        <i class="bi bi-gear me-1"></i>Configurar Umbrales
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estadísticas de Alertas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h3 class="text-danger mb-0">{{ stats.critical|default:0 }}</h3>
+                    <small class="text-muted">Críticas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h3 class="text-warning mb-0">{{ stats.high|default:0 }}</h3>
+                    <small class="text-muted">Altas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h3 class="text-info mb-0">{{ stats.medium|default:0 }}</h3>
+                    <small class="text-muted">Medias</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="mb-0">{{ stats.total|default:0 }}</h3>
+                    <small class="text-muted">Total Alertas</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="type" class="form-label">Tipo de Alerta</label>
+                            <select name="type" id="type" class="form-select">
+                                <option value="">Todos los tipos</option>
+                                <option value="delayed_orders" {% if filter_type == 'delayed_orders' %}selected{% endif %}>Órdenes Retrasadas</option>
+                                <option value="low_stock" {% if filter_type == 'low_stock' %}selected{% endif %}>Stock Bajo</option>
+                                <option value="overloaded_technicians" {% if filter_type == 'overloaded_technicians' %}selected{% endif %}>Técnicos Sobrecargados</option>
+                                <option value="anomalous_services" {% if filter_type == 'anomalous_services' %}selected{% endif %}>Servicios Anómalos</option>
+                                <option value="high_productivity" {% if filter_type == 'high_productivity' %}selected{% endif %}>Alta Productividad</option>
+                                <option value="unassigned_orders" {% if filter_type == 'unassigned_orders' %}selected{% endif %}>Órdenes Sin Asignar</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="severity" class="form-label">Severidad</label>
+                            <select name="severity" id="severity" class="form-select">
+                                <option value="">Todas las severidades</option>
+                                <option value="critical" {% if filter_severity == 'critical' %}selected{% endif %}>Crítica</option>
+                                <option value="high" {% if filter_severity == 'high' %}selected{% endif %}>Alta</option>
+                                <option value="medium" {% if filter_severity == 'medium' %}selected{% endif %}>Media</option>
+                                <option value="low" {% if filter_severity == 'low' %}selected{% endif %}>Baja</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-funnel me-1"></i>Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Alertas -->
+    <div class="row">
+        <div class="col-12">
+            {% if alerts %}
+            <div class="row g-3">
+                {% for alert in alerts %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-{% if alert.severity == 'critical' %}danger{% elif alert.severity == 'high' %}warning{% elif alert.severity == 'medium' %}info{% else %}secondary{% endif %}">
+                        <div class="card-header bg-{% if alert.severity == 'critical' %}danger{% elif alert.severity == 'high' %}warning{% elif alert.severity == 'medium' %}info{% else %}secondary{% endif %} bg-opacity-10">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="bi bi-{% if alert.severity == 'critical' %}exclamation-triangle-fill{% elif alert.severity == 'high' %}exclamation-circle-fill{% elif alert.severity == 'medium' %}info-circle-fill{% else %}check-circle-fill{% endif %} me-2"></i>
+                                    {{ alert.title }}
+                                </h6>
+                                <span class="badge bg-{% if alert.severity == 'critical' %}danger{% elif alert.severity == 'high' %}warning{% elif alert.severity == 'medium' %}info{% else %}secondary{% endif %}">
+                                    {{ alert.severity|upper }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ alert.message }}</p>
+                            {% if alert.timestamp %}
+                            <small class="text-muted d-block mb-2">
+                                <i class="bi bi-clock me-1"></i>{{ alert.timestamp|date:"d/m/Y H:i" }}
+                            </small>
+                            {% endif %}
+                            {% if alert.action_url %}
+                            <a href="{{ alert.action_url }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-arrow-right me-1"></i>Ver Detalles
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-check-circle-fill text-success fs-1 mb-3"></i>
+                    <h5>No hay alertas</h5>
+                    <p class="text-muted">No se encontraron alertas con los filtros seleccionados.</p>
+                    <a href="{% url 'frontend:service_alerts_list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Limpiar Filtros
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

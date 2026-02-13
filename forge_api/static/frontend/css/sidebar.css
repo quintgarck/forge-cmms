@@ -1,0 +1,136 @@
+/* Sidebar styles for ForgeDB */
+
+/* Navbar toggle button - always visible */
+.navbar-toggler {
+    display: block !important;
+    border: 2px solid rgba(255, 255, 255, 0.8) !important;
+    padding: 0.5rem !important;
+    font-size: 1.25rem;
+    margin-right: 0.5rem;
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.3) !important;
+}
+
+.navbar-toggler-icon {
+    width: 1.5em;
+    height: 1.5em;
+}
+
+.offcanvas {
+    --bs-offcanvas-width: 280px;
+}
+
+.offcanvas-header {
+    padding: 1rem 1.5rem;
+}
+
+.offcanvas-body {
+    padding: 0;
+    overflow-y: auto;
+}
+
+.list-group-item {
+    border-left: 3px solid transparent;
+    border-right: none;
+    border-top: none;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    border-left-color: #4e73df;
+    padding-left: 1.75rem;
+}
+
+.list-group-item.active {
+    background-color: #e3ebff;
+    border-left-color: #4e73df;
+    color: #4e73df;
+    font-weight: 500;
+}
+
+.list-group-item.bg-light {
+    padding: 0.5rem 1.5rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    border-left: none;
+}
+
+.list-group-item.bg-light:hover {
+    background-color: #e9ecef !important;
+    padding-left: 1.5rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 991.98px) {
+    .navbar-toggler {
+        margin-left: auto;
+    }
+    
+    .offcanvas {
+        --bs-offcanvas-width: 100%;
+        max-width: 320px;
+    }
+}
+
+/* Accordion styles for sidebar */
+.accordion-flush .accordion-item {
+    border: none;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.accordion-flush .accordion-button {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    padding: 0.875rem 1.25rem;
+    border: none;
+}
+
+.accordion-flush .accordion-button:not(.collapsed) {
+    background-color: #e7f1ff;
+    color: #4e73df;
+    box-shadow: none;
+}
+
+.accordion-flush .accordion-button:focus {
+    box-shadow: none;
+    border-color: transparent;
+}
+
+.accordion-flush .accordion-button::after {
+    margin-left: auto;
+}
+
+.accordion-body {
+    padding: 0;
+}
+
+.accordion-body .list-group-item {
+    padding-left: 2.5rem;
+    border-radius: 0;
+    font-size: 0.9rem;
+}
+
+/* Smooth scrolling for sidebar */
+.offcanvas-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.offcanvas-body::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.offcanvas-body::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.offcanvas-body::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

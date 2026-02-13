@@ -1,0 +1,68 @@
+# Forge CMMS - Git Ignore File (Root)
+
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+forge_api/venv/
+forge_api/.venv/
+forge_api/env/
+forge_api/ENV/
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.*.local
+!.env.example
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+forge_api/logs/
+
+# Media and Static files (generated)
+media/
+staticfiles/
+forge_api/media/
+forge_api/staticfiles/
+
+# Database
+*.sqlite3
+*.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution
+dist/
+build/
+*.egg-info/
+
+# Documentation builds
+docs/_build/
+
+# Temporary files
+*.tmp
+*.bak
+.cache/

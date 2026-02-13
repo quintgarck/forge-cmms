@@ -1,0 +1,316 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Histórico de Tasas - {{ currency.name }} - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-chart {
+        height: 400px;
+        margin-bottom: 2rem;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        text-align: center;
+    }
+    .stat-card h6 {
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+        opacity: 0.9;
+    }
+    .stat-card h3 {
+        font-size: 1.75rem;
+        margin: 0;
+        font-weight: 700;
+    }
+    .history-table {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .source-badge {
+        font-size: 0.75rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-clock-history text-primary me-2"></i>
+                        Histórico de Tasas - {{ currency.name }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        <span class="badge bg-secondary">{{ currency_code }}</span>
+                        Evolución de tasas de cambio
+                    </p>
+                </div>
+                <div>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary" data-period="7">7 días</button>
+                        <button class="btn btn-outline-primary active" data-period="30">30 días</button>
+                        <button class="btn btn-outline-primary" data-period="90">90 días</button>
+                        <button class="btn btn-outline-primary" data-period="365">1 año</button>
+                    </div>
+                    <a href="{% url 'frontend:currency_rates' %}" class="btn btn-outline-secondary ms-2">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    {% if stats %}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h6>Tasa Actual</h6>
+            <h3>{{ stats.current_rate|floatformat:4 }}</h3>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <h6>Tasa Mínima</h6>
+            <h3>{{ stats.min_rate|floatformat:4 }}</h3>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <h6>Tasa Máxima</h6>
+            <h3>{{ stats.max_rate|floatformat:4 }}</h3>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <h6>Tasa Promedio</h6>
+            <h3>{{ stats.avg_rate|floatformat:4 }}</h3>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Gráfico -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up me-2"></i>
+                        Evolución de Tasa de Cambio
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="history-chart">
+                        <canvas id="rateHistoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de Histórico -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-table me-2"></i>
+                        Registro de Cambios
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="history-table">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tasa</th>
+                                    <th>Fuente</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in history %}
+                                <tr>
+                                    <td>
+                                        <small>{{ record.date }}</small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ record.rate|floatformat:4 }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if record.source == 'manual' %}
+                                        <span class="badge bg-primary source-badge">Manual</span>
+                                        {% else %}
+                                        <span class="badge bg-success source-badge">Auto</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-3">
+                                        No hay datos históricos disponibles
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análisis -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-bar-chart-line me-2"></i>
+                        Análisis de Tendencias
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Volatilidad</h6>
+                            <p class="text-muted">
+                                {% if stats %}
+                                La tasa ha variado entre {{ stats.min_rate|floatformat:4 }} y {{ stats.max_rate|floatformat:4 }} 
+                                en el período seleccionado.
+                                {% else %}
+                                No hay suficientes datos para calcular volatilidad.
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Tendencia</h6>
+                            <p class="text-muted">
+                                {% if history|length > 1 %}
+                                {% with first=history|last last=history|first %}
+                                {% if last.rate > first.rate %}
+                                <span class="text-success">
+                                    <i class="bi bi-arrow-up-circle-fill"></i>
+                                    Tendencia alcista
+                                </span>
+                                {% elif last.rate < first.rate %}
+                                <span class="text-danger">
+                                    <i class="bi bi-arrow-down-circle-fill"></i>
+                                    Tendencia bajista
+                                </span>
+                                {% else %}
+                                <span class="text-muted">
+                                    <i class="bi bi-dash-circle-fill"></i>
+                                    Tendencia estable
+                                </span>
+                                {% endif %}
+                                {% endwith %}
+                                {% else %}
+                                No hay suficientes datos para determinar tendencia.
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos del gráfico
+    const chartData = {{ chart_data|safe }};
+    
+    // Crear gráfico
+    const ctx = document.getElementById('rateHistoryChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                label: 'Tasa de Cambio',
+                data: chartData.rates,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Tasa: ' + context.parsed.y.toFixed(4);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toFixed(4);
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            },
+            interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+            }
+        }
+    });
+    
+    // Botones de período
+    document.querySelectorAll('[data-period]').forEach(button => {
+        button.addEventListener('click', function() {
+            const period = this.dataset.period;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('[data-period]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            this.classList.add('active');
+            
+            // Recargar con nuevo período
+            window.location.href = `?days=${period}`;
+        });
+    });
+});
+</script>
+{% endblock %}

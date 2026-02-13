@@ -1,0 +1,134 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ purchase_order.po_number|default:"Orden de Compra" }} - MovIAx{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item"><a href="{% url 'frontend:purchase_order_list' %}">Órdenes de Compra</a></li>
+    <li class="breadcrumb-item active">{{ purchase_order.po_number|default:"Orden" }}</li>
+{% endblock %}
+
+{% block content %}
+{% if purchase_order %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h3 mb-0"><i class="bi bi-cart me-2 text-primary"></i>{{ purchase_order.po_number }}</h1>
+        <p class="text-muted mb-0">Orden de Compra #{{ purchase_order.po_id }}</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'frontend:purchase_order_update' purchase_order.po_id %}" class="btn btn-primary">
+            <i class="bi bi-pencil me-1"></i>Editar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Información General</h5></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Proveedor:</dt>
+                    <dd class="col-sm-8">{{ purchase_order.supplier.name|default:"N/A" }}</dd>
+                    <dt class="col-sm-4">Fecha:</dt>
+                    <dd class="col-sm-8">{{ purchase_order.order_date|date:"d/m/Y"|default:"N/A" }}</dd>
+                    <dt class="col-sm-4">Entrega Esperada:</dt>
+                    <dd class="col-sm-8">{{ purchase_order.expected_delivery_date|date:"d/m/Y"|default:"-" }}</dd>
+                    <dt class="col-sm-4">Estado:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-{% if purchase_order.status == 'RECEIVED' %}success{% elif purchase_order.status == 'APPROVED' or purchase_order.status == 'ORDERED' %}info{% elif purchase_order.status == 'DRAFT' %}secondary{% elif purchase_order.status == 'CANCELLED' %}danger{% else %}warning{% endif %}">
+                            {{ purchase_order.status|default:"N/A" }}
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Resumen Financiero</h5></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-6">Subtotal:</dt>
+                    <dd class="col-sm-6">${{ purchase_order.subtotal|floatformat:2|default:"0.00" }}</dd>
+                    <dt class="col-sm-6">Impuestos:</dt>
+                    <dd class="col-sm-6">${{ purchase_order.tax_amount|floatformat:2|default:"0.00" }}</dd>
+                    <dt class="col-sm-6">Envío:</dt>
+                    <dd class="col-sm-6">${{ purchase_order.shipping_cost|floatformat:2|default:"0.00" }}</dd>
+                    <dt class="col-sm-6"><strong>Total:</strong></dt>
+                    <dd class="col-sm-6"><strong>${{ purchase_order.total_amount|floatformat:2|default:"0.00" }}</strong></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if purchase_order.notes %}
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Notas</h5></div>
+            <div class="card-body">{{ purchase_order.notes|linebreaks }}</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Purchase Order Items Section -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Productos/Servicios</h5>
+                <a href="{% url 'frontend:purchase_order_update' purchase_order.po_id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-plus"></i> Agregar/Editar Productos
+                </a>
+            </div>
+            <div class="card-body">
+                {% if po_items %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>SKU Interno</th>
+                                <th>Descripción</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unitario</th>
+                                <th>Descuento (%)</th>
+                                <th>Impuesto (%)</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in po_items %}
+                            <tr>
+                                <td>{{ item.po_item_id }}</td>
+                                <td>{{ item.internal_sku|default:"N/A" }}</td>
+                                <td>{{ item.description|default:"N/A" }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ item.unit_price|floatformat:2 }}</td>
+                                <td>{{ item.discount_percent|floatformat:2 }}%</td>
+                                <td>{{ item.tax_percent|floatformat:2 }}%</td>
+                                <td>${{ item.total_price|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">No hay productos/servicios en esta orden de compra.</p>
+                    <small>Presione el botón "Agregar/Editar Productos" para añadir elementos.</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning">Orden de compra no encontrada.</div>
+<a href="{% url 'frontend:purchase_order_list' %}" class="btn btn-primary">Volver</a>
+{% endif %}
+{% endblock %}
+

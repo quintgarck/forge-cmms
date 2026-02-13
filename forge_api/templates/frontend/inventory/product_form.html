@@ -1,0 +1,364 @@
+﻿{% extends "frontend/base/base.html" %}
+
+{% load static %}
+
+{% block title %}{{ form_action|title }} Producto - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/inventory-forms.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            {% if form_action == 'create' %}
+                <i class="bi bi-plus-circle"></i> Crear Producto
+            {% else %}
+                <i class="bi bi-pencil"></i> Editar Producto
+            {% endif %}
+        </h1>
+        <a href="{% url 'frontend:product_list' %}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver a Productos
+        </a>
+    </div>
+
+    <!-- Product Form Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{{ form_title }}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" id="productForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5 class="mb-3"><i class="bi bi-tag"></i> Información Básica</h5>
+                        <hr>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.product_code.id_for_label }}" class="form-label required">
+                            {{ form.product_code.label }}
+                        </label>
+                        {{ form.product_code }}
+                        {% if form.product_code.help_text %}
+                            <div class="form-text">{{ form.product_code.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.product_code.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label required">
+                            {{ form.name.label }}
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.help_text %}
+                            <div class="form-text">{{ form.name.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.name.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            {{ form.description.label }}
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.help_text %}
+                            <div class="form-text">{{ form.description.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.description.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.category.id_for_label }}" class="form-label required">
+                            {{ form.category.label }}
+                        </label>
+                        {{ form.category }}
+                        {% if form.category.help_text %}
+                            <div class="form-text">{{ form.category.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.category.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.type.id_for_label }}" class="form-label required">
+                            {{ form.type.label }}
+                        </label>
+                        {{ form.type }}
+                        {% if form.type.help_text %}
+                            <div class="form-text">{{ form.type.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.type.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.unit_of_measure.id_for_label }}" class="form-label">
+                            {{ form.unit_of_measure.label }}
+                        </label>
+                        {{ form.unit_of_measure }}
+                        {% if form.unit_of_measure.help_text %}
+                            <div class="form-text">{{ form.unit_of_measure.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.unit_of_measure.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5 class="mb-3 mt-4"><i class="bi bi-cash-coin"></i> Información Comercial</h5>
+                        <hr>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.price.id_for_label }}" class="form-label required">
+                            {{ form.price.label }}
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            {{ form.price }}
+                        </div>
+                        {% if form.price.help_text %}
+                            <div class="form-text">{{ form.price.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.price.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.cost.id_for_label }}" class="form-label">
+                            {{ form.cost.label }}
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            {{ form.cost }}
+                        </div>
+                        {% if form.cost.help_text %}
+                            <div class="form-text">{{ form.cost.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.cost.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.estimated_hours.id_for_label }}" class="form-label">
+                            {{ form.estimated_hours.label }}
+                        </label>
+                        <div class="input-group">
+                            {{ form.estimated_hours }}
+                            <span class="input-group-text"><i class="bi bi-clock"></i></span>
+                        </div>
+                        {% if form.estimated_hours.help_text %}
+                            <div class="form-text">{{ form.estimated_hours.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.estimated_hours.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5 class="mb-3 mt-4"><i class="bi bi-box-seam"></i> Control de Inventario</h5>
+                        <hr>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.minimum_stock.id_for_label }}" class="form-label">
+                            {{ form.minimum_stock.label }}
+                        </label>
+                        {{ form.minimum_stock }}
+                        {% if form.minimum_stock.help_text %}
+                            <div class="form-text">{{ form.minimum_stock.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.minimum_stock.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.maximum_stock.id_for_label }}" class="form-label">
+                            {{ form.maximum_stock.label }}
+                        </label>
+                        {{ form.maximum_stock }}
+                        {% if form.maximum_stock.help_text %}
+                            <div class="form-text">{{ form.maximum_stock.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.maximum_stock.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.is_active.id_for_label }}" class="form-label">
+                            {{ form.is_active.label }}
+                        </label>
+                        <div class="form-check form-switch">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Producto Activo</label>
+                        </div>
+                        {% if form.is_active.help_text %}
+                            <div class="form-text">{{ form.is_active.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.is_active.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5 class="mb-3 mt-4"><i class="bi bi-building"></i> Proveedor</h5>
+                        <hr>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.supplier.id_for_label }}" class="form-label">
+                            {{ form.supplier.label }}
+                        </label>
+                        {{ form.supplier }}
+                        {% if form.supplier.help_text %}
+                            <div class="form-text">{{ form.supplier.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.supplier.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.supplier_code.id_for_label }}" class="form-label">
+                            {{ form.supplier_code.label }}
+                        </label>
+                        {{ form.supplier_code }}
+                        {% if form.supplier_code.help_text %}
+                            <div class="form-text">{{ form.supplier_code.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.supplier_code.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-check form-switch mb-3">
+                            {{ form.is_taxable }}
+                            <label class="form-check-label" for="{{ form.is_taxable.id_for_label }}">
+                                {{ form.is_taxable.label }}
+                            </label>
+                        </div>
+                        {% if form.is_taxable.help_text %}
+                            <div class="form-text">{{ form.is_taxable.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.is_taxable.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{% url 'frontend:product_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> 
+                                {% if form_action == 'create' %}
+                                    Crear Producto
+                                {% else %}
+                                    Actualizar Producto
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'frontend/js/inventory-forms.js' %}"></script>
+<script>
+// Form validation and submission
+document.getElementById('productForm').addEventListener('submit', function(e) {
+    // Simple validation before submission
+    const requiredFields = ['product_code', 'name', 'category', 'type', 'price'];
+    let isValid = true;
+    
+    requiredFields.forEach(function(fieldName) {
+        const field = document.getElementById('id_' + fieldName);
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    if (!isValid) {
+        e.preventDefault();
+        alert('Por favor complete los campos requeridos antes de enviar.');
+    }
+});
+
+// Add input validation for price and cost
+document.querySelectorAll('input[name="price"], input[name="cost"]').forEach(input => {
+    input.addEventListener('blur', function() {
+        const value = parseFloat(this.value);
+        if (isNaN(value) || value < 0) {
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+});
+
+// Auto-uppercase product code
+document.getElementById('id_product_code').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
+</script>
+{% endblock %}

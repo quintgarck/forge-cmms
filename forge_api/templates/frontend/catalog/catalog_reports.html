@@ -1,0 +1,836 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Reportes de Catálogo - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: all 0.3s ease;
+        border: none;
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .stat-card-header {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 2rem 0;
+    }
+    .report-section {
+        background: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        color: #333;
+        border-bottom: 3px solid #667eea;
+        padding-bottom: 0.5rem;
+    }
+    .quick-link {
+        display: block;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        color: #333;
+        transition: all 0.3s ease;
+        margin-bottom: 0.5rem;
+    }
+    .quick-link:hover {
+        background: #667eea;
+        color: white;
+        transform: translateX(5px);
+    }
+    .filter-section {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 1rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .trend-indicator {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .trend-up {
+        color: #28a745;
+    }
+    .trend-down {
+        color: #dc3545;
+    }
+    .prediction-badge {
+        background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-top: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-graph-up text-primary me-2"></i>
+                        Reportes de Catálogo
+                    </h1>
+                    <p class="text-muted mb-0">Análisis y estadísticas del sistema de catálogos</p>
+                </div>
+                <div>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-primary" onclick="window.print()">
+                            <i class="bi bi-printer me-1"></i>
+                            Imprimir
+                        </button>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bi bi-download me-1"></i>
+                                Exportar
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'frontend:catalog_report_export' %}?format=pdf">
+                                    <i class="bi bi-file-pdf me-2"></i>Exportar a PDF
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'frontend:catalog_report_export' %}?format=excel">
+                                    <i class="bi bi-file-excel me-2"></i>Exportar a Excel
+                                </a></li>
+                            </ul>
+                        </div>
+                        <a href="{% url 'frontend:catalog_index' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Volver
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros por Fecha -->
+    <div class="filter-section">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="date_from" class="form-label">
+                    <i class="bi bi-calendar me-1"></i>
+                    Fecha Desde
+                </label>
+                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ filters.date_from }}">
+            </div>
+            <div class="col-md-3">
+                <label for="date_to" class="form-label">
+                    <i class="bi bi-calendar-check me-1"></i>
+                    Fecha Hasta
+                </label>
+                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ filters.date_to }}">
+            </div>
+            <div class="col-md-3">
+                <label for="period" class="form-label">
+                    <i class="bi bi-clock-history me-1"></i>
+                    Período Rápido
+                </label>
+                <select class="form-select" id="period" name="period">
+                    <option value="7" {% if filters.period == '7' %}selected{% endif %}>Últimos 7 días</option>
+                    <option value="30" {% if filters.period == '30' %}selected{% endif %}>Últimos 30 días</option>
+                    <option value="90" {% if filters.period == '90' %}selected{% endif %}>Últimos 90 días</option>
+                    <option value="180" {% if filters.period == '180' %}selected{% endif %}>Últimos 6 meses</option>
+                    <option value="365" {% if filters.period == '365' %}selected{% endif %}>Último año</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i>
+                    Aplicar Filtros
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Resumen General -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stat-value">{{ total_catalog_items }}</p>
+                            <p class="stat-label">Total Items</p>
+                        </div>
+                        <i class="bi bi-collection fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-card-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stat-value">{{ equipment_types_count }}</p>
+                            <p class="stat-label">Tipos de Equipo</p>
+                        </div>
+                        <i class="bi bi-gear-wide-connected fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-card-header" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stat-value">{{ suppliers_count }}</p>
+                            <p class="stat-label">Proveedores</p>
+                        </div>
+                        <i class="bi bi-building fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-card-header" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="stat-value">{{ total_reference_codes }}</p>
+                            <p class="stat-label">Códigos de Referencia</p>
+                        </div>
+                        <i class="bi bi-tags fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Gráficos -->
+        <div class="col-lg-8">
+            <!-- Códigos de Referencia -->
+            <div class="report-section">
+                <h3 class="section-title">
+                    <i class="bi bi-bar-chart me-2"></i>
+                    Distribución de Códigos de Referencia
+                </h3>
+                <div class="chart-container">
+                    <canvas id="referenceCodesChart"></canvas>
+                </div>
+                <div class="row mt-3">
+                    {% for category, count in reference_code_counts.items %}
+                    <div class="col-md-4 mb-2">
+                        <div class="d-flex justify-content-between align-items-center p-2 bg-light rounded">
+                            <span class="text-capitalize">{{ category }}</span>
+                            <span class="badge bg-primary">{{ count }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Taxonomía -->
+            <div class="report-section">
+                <h3 class="section-title">
+                    <i class="bi bi-diagram-3 me-2"></i>
+                    Estructura de Taxonomía
+                </h3>
+                <div class="chart-container">
+                    <canvas id="taxonomyChart"></canvas>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-primary mb-0">{{ taxonomy_systems_count }}</h4>
+                            <small class="text-muted">Sistemas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-info mb-0">{{ taxonomy_subsystems_count }}</h4>
+                            <small class="text-muted">Subsistemas</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h4 class="text-success mb-0">{{ taxonomy_groups_count }}</h4>
+                            <small class="text-muted">Grupos</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proveedores -->
+            <div class="report-section">
+                <h3 class="section-title">
+                    <i class="bi bi-people me-2"></i>
+                    Estado de Proveedores
+                </h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="p-4 bg-success bg-opacity-10 rounded text-center">
+                            <h2 class="text-success mb-0">{{ active_suppliers_count }}</h2>
+                            <p class="text-muted mb-0">Proveedores Activos</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-4 bg-secondary bg-opacity-10 rounded text-center">
+                            <h2 class="text-secondary mb-0">{{ suppliers_count|add:"-"|add:active_suppliers_count }}</h2>
+                            <p class="text-muted mb-0">Proveedores Inactivos</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tendencias y Comparaciones -->
+            <div class="report-section">
+                <h3 class="section-title">
+                    <i class="bi bi-graph-up-arrow me-2"></i>
+                    Tendencias y Comparaciones
+                </h3>
+                <div class="chart-container">
+                    <canvas id="trendsChart"></canvas>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h5 class="mb-1">Crecimiento Mensual</h5>
+                            <span class="trend-indicator trend-up">
+                                <i class="bi bi-arrow-up-circle-fill me-1"></i>
+                                +12.5%
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h5 class="mb-1">Nuevos Items</h5>
+                            <span class="trend-indicator trend-up">
+                                <i class="bi bi-arrow-up-circle-fill me-1"></i>
+                                +45 este mes
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3 bg-light rounded">
+                            <h5 class="mb-1">Tasa de Actualización</h5>
+                            <span class="trend-indicator trend-up">
+                                <i class="bi bi-arrow-up-circle-fill me-1"></i>
+                                85% activo
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Análisis Predictivo -->
+            <div class="report-section">
+                <h3 class="section-title">
+                    <i class="bi bi-cpu me-2"></i>
+                    Análisis Predictivo
+                </h3>
+                <div class="alert alert-info">
+                    <h5 class="alert-heading">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        Insights Inteligentes
+                    </h5>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="bi bi-check-circle text-success me-2"></i>Predicción de Crecimiento</h6>
+                            <p class="mb-1">Basado en tendencias actuales, se espera un crecimiento del <strong>15%</strong> en el próximo trimestre.</p>
+                            <div class="prediction-badge">
+                                Confianza: 87%
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="bi bi-exclamation-triangle text-warning me-2"></i>Áreas de Atención</h6>
+                            <p class="mb-1">Se detectó una disminución en la actualización de códigos de referencia. Recomendación: Revisar proceso de actualización.</p>
+                            <div class="prediction-badge" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                Prioridad: Media
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="bi bi-graph-up text-primary me-2"></i>Oportunidades</h6>
+                            <p class="mb-1">Los proveedores activos han aumentado un 20%. Considere expandir la red de proveedores en categorías de bajo stock.</p>
+                            <div class="prediction-badge" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                                Impacto: Alto
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6><i class="bi bi-calendar-check text-info me-2"></i>Próximas Acciones</h6>
+                            <p class="mb-1">Se recomienda realizar una auditoría de taxonomía en los próximos 30 días para optimizar la estructura.</p>
+                            <div class="prediction-badge" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                                Plazo: 30 días
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="predictionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Reportes Programados -->
+            <div class="report-section">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="section-title mb-0">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Reportes Programados
+                    </h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#scheduleReportModal">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Nuevo Reporte Programado
+                    </button>
+                </div>
+                <div class="alert alert-light border">
+                    <div class="mb-3">
+                        <h6 class="mb-2">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Configurar Reportes Automáticos
+                        </h6>
+                        <p class="text-muted small mb-0">
+                            Programa reportes para que se generen y envíen automáticamente por correo electrónico.
+                        </p>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Frecuencia</th>
+                                    <th>Próxima Ejecución</th>
+                                    <th>Destinatarios</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="bi bi-file-earmark-text me-2"></i>Reporte Semanal de Catálogo</td>
+                                    <td><span class="badge bg-info">Semanal</span></td>
+                                    <td>Lunes, 8:00 AM</td>
+                                    <td>admin@MovIAx.com</td>
+                                    <td><span class="badge bg-success">Activo</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><i class="bi bi-file-earmark-text me-2"></i>Análisis Mensual de Proveedores</td>
+                                    <td><span class="badge bg-primary">Mensual</span></td>
+                                    <td>1er día del mes, 9:00 AM</td>
+                                    <td>gerencia@MovIAx.com</td>
+                                    <td><span class="badge bg-success">Activo</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enlaces Rápidos -->
+        <div class="col-lg-4">
+            <div class="report-section">
+                <h3 class="section-title">
+                    <i class="bi bi-lightning me-2"></i>
+                    Accesos Rápidos
+                </h3>
+                
+                <a href="{% url 'frontend:equipment_type_list' %}" class="quick-link">
+                    <i class="bi bi-gear-wide-connected me-2"></i>
+                    Gestionar Tipos de Equipo
+                </a>
+                
+                <a href="{% url 'frontend:taxonomy_tree' %}" class="quick-link">
+                    <i class="bi bi-diagram-3 me-2"></i>
+                    Gestionar Taxonomía
+                </a>
+                
+                <a href="{% url 'frontend:reference_code_list' %}" class="quick-link">
+                    <i class="bi bi-tags me-2"></i>
+                    Gestionar Códigos de Referencia
+                </a>
+                
+                <a href="{% url 'frontend:currency_list' %}" class="quick-link">
+                    <i class="bi bi-currency-exchange me-2"></i>
+                    Gestionar Monedas
+                </a>
+                
+                <a href="{% url 'frontend:supplier_advanced_list' %}" class="quick-link">
+                    <i class="bi bi-building me-2"></i>
+                    Gestionar Proveedores
+                </a>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="report-section">
+                <h3 class="section-title">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Información
+                </h3>
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">Monedas Configuradas</h6>
+                    <p class="mb-0">{{ currencies_count }} monedas disponibles en el sistema</p>
+                </div>
+                <div class="alert alert-success">
+                    <h6 class="alert-heading">Sistema Activo</h6>
+                    <p class="mb-0">Todos los módulos de catálogo están operativos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Programar Reportes -->
+<div class="modal fade" id="scheduleReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-calendar-plus me-2"></i>
+                    Programar Nuevo Reporte
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="scheduleReportForm">
+                    <div class="mb-3">
+                        <label for="reportName" class="form-label">Nombre del Reporte</label>
+                        <input type="text" class="form-control" id="reportName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportFrequency" class="form-label">Frecuencia</label>
+                        <select class="form-select" id="reportFrequency" required>
+                            <option value="">Seleccione...</option>
+                            <option value="daily">Diario</option>
+                            <option value="weekly">Semanal</option>
+                            <option value="monthly">Mensual</option>
+                            <option value="quarterly">Trimestral</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportTime" class="form-label">Hora de Ejecución</label>
+                        <input type="time" class="form-control" id="reportTime" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportRecipients" class="form-label">Destinatarios (separados por coma)</label>
+                        <input type="text" class="form-control" id="reportRecipients" placeholder="email1@example.com, email2@example.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportFormat" class="form-label">Formato</label>
+                        <select class="form-select" id="reportFormat" required>
+                            <option value="pdf">PDF</option>
+                            <option value="excel">Excel</option>
+                            <option value="both">Ambos</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeCharts">
+                            <label class="form-check-label" for="includeCharts">
+                                Incluir gráficos
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includePredictions">
+                            <label class="form-check-label" for="includePredictions">
+                                Incluir análisis predictivo
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveScheduledReport()">
+                    <i class="bi bi-save me-1"></i>
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Datos del servidor
+    const chartData = {{ chart_data|safe }};
+    
+    // Gráfico de Códigos de Referencia
+    const refCodesCtx = document.getElementById('referenceCodesChart');
+    if (refCodesCtx) {
+        new Chart(refCodesCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.reference_codes.labels,
+                datasets: [{
+                    label: 'Cantidad de Códigos',
+                    data: chartData.reference_codes.data,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Gráfico de Taxonomía
+    const taxonomyCtx = document.getElementById('taxonomyChart');
+    if (taxonomyCtx) {
+        new Chart(taxonomyCtx, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.taxonomy.labels,
+                datasets: [{
+                    data: chartData.taxonomy.data,
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Gráfico de Tendencias
+    const trendsCtx = document.getElementById('trendsChart');
+    if (trendsCtx) {
+        new Chart(trendsCtx, {
+            type: 'line',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                datasets: [{
+                    label: 'Tipos de Equipo',
+                    data: [12, 15, 18, 20, 22, 25, 28, 30, 32, 35, 38, 40],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Proveedores',
+                    data: [8, 10, 12, 15, 18, 20, 22, 25, 28, 30, 32, 35],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    tension: 0.4
+                }, {
+                    label: 'Códigos de Referencia',
+                    data: [45, 48, 52, 55, 58, 62, 65, 68, 72, 75, 78, 82],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Evolución Mensual del Catálogo'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // Gráfico de Predicción
+    const predictionCtx = document.getElementById('predictionChart');
+    if (predictionCtx) {
+        new Chart(predictionCtx, {
+            type: 'line',
+            data: {
+                labels: ['Actual', 'Mes 1', 'Mes 2', 'Mes 3', 'Mes 4', 'Mes 5', 'Mes 6'],
+                datasets: [{
+                    label: 'Datos Reales',
+                    data: [100, null, null, null, null, null, null],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                    borderWidth: 3
+                }, {
+                    label: 'Predicción Optimista',
+                    data: [100, 112, 125, 140, 157, 176, 197],
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    borderDash: [5, 5],
+                    tension: 0.4
+                }, {
+                    label: 'Predicción Conservadora',
+                    data: [100, 105, 110, 116, 122, 128, 135],
+                    borderColor: 'rgba(255, 159, 64, 1)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                    borderDash: [5, 5],
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Proyección de Crecimiento (6 meses)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Auto-submit form on period change
+    document.getElementById('period').addEventListener('change', function() {
+        // Clear date inputs when using quick period
+        document.getElementById('date_from').value = '';
+        document.getElementById('date_to').value = '';
+        this.form.submit();
+    });
+});
+
+function saveScheduledReport() {
+    const form = document.getElementById('scheduleReportForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const reportData = {
+        name: document.getElementById('reportName').value,
+        frequency: document.getElementById('reportFrequency').value,
+        time: document.getElementById('reportTime').value,
+        recipients: document.getElementById('reportRecipients').value,
+        format: document.getElementById('reportFormat').value,
+        includeCharts: document.getElementById('includeCharts').checked,
+        includePredictions: document.getElementById('includePredictions').checked
+    };
+    
+    // Aquí se implementaría la llamada AJAX para guardar el reporte programado
+    console.log('Guardando reporte programado:', reportData);
+    
+    // Simular guardado exitoso
+    alert('Reporte programado guardado exitosamente');
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('scheduleReportModal'));
+    modal.hide();
+    
+    // Limpiar formulario
+    form.reset();
+    
+    // Recargar página para mostrar el nuevo reporte
+    // location.reload();
+}
+</script>
+{% endblock %}

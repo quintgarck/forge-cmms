@@ -1,0 +1,380 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ brand.name }} - Marca OEM - MovIAx{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'frontend:oem_brand_management' %}">Catálogo OEM</a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{% url 'frontend:oem_brand_list' %}">Marcas</a>
+    </li>
+    <li class="breadcrumb-item active">{{ brand.oem_code }}</li>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col">
+        <div class="d-flex align-items-center">
+            {% if brand.logo_url %}
+                <img src="{{ brand.logo_url }}" alt="{{ brand.name }}" class="me-3" style="height: 50px; width: auto;">
+            {% else %}
+                <i class="bi bi-box-seam display-4 me-3 text-primary"></i>
+            {% endif %}
+            <div>
+                <h1 class="h3 mb-1">{{ brand.name }}</h1>
+                <p class="text-muted mb-0">
+                    <strong>{{ brand.oem_code }}</strong>
+                    {% if brand.country %}
+                        | <i class="bi bi-geo-alt me-1"></i>{{ brand.country }}
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'frontend:oem_brand_update' brand.brand_id %}" class="btn btn-warning me-2">
+            <i class="bi bi-pencil me-1"></i>
+            Editar
+        </a>
+        <a href="{% url 'frontend:oem_brand_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Information -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Información de la Marca
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5 text-muted">Código OEM:</dt>
+                    <dd class="col-sm-7">
+                        <strong class="text-primary">{{ brand.oem_code }}</strong>
+                    </dd>
+
+                    <dt class="col-sm-5 text-muted">Nombre Completo:</dt>
+                    <dd class="col-sm-7">{{ brand.name }}</dd>
+
+                    <dt class="col-sm-5 text-muted">Tipo:</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge bg-secondary">{{ brand.get_brand_type_label }}</span>
+                    </dd>
+
+                    <dt class="col-sm-5 text-muted">País:</dt>
+                    <dd class="col-sm-7">{{ brand.country|default:"No especificado" }}</dd>
+
+                    <dt class="col-sm-5 text-muted">Estado:</dt>
+                    <dd class="col-sm-7">
+                        {% if brand.is_active %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Activo
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-pause-circle me-1"></i>
+                                Inactivo
+                            </span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5 text-muted">Orden de Vista:</dt>
+                    <dd class="col-sm-7">{{ brand.display_order|default:"Sin especificar" }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-telephone me-2"></i>
+                    Información de Contacto
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5 text-muted">Sitio Web:</dt>
+                    <dd class="col-sm-7">
+                        {% if brand.website %}
+                            <a href="{{ brand.website }}" target="_blank" class="text-decoration-none">
+                                <i class="bi bi-globe me-1"></i>
+                                {{ brand.website|truncatechars:30 }}
+                                <i class="bi bi-box-arrow-up-right ms-1"></i>
+                            </a>
+                        {% else %}
+                            <span class="text-muted">No especificado</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5 text-muted">Email de Soporte:</dt>
+                    <dd class="col-sm-7">
+                        {% if brand.support_email %}
+                            <a href="mailto:{{ brand.support_email }}" class="text-decoration-none">
+                                <i class="bi bi-envelope me-1"></i>
+                                {{ brand.support_email }}
+                            </a>
+                        {% else %}
+                            <span class="text-muted">No especificado</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5 text-muted">URL del Logo:</dt>
+                    <dd class="col-sm-7">
+                        {% if brand.logo_url %}
+                            <a href="{{ brand.logo_url }}" target="_blank" class="text-decoration-none">
+                                <i class="bi bi-image me-1"></i>
+                                Ver logo
+                                <i class="bi bi-box-arrow-up-right ms-1"></i>
+                            </a>
+                        {% else %}
+                            <span class="text-muted">No especificado</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Metadata -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Metadatos
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5 text-muted">ID:</dt>
+                    <dd class="col-sm-7"><code>{{ brand.brand_id }}</code></dd>
+
+                    <dt class="col-sm-5 text-muted">Creado:</dt>
+                    <dd class="col-sm-7">
+                        {% if brand.created_at %}
+                            <small class="text-muted">
+                                {{ brand.created_at|date:"d/m/Y H:i" }}
+                            </small>
+                        {% else %}
+                            <span class="text-muted">No disponible</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-5 text-muted">Actualizado:</dt>
+                    <dd class="col-sm-7">
+                        {% if brand.updated_at %}
+                            <small class="text-muted">
+                                {{ brand.updated_at|date:"d/m/Y H:i" }}
+                            </small>
+                        {% else %}
+                            <span class="text-muted">No disponible</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Zona de Peligro
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Al eliminar esta marca se eliminarán también todos los modelos y referencias asociadas.
+                </p>
+                <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="bi bi-trash me-1"></i>
+                    Eliminar Marca
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Catalog Items (Models) -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul me-2"></i>
+                    Modelos y Partes del Catálogo
+                    {% if catalog_items_count > 0 %}
+                        <span class="badge bg-primary ms-2">{{ catalog_items_count }}</span>
+                    {% endif %}
+                </h5>
+                <a href="{% url 'frontend:oem_catalog_item_create' %}?oem_code={{ brand.oem_code }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Agregar Modelo/Parte
+                </a>
+            </div>
+            
+            <div class="card-body p-0">
+                {% if catalog_items %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número de Parte</th>
+                                    <th>Tipo</th>
+                                    <th>Descripción</th>
+                                    <th>Años</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in catalog_items %}
+                                    <tr>
+                                        <td>
+                                            <strong class="text-primary">{{ item.part_number }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if item.item_type == 'VEHICLE_MODEL' %}
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-car-front me-1"></i>
+                                                    Vehículo
+                                                </span>
+                                            {% elif item.item_type == 'EQUIPMENT_MODEL' %}
+                                                <span class="badge bg-warning">
+                                                    <i class="bi bi-tools me-1"></i>
+                                                    Maquinaria
+                                                </span>
+                                            {% elif item.item_type == 'PART' %}
+                                                <span class="badge bg-secondary">
+                                                    <i class="bi bi-box me-1"></i>
+                                                    Parte
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-dark">{{ item.item_type }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ item.description|truncatewords:8|default:"Sin descripción" }}
+                                        </td>
+                                        <td>
+                                            {% if item.year_start and item.year_end %}
+                                                <span class="badge bg-light text-dark">
+                                                    {{ item.year_start }} - {{ item.year_end }}
+                                                </span>
+                                            {% elif item.year_start %}
+                                                <span class="badge bg-light text-dark">
+                                                    {{ item.year_start }}+
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'frontend:oem_catalog_item_detail' item.catalog_id %}" 
+                                                   class="btn btn-outline-primary" title="Ver detalle">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'frontend:oem_catalog_item_update' item.catalog_id %}" 
+                                                   class="btn btn-outline-warning" title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination for catalog items -->
+                    {% if catalog_items_pagination.total_pages > 1 %}
+                        <div class="card-footer">
+                            <nav aria-label="Paginación de modelos">
+                                <ul class="pagination pagination-sm mb-0 justify-content-center">
+                                    {% if catalog_items_pagination.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?items_page={{ catalog_items_pagination.current_page|add:'-1' }}">
+                                                <i class="bi bi-chevron-left"></i> Anterior
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in catalog_items_pagination.page_range %}
+                                        <li class="page-item {% if page_num == catalog_items_pagination.current_page %}active{% endif %}">
+                                            <a class="page-link" href="?items_page={{ page_num }}">
+                                                {{ page_num }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                    
+                                    {% if catalog_items_pagination.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?items_page={{ catalog_items_pagination.current_page|add:'1' }}">
+                                                Siguiente <i class="bi bi-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <p class="mt-3 text-muted">No hay modelos o partes registradas para esta marca</p>
+                        <a href="{% url 'frontend:oem_catalog_item_create' %}?oem_code={{ brand.oem_code }}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Agregar Primer Modelo/Parte
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar la marca <strong>{{ brand.name }}</strong>?</p>
+                <p class="text-danger mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Esta acción no se puede deshacer y eliminará:
+                </p>
+                <ul class="text-danger">
+                    <li>La marca OEM {{ brand.oem_code }}</li>
+                    <li>Todos los modelos asociados ({{ catalog_items_count }} items)</li>
+                    <li>Todas las referencias y equivalencias</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{% url 'frontend:oem_brand_delete' brand.brand_id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>
+                        Eliminar Permanentemente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

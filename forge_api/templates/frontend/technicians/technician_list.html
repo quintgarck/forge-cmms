@@ -1,0 +1,184 @@
+﻿{% extends "frontend/base/base.html" %}
+
+{% block title %}Técnicos - MovIAx{% endblock %}
+
+{% block body_class %}technician-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">MovIAx</a></li>
+                        <li class="breadcrumb-item active">Técnicos</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Gestión de Técnicos</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Lista de Técnicos</h5>
+                        <a href="{% url 'frontend:technician_create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Nuevo Técnico
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros y búsqueda -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <form method="GET" class="d-flex">
+                                <div class="input-group">
+                                    <input type="text" name="search" class="form-control" placeholder="Buscar técnicos..." value="{{ filters.search|default:'' }}">
+                                    <button class="btn btn-outline-secondary" type="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-6">
+                            <form method="GET" class="d-flex justify-content-end">
+                                <div class="me-2">
+                                    <select name="status" class="form-select" onchange="this.form.submit()">
+                                        <option value="">Todos los estados</option>
+                                        {% for option in status_options %}
+                                            <option value="{{ option.value }}" {% if option.value == filters.status %}selected{% endif %}>
+                                                {{ option.label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="me-2">
+                                    <select name="sort" class="form-select" onchange="this.form.submit()">
+                                        {% for option in sort_options %}
+                                            <option value="{{ option.value }}" {% if option.value == filters.sort %}selected{% endif %}>
+                                                {{ option.label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <select name="order" class="form-select" onchange="this.form.submit()">
+                                        <option value="asc" {% if filters.order != 'desc' %}selected{% endif %}>Asc</option>
+                                        <option value="desc" {% if filters.order == 'desc' %}selected{% endif %}>Desc</option>
+                                    </select>
+                                </div>
+                                {% for key, value in request.GET.items %}
+                                    {% if key != 'search' and key != 'status' and key != 'sort' and key != 'order' and key != 'page' %}
+                                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                    {% endif %}
+                                {% endfor %}
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de técnicos -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Contratación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for technician in technicians %}
+                                <tr>
+                                    <td>{{ technician.employee_code }}</td>
+                                    <td>{{ technician.first_name }} {{ technician.last_name }}</td>
+                                    <td>{{ technician.email }}</td>
+                                    <td>{{ technician.phone|default:'-' }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if technician.status == 'active' %}bg-success
+                                            {% elif technician.status == 'inactive' %}bg-secondary
+                                            {% elif technician.status == 'suspended' %}bg-danger
+                                            {% else %}bg-warning{% endif %}">
+                                            {{ technician.get_status_display|default:technician.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ technician.hire_date }}</td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a href="{% url 'frontend:technician_detail' technician.technician_id %}" class="btn btn-info btn-sm" title="Ver Detalles">
+                                                <i class="fas fa-eye me-1"></i> Ver
+                                            </a>
+                                            <a href="{% url 'frontend:technician_update' technician.technician_id %}" class="btn btn-primary btn-sm" title="Editar">
+                                                <i class="fas fa-edit me-1"></i> Editar
+                                            </a>
+                                            <a href="{% url 'frontend:technician_delete' technician.technician_id %}" class="btn btn-danger btn-sm" title="Eliminar" onclick="return confirm('¿Está seguro de eliminar este técnico?')">
+                                                <i class="fas fa-trash-alt me-1"></i> Eliminar
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No se encontraron técnicos</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginación -->
+                    {% if pagination.total_pages > 1 %}
+                    <nav aria-label="Técnicos pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if pagination.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">Primera</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'-1' }}">Anterior</a>
+                                </li>
+                            {% endif %}
+
+                            {% for page_num in pagination.page_range %}
+                                <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}">{{ page_num }}</a>
+                                </li>
+                            {% endfor %}
+
+                            {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'1' }}">Siguiente</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.total_pages }}">Última</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+
+                    <!-- Información de paginación -->
+                    {% if pagination.count > 0 %}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted">
+                            Mostrando {{ pagination.start_index }} a {{ pagination.end_index }} de {{ pagination.count }} técnicos
+                        </div>
+                        <div class="text-muted">
+                            Página {{ pagination.current_page }} de {{ pagination.total_pages }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

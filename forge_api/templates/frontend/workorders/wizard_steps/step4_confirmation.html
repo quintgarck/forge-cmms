@@ -1,0 +1,276 @@
+<!-- Step 4: Review and Confirmation -->
+<div class="wizard-step-content">
+    <h4 class="mb-4">
+        <i class="bi bi-check-circle me-2"></i>
+        Paso 4: Revisión y Confirmación
+    </h4>
+    
+    <div class="row">
+        <!-- Client and Equipment Summary -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-person-gear me-2"></i>
+                        Cliente y Equipo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if client_details %}
+                        <div class="client-summary mb-3">
+                            <h6>Cliente:</h6>
+                            <div class="summary-item">
+                                <strong>{{ client_details.name }}</strong>
+                                <div class="text-muted small">{{ client_details.client_code }}</div>
+                                <div class="text-muted small">{{ client_details.email }}</div>
+                                <div class="text-muted small">{{ client_details.phone }}</div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if equipment_details %}
+                        <div class="equipment-summary">
+                            <h6>Equipo:</h6>
+                            <div class="summary-item">
+                                <strong>{{ equipment_details.year }} {{ equipment_details.make }} {{ equipment_details.model }}</strong>
+                                <div class="text-muted small">Código: {{ equipment_details.equipment_code }}</div>
+                                {% if equipment_details.vin %}
+                                    <div class="text-muted small">VIN: {{ equipment_details.vin }}</div>
+                                {% endif %}
+                                {% if equipment_details.license_plate %}
+                                    <div class="text-muted small">Placas: {{ equipment_details.license_plate }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Services and Parts Summary -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-tools me-2"></i>
+                        Servicios y Partes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if wizard_data.services %}
+                        <div class="services-summary mb-3">
+                            <h6>Servicios:</h6>
+                            {% for service in wizard_data.services %}
+                                <div class="summary-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ service.name }} x{{ service.quantity }}</span>
+                                        <span class="text-success">${{ service.price|floatformat:2 }}</span>
+                                    </div>
+                                    {% if service.estimated_hours %}
+                                        <div class="text-muted small">{{ service.estimated_hours }}h estimadas</div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    {% if wizard_data.parts %}
+                        <div class="parts-summary">
+                            <h6>Partes:</h6>
+                            {% for part in wizard_data.parts %}
+                                <div class="summary-item">
+                                    <div class="d-flex justify-content-between">
+                                        <span>{{ part.name }} x{{ part.quantity }}</span>
+                                        <span class="text-success">${{ part.price|floatformat:2 }}</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <!-- Work Details -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-file-text me-2"></i>
+                        Detalles del Trabajo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="summary-item mb-3">
+                        <h6>Descripción:</h6>
+                        <p class="text-muted">{{ wizard_data.description }}</p>
+                    </div>
+                    
+                    {% if wizard_data.complaint %}
+                        <div class="summary-item mb-3">
+                            <h6>Queja del Cliente:</h6>
+                            <p class="text-muted">{{ wizard_data.complaint }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="summary-item">
+                                <h6>Prioridad:</h6>
+                                <span class="badge bg-{% if wizard_data.priority == 'urgent' %}danger{% elif wizard_data.priority == 'high' %}warning{% elif wizard_data.priority == 'normal' %}info{% else %}success{% endif %}">
+                                    {{ wizard_data.priority|capfirst }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="summary-item">
+                                <h6>Estado:</h6>
+                                <span class="badge bg-{% if wizard_data.status == 'scheduled' %}info{% else %}secondary{% endif %}">
+                                    {{ wizard_data.status|capfirst }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scheduling and Assignment -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-calendar-event me-2"></i>
+                        Programación y Asignación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if technician_details %}
+                        <div class="summary-item mb-3">
+                            <h6>Técnico Asignado:</h6>
+                            <div>
+                                <strong>{{ technician_details.first_name }} {{ technician_details.last_name }}</strong>
+                                <div class="text-muted small">{{ technician_details.employee_code }}</div>
+                                {% if technician_details.email %}
+                                    <div class="text-muted small">{{ technician_details.email }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="summary-item mb-3">
+                            <h6>Técnico Asignado:</h6>
+                            <span class="text-muted">Sin asignar</span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if wizard_data.scheduled_datetime %}
+                        <div class="summary-item mb-3">
+                            <h6>Fecha Programada:</h6>
+                            <div>{{ wizard_data.scheduled_datetime|date:"d/m/Y H:i" }}</div>
+                        </div>
+                    {% else %}
+                        <div class="summary-item mb-3">
+                            <h6>Fecha Programada:</h6>
+                            <span class="text-muted">No programada</span>
+                        </div>
+                    {% endif %}
+                    
+                    {% if wizard_data.estimated_hours %}
+                        <div class="summary-item">
+                            <h6>Horas Estimadas:</h6>
+                            <div>{{ wizard_data.estimated_hours }} horas</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Final Summary -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-calculator me-2"></i>
+                        Resumen Final
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="summary-metric">
+                                <h4 class="text-primary">${{ total_cost|floatformat:2 }}</h4>
+                                <p class="text-muted mb-0">Costo Total Estimado</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-metric">
+                                <h4 class="text-info">{{ total_hours|floatformat:1 }}h</h4>
+                                <p class="text-muted mb-0">Horas Totales</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-metric">
+                                <h4 class="text-success">
+                                    {% with services_count=wizard_data.services|length parts_count=wizard_data.parts|length %}
+                                        {{ services_count|add:parts_count }}
+                                    {% endwith %}
+                                </h4>
+                                <p class="text-muted mb-0">Items Totales</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="summary-metric">
+                                <h4 class="text-warning">
+                                    {% if wizard_data.scheduled_datetime %}
+                                        {{ wizard_data.scheduled_datetime|date:"d/m" }}
+                                    {% else %}
+                                        TBD
+                                    {% endif %}
+                                </h4>
+                                <p class="text-muted mb-0">Fecha Programada</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation Buttons -->
+    <div class="wizard-navigation mt-4">
+        <div class="d-flex justify-content-between">
+            <button type="submit" name="action" value="prev" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>
+                Anterior
+            </button>
+            <div>
+                <button type="submit" name="action" value="cancel" class="btn btn-outline-danger me-2">
+                    <i class="bi bi-x-lg me-1"></i>
+                    Cancelar
+                </button>
+                <button type="submit" name="action" value="next" class="btn btn-success btn-lg">
+                    <i class="bi bi-check-lg me-1"></i>
+                    Crear Orden de Trabajo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add confirmation before creating work order
+    const createButton = document.querySelector('button[value="next"]');
+    
+    createButton.addEventListener('click', function(e) {
+        const confirmed = confirm('¿Está seguro de que desea crear esta orden de trabajo?');
+        if (!confirmed) {
+            e.preventDefault();
+        }
+    });
+});
+</script>

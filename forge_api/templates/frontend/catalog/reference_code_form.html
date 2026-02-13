@@ -1,0 +1,492 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Editar{% else %}Crear{% endif %} Código - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            {% for crumb in breadcrumbs %}
+                {% if crumb.url %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% else %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-{{ category_config.color }} text-white">
+                    <h4 class="mb-0">
+                        <i class="{{ category_config.icon }}"></i>
+                        {% if is_edit %}Editar{% else %}Crear{% endif %} Código - {{ category_config.title }}
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post" id="codeForm">
+                        {% csrf_token %}
+                        
+                        <!-- Categoría (oculta si es edición) -->
+                        <input type="hidden" name="category" value="{{ category }}">
+                        
+                        <!-- Código -->
+                        <div class="mb-3">
+                            <label for="id_code" class="form-label">
+                                Código <span class="text-danger">*</span>
+                            </label>
+                            {% if is_edit %}
+                                <input type="text"
+                                       name="code"
+                                       id="id_code"
+                                       class="form-control text-uppercase {% if form.code.errors %}is-invalid{% endif %}"
+                                       value="{{ form.code.value|default:'' }}"
+                                       placeholder="Ej: DIESEL, AUTO, RED"
+                                       maxlength="10"
+                                       required>
+                                <input type="hidden" name="original_code" value="{{ form.code.value|default:'' }}">
+                                <div class="form-text text-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>Atención:</strong> Cambiar el código actualizará automáticamente todos los equipos que lo usan.
+                                    Si el nuevo código ya existe, se mostrará un error.
+                                </div>
+                            {% else %}
+                                <input type="text"
+                                       name="code"
+                                       id="id_code"
+                                       class="form-control text-uppercase {% if form.code.errors %}is-invalid{% endif %}"
+                                       value="{{ form.code.value|default:'' }}"
+                                       placeholder="Ej: DIESEL, AUTO, RED"
+                                       maxlength="10"
+                                       required>
+                                <div class="form-text">
+                                    Código único dentro de la categoría (se convertirá a mayúsculas, máximo 10 caracteres)
+                                </div>
+                            {% endif %}
+                            {% if form.code.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.code.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label">
+                                Descripción <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   name="description" 
+                                   id="id_description"
+                                   class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                                   value="{{ form.description.value|default:'' }}"
+                                   placeholder="Descripción del código"
+                                   maxlength="200"
+                                   required>
+                            <div class="form-text">
+                                Descripción clara y concisa del código
+                            </div>
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {{ form.description.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if not is_edit %}
+                        <!-- Estado Activo (solo en creación, no existe en BD para edición) -->
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox"
+                                       name="is_active"
+                                       id="id_is_active"
+                                       class="form-check-input"
+                                       checked>
+                                <label class="form-check-label" for="id_is_active">
+                                    Activo
+                                </label>
+                                <div class="form-text">
+                                    El código será creado como activo
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'frontend:reference_code_list' %}?category={{ category }}"
+                               class="btn btn-secondary cancel-btn" data-no-loading="true">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                {% if is_edit %}Actualizar{% else %}Crear{% endif %} Código
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal para mensajes de advertencia del sistema - FUERA del card-body -->
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'warning' %}
+                    <div class="modal fade" id="warningModal" tabindex="-1" data-bs-backdrop="false" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-warning">
+                                <div class="modal-header bg-warning text-dark">
+                                    <h5 class="modal-title">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        Atención
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="text-center mb-3">
+                                        <i class="bi bi-exclamation-circle text-warning" style="font-size: 4rem;"></i>
+                                    </div>
+                                    <p class="text-center mb-0" style="font-size: 1.1rem; white-space: pre-line;">
+                                        {{ message }}
+                                    </p>
+                                </div>
+                                <div class="modal-footer justify-content-center">
+                                    <button type="button" class="btn btn-warning px-4" data-bs-dismiss="modal">
+                                        <i class="bi bi-check-lg me-2"></i>Entendido
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            <!-- Modal de Confirmación para Cambio de Código - FUERA del card-body -->
+            <div class="modal fade" id="confirmCodeChangeModal" tabindex="-1" data-bs-backdrop="false" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content border-primary">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">
+                                <i class="bi bi-question-circle-fill me-2"></i>
+                                Confirmar Cambio de Código
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-arrow-left-right text-primary" style="font-size: 4rem;"></i>
+                            </div>
+                            <p class="text-center" style="font-size: 1.1rem;">
+                                ¿Estás seguro de cambiar el código?<br><br>
+                                <strong>De:</strong> <span id="originalCodeDisplay" class="badge bg-dark text-white border"></span><br>
+                                <strong>A:</strong> <span id="newCodeDisplay" class="badge bg-primary text-white border"></span>
+                            </p>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Esto actualizará automáticamente todos los equipos que usan este código.
+                                Si el nuevo código ya existe, se mostrará un error.
+                            </div>
+                        </div>
+                        <div class="modal-footer justify-content-center">
+                            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                                <i class="bi bi-x-lg me-2"></i>Cancelar
+                            </button>
+                            <button type="button" class="btn btn-primary px-4" id="confirmCodeChangeBtn">
+                                <i class="bi bi-check-lg me-2"></i>Sí, Cambiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información adicional -->
+            {% if is_edit %}
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle"></i> Información
+                    </h6>
+                    <ul class="mb-0">
+                        <li><strong>Puedes cambiar el código</strong>, pero se verificará que el nuevo código no exista</li>
+                        <li>Si cambias el código, todos los equipos que lo usan se actualizarán automáticamente</li>
+                        <li>No se pueden eliminar códigos que estén en uso por equipos existentes</li>
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Asegurar que el loading overlay no bloquee cuando está oculto */
+    #loading-overlay.d-none {
+        pointer-events: none !important;
+        visibility: hidden !important;
+    }
+    
+    /* REMOVER backdrop de modal - usar fondo semitransparente en el body o nada */
+    .modal-backdrop {
+        display: none !important;
+    }
+    
+    /* Forzar z-index muy alto para modales - debe cubrir todo incluyendo footer */
+    .modal {
+        z-index: 99999 !important;
+        background-color: rgba(0, 0, 0, 0.6) !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    .modal-dialog {
+        z-index: 100000 !important;
+    }
+    .modal-content {
+        z-index: 100001 !important;
+    }
+    .modal-header, .modal-body, .modal-footer {
+        z-index: 100002 !important;
+    }
+    .modal-footer button, .modal-header button {
+        position: relative;
+        z-index: 100003 !important;
+        pointer-events: auto !important;
+    }
+    
+    /* Cuando el modal está abierto, asegurar que esté por encima del footer */
+    body.modal-open footer,
+    body.modal-open .footer,
+    body.modal-open [class*="footer"] {
+        z-index: 1 !important;
+        position: relative !important;
+    }
+    
+    /* Asegurar que el modal esté realmente por encima */
+    body.modal-open {
+        overflow: hidden !important;
+    }
+    
+    /* Asegurar que el input de código sea editable */
+    #id_code {
+        pointer-events: auto !important;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        cursor: text !important;
+    }
+    
+    /* Asegurar visibilidad de badges en el modal */
+    .modal .badge.bg-dark {
+        background-color: #212529 !important;
+        color: #fff !important;
+    }
+    .modal .badge.bg-primary {
+        background-color: #0d6efd !important;
+        color: #fff !important;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const codeInput = document.getElementById('id_code');
+    const form = document.getElementById('codeForm');
+    const warningModal = document.getElementById('warningModal');
+    const cancelBtn = document.querySelector('.cancel-btn');
+
+    // DESACTIVAR loading overlay para este formulario específicamente
+    form.setAttribute('data-no-loading', 'true');
+
+    // Ocultar cualquier loading overlay activo al cargar la página
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.add('d-none');
+        loadingOverlay.style.display = 'none';
+        loadingOverlay.style.visibility = 'hidden';
+        loadingOverlay.style.pointerEvents = 'none';
+    }
+
+    // Prevenir loading spinner en botón cancelar
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (typeof hideLoadingOverlay === 'function') {
+                hideLoadingOverlay();
+            }
+            window.location.href = this.getAttribute('href');
+            return false;
+        }, true);
+    }
+
+    // Mostrar modal de advertencia si existe
+    function showWarningModal() {
+        if (warningModal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            try {
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('d-none');
+                }
+                warningModal.style.zIndex = '99999';
+                const modal = new bootstrap.Modal(warningModal, {
+                    backdrop: false,
+                    keyboard: true
+                });
+                modal.show();
+                
+                warningModal.addEventListener('click', function(e) {
+                    if (e.target === warningModal) {
+                        modal.hide();
+                    }
+                });
+            } catch(e) {
+                console.error('Error showing modal:', e);
+            }
+        } else {
+            setTimeout(showWarningModal, 100);
+        }
+    }
+    showWarningModal();
+
+    // Verificar que el input no esté deshabilitado
+    if (codeInput) {
+        console.log('Code input encontrado:', codeInput);
+        console.log('Disabled:', codeInput.disabled);
+        console.log('Readonly:', codeInput.readOnly);
+        
+        // Asegurar que no esté bloqueado
+        codeInput.disabled = false;
+        codeInput.readOnly = false;
+    }
+    
+    // Convertir a mayúsculas automáticamente
+    if (codeInput) {
+        codeInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+    
+    // Variables para controlar el submit
+    let pendingSubmit = false;
+    const confirmModal = document.getElementById('confirmCodeChangeModal');
+    const confirmBtn = document.getElementById('confirmCodeChangeBtn');
+
+    // Configurar botón de confirmación del modal
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            pendingSubmit = true;
+            const modal = bootstrap.Modal.getInstance(confirmModal);
+            if (modal) modal.hide();
+            form.submit();
+        });
+    }
+
+    // Cerrar modal al hacer clic fuera de él
+    if (confirmModal) {
+        confirmModal.addEventListener('click', function(e) {
+            if (e.target === confirmModal) {
+                const modal = bootstrap.Modal.getInstance(confirmModal);
+                if (modal) modal.hide();
+            }
+        });
+    }
+
+    // Limpiar after modal close
+    document.addEventListener('hidden.bs.modal', function() {
+        document.querySelectorAll('.modal-backdrop').forEach(function(backdrop) {
+            backdrop.remove();
+        });
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    });
+
+    // Validación antes de enviar
+    form.addEventListener('submit', function(e) {
+        const code = codeInput.value.trim();
+        const description = document.getElementById('id_description').value.trim();
+
+        if (!code) {
+            e.preventDefault();
+            alert('El código es requerido');
+            codeInput.focus();
+            return false;
+        }
+
+        if (!description) {
+            e.preventDefault();
+            alert('La descripción es requerida');
+            document.getElementById('id_description').focus();
+            return false;
+        }
+
+        if (description.length < 3) {
+            e.preventDefault();
+            alert('La descripción debe tener al menos 3 caracteres');
+            document.getElementById('id_description').focus();
+            return false;
+        }
+
+        // Validación de longitud máxima del código (10 caracteres según API)
+        if (code.length > 10) {
+            e.preventDefault();
+            alert('El código no puede tener más de 10 caracteres. Actualmente tiene ' + code.length + ' caracteres.');
+            codeInput.focus();
+            codeInput.classList.add('is-invalid');
+            return false;
+        } else {
+            codeInput.classList.remove('is-invalid');
+        }
+
+        {% if is_edit %}
+        // En modo edición, confirmar si el código cambió
+        const originalCode = document.querySelector('input[name="original_code"]').value;
+        if (code !== originalCode && !pendingSubmit) {
+            e.preventDefault();
+            if (typeof hideLoadingOverlay === 'function') {
+                hideLoadingOverlay();
+            }
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if (loadingOverlay) {
+                loadingOverlay.classList.add('d-none');
+            }
+            if (confirmModal && typeof bootstrap !== 'undefined') {
+                document.getElementById('originalCodeDisplay').textContent = originalCode;
+                document.getElementById('newCodeDisplay').textContent = code;
+                confirmModal.style.zIndex = '99999';
+                const modal = new bootstrap.Modal(confirmModal, {
+                    backdrop: false,
+                    keyboard: true
+                });
+                modal.show();
+                
+                confirmModal.addEventListener('click', function(e) {
+                    if (e.target === confirmModal) {
+                        modal.hide();
+                    }
+                });
+            } else {
+                if (confirm('¿Estás seguro de cambiar el código de "' + originalCode + '" a "' + code + '"?')) {
+                    pendingSubmit = true;
+                    form.submit();
+                }
+            }
+            return false;
+        }
+        {% endif %}
+    });
+});
+</script>
+{% endblock %}

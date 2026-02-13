@@ -1,0 +1,264 @@
+/* Maintenance List Styles */
+
+.maintenance-card {
+    transition: all 0.3s ease;
+    border: 1px solid #e3e6f0;
+}
+
+.maintenance-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.maintenance-card.border-danger {
+    border-left: 4px solid #dc3545;
+}
+
+.maintenance-card.border-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.maintenance-type-icon {
+    font-size: 1.2em;
+}
+
+.maintenance-info {
+    font-size: 0.9em;
+}
+
+.maintenance-description p {
+    font-size: 0.85em;
+    line-height: 1.4;
+}
+
+/* Priority badges */
+.priority-low {
+    background-color: #28a745;
+    color: white;
+}
+
+.priority-medium {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.priority-high {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.priority-critical {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Status badges */
+.status-scheduled {
+    background-color: #6c757d;
+    color: white;
+}
+
+.status-in_progress {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.status-completed {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-cancelled {
+    background-color: #6c757d;
+    color: white;
+}
+
+.status-overdue {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Search and filter section */
+.search-input {
+    border-radius: 8px;
+}
+
+.search-input:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+/* Stats badges */
+.maintenance-stats .badge {
+    font-size: 0.8em;
+    padding: 0.4em 0.8em;
+}
+
+/* Card animations */
+.maintenance-card .card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.maintenance-card .card-footer {
+    background-color: #f8f9fc;
+    border-top: 1px solid #e3e6f0;
+}
+
+/* Dropdown menu styling */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.9em;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fc;
+}
+
+/* Pagination */
+.pagination .page-link {
+    border: 1px solid #e3e6f0;
+    color: #5a5c69;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.pagination .page-link:hover {
+    background-color: #f8f9fc;
+    border-color: #e3e6f0;
+}
+
+/* Empty state */
+.text-center i.fa-3x {
+    opacity: 0.3;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .maintenance-card .card-body {
+        padding: 1rem 0.75rem;
+    }
+    
+    .maintenance-info .row {
+        margin-bottom: 0.5rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 576px) {
+    .col-lg-6.col-xl-4 {
+        margin-bottom: 1rem;
+    }
+    
+    .maintenance-card .card-header h6 {
+        font-size: 0.9rem;
+    }
+    
+    .maintenance-info {
+        font-size: 0.8em;
+    }
+}
+
+/* Filter form styling */
+.card-body form .row {
+    align-items: end;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #5a5c69;
+    margin-bottom: 0.25rem;
+}
+
+.form-select, .form-control {
+    border: 1px solid #d1d3e2;
+    border-radius: 0.35rem;
+}
+
+.form-select:focus, .form-control:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+
+/* Loading states */
+.maintenance-card.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.maintenance-card.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #4e73df;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Hover effects */
+.maintenance-card .btn {
+    transition: all 0.2s ease;
+}
+
+.maintenance-card .btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Badge animations */
+.badge {
+    transition: all 0.2s ease;
+}
+
+.maintenance-card:hover .badge {
+    transform: scale(1.05);
+}
+
+/* Custom scrollbar for long descriptions */
+.maintenance-description {
+    max-height: 60px;
+    overflow-y: auto;
+}
+
+.maintenance-description::-webkit-scrollbar {
+    width: 4px;
+}
+
+.maintenance-description::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+}
+
+.maintenance-description::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+}
+
+.maintenance-description::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}

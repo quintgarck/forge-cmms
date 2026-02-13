@@ -1,0 +1,304 @@
+﻿{% extends "frontend/base/base.html" %}
+
+{% load static %}
+
+{% block title %}Movimiento de Inventario - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/inventory-movements.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-arrow-left-right"></i> Movimiento de Inventario
+        </h1>
+        <a href="{% url 'frontend:stock_list' %}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver a Stock
+        </a>
+    </div>
+
+    <!-- Movement Form Card -->
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Registrar Nuevo Movimiento</h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="movementForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    {% for error in form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="transactionType" class="form-label required">Tipo de Transacción</label>
+                                <select class="form-select" id="transactionType" name="transaction_type" required>
+                                    <option value="">Seleccionar tipo de transacción...</option>
+                                    {% for option in transaction_types %}
+                                        <option value="{{ option.value }}">{{ option.label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Seleccione el tipo de movimiento de inventario que desea realizar.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="productId" class="form-label required">Producto</label>
+                                <select class="form-select" id="productId" name="product_id" required>
+                                    <option value="">Seleccionar producto...</option>
+                                    {% for product in products %}
+                                        <option value="{{ product.id }}" 
+                                                data-category="{{ product.category }}"
+                                                data-current-stock="{{ product.current_stock|default:0 }}">
+                                            {{ product.name }} ({{ product.product_code }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Seleccione el producto que será afectado por el movimiento.</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="warehouseId" class="form-label required">Almacén Origen</label>
+                                <select class="form-select" id="warehouseId" name="warehouse_id" required>
+                                    <option value="">Seleccionar almacén...</option>
+                                    {% for warehouse in warehouses %}
+                                        <option value="{{ warehouse.id }}">
+                                            {{ warehouse.name }} ({{ warehouse.warehouse_code }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Seleccione el almacén de origen para el movimiento.</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3" id="destinationWarehouseSection" style="display: none;">
+                                <label for="destinationWarehouseId" class="form-label">Almacén Destino</label>
+                                <select class="form-select" id="destinationWarehouseId" name="destination_warehouse_id">
+                                    <option value="">Seleccionar almacén destino...</option>
+                                    {% for warehouse in warehouses %}
+                                        {% if warehouse.id != default_warehouse_id %}
+                                            <option value="{{ warehouse.id }}">
+                                                {{ warehouse.name }} ({{ warehouse.warehouse_code }})
+                                            </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Seleccione el almacén de destino para transferencias.</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="quantity" class="form-label required">Cantidad</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" min="1" max="999999" required>
+                                <div class="form-text">Ingrese la cantidad a mover. Debe ser mayor a 0.</div>
+                                <div id="currentStockInfo" class="mt-1"></div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="unitCost" class="form-label">Costo Unitario</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" class="form-control" id="unitCost" name="unit_cost" min="0" max="999999.99">
+                                </div>
+                                <div class="form-text">Costo unitario del producto (opcional para algunos movimientos).</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="referenceNumber" class="form-label">Número de Referencia</label>
+                            <input type="text" class="form-control" id="referenceNumber" name="reference_number" maxlength="50">
+                            <div class="form-text">Número de referencia para la operación (factura, guía de remisión, etc.).</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notas</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3" maxlength="500"></textarea>
+                            <div class="form-text">Notas adicionales acerca del movimiento de inventario.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'frontend:stock_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="bi bi-save"></i> Registrar Movimiento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Stock Info Card -->
+        <div class="col-xl-4 col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Información de Stock</h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <i class="bi bi-box-seam" style="font-size: 3rem;"></i>
+                    </div>
+                    <div id="stockInfo">
+                        <p class="text-muted text-center">Seleccione un producto para ver su información de stock.</p>
+                    </div>
+                    <hr>
+                    <h6 class="text-gray-800">Información Importante:</h6>
+                    <ul class="small">
+                        <li>Los movimientos de tipo "Salida" reducirán el stock disponible</li>
+                        <li>Los movimientos de tipo "Entrada" aumentarán el stock disponible</li>
+                        <li>Las transferencias mueven stock entre almacenes</li>
+                        <li>Los ajustes se usan para corregir diferencias en conteo físico</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'frontend/js/inventory-movements.js' %}"></script>
+<script>
+// Movement form logic
+document.addEventListener('DOMContentLoaded', function() {
+    const transactionType = document.getElementById('transactionType');
+    const destinationWarehouseSection = document.getElementById('destinationWarehouseSection');
+    const productId = document.getElementById('productId');
+    const quantity = document.getElementById('quantity');
+    const currentStockInfo = document.getElementById('currentStockInfo');
+    const stockInfo = document.getElementById('stockInfo');
+    const warehouseId = document.getElementById('warehouseId');
+    
+    // Show/hide destination warehouse for transfers
+    transactionType.addEventListener('change', function() {
+        if (this.value === 'transfer') {
+            destinationWarehouseSection.style.display = 'block';
+        } else {
+            destinationWarehouseSection.style.display = 'none';
+        }
+    });
+    
+    // Update stock information when product changes
+    productId.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const currentStock = selectedOption.getAttribute('data-current-stock') || 0;
+        const category = selectedOption.getAttribute('data-category') || '';
+        
+        // Update stock info display
+        stockInfo.innerHTML = `
+            <div class="mb-2">
+                <span class="text-muted">Stock actual:</span>
+                <span class="h6">${currentStock}</span>
+            </div>
+            <div class="mb-2">
+                <span class="text-muted">Categoría:</span>
+                <span>${category}</span>
+            </div>
+        `;
+        
+        // Update current stock info under quantity field
+        currentStockInfo.innerHTML = `
+            <small class="text-muted">Stock disponible: ${currentStock}</small>
+        `;
+        
+        // For issue transactions, we may want to limit the quantity
+        if (transactionType.value === 'issue') {
+            quantity.max = currentStock;
+        } else {
+            // Reset max for other transaction types
+            quantity.removeAttribute('max');
+        }
+    });
+    
+    // Update max quantity when transaction type changes
+    transactionType.addEventListener('change', function() {
+        const selectedProduct = productId.options[productId.selectedIndex];
+        const currentStock = selectedProduct.getAttribute('data-current-stock') || 0;
+        
+        if (this.value === 'issue' && currentStock > 0) {
+            quantity.max = currentStock;
+            if (quantity.value > currentStock) {
+                quantity.value = currentStock;
+            }
+        } else {
+            quantity.removeAttribute('max');
+        }
+    });
+    
+    // Validate quantity doesn't exceed available stock for issues
+    quantity.addEventListener('change', function() {
+        const selectedProduct = productId.options[productId.selectedIndex];
+        const currentStock = selectedProduct.getAttribute('data-current-stock') || 0;
+        
+        if (transactionType.value === 'issue' && parseInt(this.value) > parseInt(currentStock)) {
+            this.value = currentStock;
+            alert(`La cantidad no puede exceder el stock disponible (${currentStock})`);
+        }
+    });
+    
+    // Form submission handler
+    document.getElementById('movementForm').addEventListener('submit', function(e) {
+        const transType = transactionType.value;
+        const prodId = productId.value;
+        const qty = parseInt(quantity.value);
+        const wareId = warehouseId.value;
+        
+        if (!transType || !prodId || !qty || !wareId) {
+            e.preventDefault();
+            alert('Por favor complete todos los campos requeridos.');
+            return;
+        }
+        
+        // Additional validation for transfers
+        if (transType === 'transfer') {
+            const destWareId = document.getElementById('destinationWarehouseId').value;
+            if (!destWareId) {
+                e.preventDefault();
+                alert('Por favor seleccione un almacén de destino para la transferencia.');
+                return;
+            }
+            
+            if (wareId === destWareId) {
+                e.preventDefault();
+                alert('El almacén de origen y destino no pueden ser el mismo.');
+                return;
+            }
+        }
+        
+        // Confirm before submitting for issues
+        if (transType === 'issue') {
+            const selectedProduct = productId.options[productId.selectedIndex];
+            const currentStock = selectedProduct.getAttribute('data-current-stock') || 0;
+            const productName = selectedProduct.text;
+            
+            if (qty > currentStock) {
+                e.preventDefault();
+                alert(`La cantidad excede el stock disponible (${currentStock})`);
+                return;
+            }
+            
+            if (!confirm(`¿Está seguro que desea sacar ${qty} unidades de ${productName}?`)) {
+                e.preventDefault();
+                return;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

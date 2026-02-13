@@ -1,0 +1,755 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Checklist Interactivo - {{ flat_rate.service_code }} - MovIAx{% endblock %}
+
+{% block body_class %}service-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checklist-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .checklist-item {
+        transition: all 0.3s ease;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        background: white;
+    }
+    .checklist-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .checklist-item.completed {
+        background: #f8f9fa;
+        border-color: #28a745;
+    }
+    .checklist-item.critical {
+        border-left: 4px solid #dc3545;
+    }
+    .item-checkbox {
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+    }
+    .item-checkbox:checked {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    .progress-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    .progress-circle::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: conic-gradient(#28a745 0deg, #28a745 var(--progress, 0deg), #e9ecef var(--progress, 0deg));
+        border-radius: 50%;
+    }
+    .progress-circle .progress-text {
+        position: relative;
+        z-index: 1;
+        color: #333;
+        font-weight: bold;
+    }
+    .time-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .criticality-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .completion-stats {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .item-notes {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 0.25rem;
+        padding: 0.75rem;
+        margin-top: 0.5rem;
+        display: none;
+    }
+    .item-notes.show {
+        display: block;
+    }
+    .validation-message {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 0.75rem;
+        border-radius: 0.25rem;
+        margin-top: 1rem;
+        display: none;
+    }
+    .validation-message.show {
+        display: block;
+    }
+    .sequence-indicator {
+        background: #007bff;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if flat_rate %}
+    <!-- Header -->
+    <div class="checklist-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 mb-1">
+                    <i class="bi bi-list-check me-2"></i>
+                    Checklist: {{ flat_rate.service_code }}
+                </h1>
+                <p class="mb-0 opacity-75">
+                    {{ flat_rate.description|truncatechars:100 }}
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="progress-circle" style="--progress: 0deg;">
+                    <div class="progress-text">
+                        <span id="completionPercentage">0</span>%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completion Statistics -->
+    <div class="completion-stats">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-1">
+                    <i class="bi bi-clipboard-data me-2"></i>
+                    Estadísticas de Completación
+                </h5>
+                <div class="row g-3 mt-2">
+                    <div class="col-sm-3">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-primary" id="totalItems">{{ checklist_stats.total_items }}</div>
+                            <small class="text-muted">Total Items</small>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-danger" id="criticalItems">{{ checklist_stats.critical_items }}</div>
+                            <small class="text-muted">Críticos</small>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-success" id="completedItems">0</div>
+                            <small class="text-muted">Completados</small>
+                        </div>
+                    </div>
+                    <div class="col-sm-3">
+                        <div class="text-center">
+                            <div class="h4 mb-0 text-info">{{ checklist_stats.total_time_hours|floatformat:1 }}h</div>
+                            <small class="text-muted">Tiempo Total</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="progress mb-2" style="height: 8px;">
+                    <div class="progress-bar bg-success" id="progressBar" style="width: 0%;"></div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <small class="text-muted">Progreso</small>
+                    <small class="text-success" id="progressText">0 / {{ checklist_stats.total_items }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Checklist Items -->
+        <div class="col-lg-8">
+            {% if checklist_items %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-check-square me-2"></i>
+                    Items del Checklist
+                </h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-success" id="checkAllBtn">
+                        <i class="bi bi-check-all me-1"></i>
+                        Marcar Todos
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="uncheckAllBtn">
+                        <i class="bi bi-x-square me-1"></i>
+                        Desmarcar Todos
+                    </button>
+                    <button type="button" class="btn btn-outline-info" id="showNotesBtn">
+                        <i class="bi bi-chat-text me-1"></i>
+                        Mostrar Notas
+                    </button>
+                </div>
+            </div>
+
+            {% for item in checklist_items %}
+            <div class="checklist-item {% if item.is_critical %}critical{% endif %}" data-item-id="{{ item.checklist_item_id }}">
+                <div class="card-body">
+                    <div class="row align-items-start">
+                        <!-- Sequence and Checkbox -->
+                        <div class="col-auto">
+                            <div class="d-flex flex-column align-items-center">
+                                <div class="sequence-indicator mb-2">
+                                    {{ item.sequence_number|default:forloop.counter }}
+                                </div>
+                                <input type="checkbox" 
+                                       class="form-check-input item-checkbox" 
+                                       id="item_{{ item.checklist_item_id }}"
+                                       data-critical="{{ item.is_critical|yesno:'true,false' }}"
+                                       data-estimated-minutes="{{ item.estimated_minutes|default:0 }}">
+                            </div>
+                        </div>
+                        
+                        <!-- Item Content -->
+                        <div class="col">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <label for="item_{{ item.checklist_item_id }}" class="form-check-label fw-bold mb-1" style="cursor: pointer;">
+                                        {{ item.description }}
+                                    </label>
+                                    {% if item.detailed_instructions %}
+                                    <p class="text-muted small mb-2">{{ item.detailed_instructions|truncatechars:150 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    <span class="criticality-badge bg-{{ item.criticality_class }} text-white me-2">
+                                        <i class="{{ item.criticality_icon }} me-1"></i>
+                                        {{ item.criticality_label }}
+                                    </span>
+                                    <span class="time-indicator bg-{{ item.time_class }} text-white">
+                                        <i class="bi bi-clock me-1"></i>
+                                        {{ item.time_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Item Details -->
+                            <div class="row g-2 mb-2">
+                                {% if item.required_tools %}
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">
+                                        <i class="bi bi-tools me-1"></i>
+                                        Herramientas Requeridas
+                                    </small>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        {% for tool in item.required_tools %}
+                                        <span class="badge bg-secondary">{{ tool }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if item.safety_notes %}
+                                <div class="col-sm-6">
+                                    <small class="text-muted d-block">
+                                        <i class="bi bi-shield-exclamation me-1"></i>
+                                        Notas de Seguridad
+                                    </small>
+                                    <small class="text-warning">{{ item.safety_notes|truncatechars:50 }}</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" 
+                                            class="btn btn-outline-info notes-btn" 
+                                            data-item-id="{{ item.checklist_item_id }}">
+                                        <i class="bi bi-chat-text me-1"></i>
+                                        Notas
+                                    </button>
+                                    {% if item.reference_document %}
+                                    <button type="button" class="btn btn-outline-secondary">
+                                        <i class="bi bi-file-text me-1"></i>
+                                        Referencia
+                                    </button>
+                                    {% endif %}
+                                    {% if item.is_critical %}
+                                    <button type="button" class="btn btn-outline-warning">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Verificar
+                                    </button>
+                                    {% endif %}
+                                </div>
+                                
+                                <small class="text-muted">
+                                    <i class="bi bi-hash me-1"></i>
+                                    ID: {{ item.checklist_item_id }}
+                                </small>
+                            </div>
+                            
+                            <!-- Notes Section (Hidden by default) -->
+                            <div class="item-notes" id="notes_{{ item.checklist_item_id }}">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <strong>
+                                        <i class="bi bi-chat-text me-1"></i>
+                                        Notas del Técnico
+                                    </strong>
+                                    <button type="button" class="btn-close" aria-label="Cerrar"></button>
+                                </div>
+                                <textarea class="form-control" 
+                                          rows="3" 
+                                          placeholder="Agregue notas sobre este item..."
+                                          id="notes_text_{{ item.checklist_item_id }}"></textarea>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-primary save-notes-btn" data-item-id="{{ item.checklist_item_id }}">
+                                        <i class="bi bi-save me-1"></i>
+                                        Guardar Notas
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <!-- Validation Message -->
+            <div class="validation-message" id="validationMessage">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <span id="validationText">Debe completar todos los items críticos antes de continuar.</span>
+            </div>
+            
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="bi bi-list-check text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No hay items en el checklist</h4>
+                <p class="text-muted">
+                    Este servicio no tiene items de checklist configurados.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Completion Actions -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Acciones de Completación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-success" id="completeChecklistBtn" disabled>
+                            <i class="bi bi-check-lg me-1"></i>
+                            Completar Checklist
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="saveProgressBtn">
+                            <i class="bi bi-save me-1"></i>
+                            Guardar Progreso
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="printChecklistBtn">
+                            <i class="bi bi-printer me-1"></i>
+                            Imprimir Checklist
+                        </button>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Time Tracking -->
+                    <div class="text-center">
+                        <h6 class="text-muted mb-2">Tiempo Transcurrido</h6>
+                        <div class="h4 text-primary" id="elapsedTime">00:00:00</div>
+                        <div class="btn-group btn-group-sm w-100" role="group">
+                            <button type="button" class="btn btn-outline-success" id="startTimerBtn">
+                                <i class="bi bi-play"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" id="pauseTimerBtn">
+                                <i class="bi bi-pause"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" id="resetTimerBtn">
+                                <i class="bi bi-stop"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Critical Items Summary -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Items Críticos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="criticalItemsList">
+                        {% for item in checklist_items %}
+                        {% if item.is_critical %}
+                        <div class="d-flex justify-content-between align-items-center mb-2 critical-item-summary" data-item-id="{{ item.checklist_item_id }}">
+                            <div class="flex-grow-1">
+                                <small class="fw-bold">{{ item.description|truncatechars:30 }}</small>
+                            </div>
+                            <div>
+                                <i class="bi bi-circle text-danger critical-status" id="critical_status_{{ item.checklist_item_id }}"></i>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    
+                    {% if not checklist_items or not checklist_items|length %}
+                    <div class="text-center text-muted">
+                        <i class="bi bi-check-circle fs-1"></i>
+                        <p class="mt-2 mb-0">No hay items críticos</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Service Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Información del Servicio
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <small class="text-muted d-block">Código de Servicio</small>
+                            <strong>{{ flat_rate.service_code }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Tiempo Estándar</small>
+                            <span class="badge bg-info">{{ flat_rate.standard_hours }}h</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Dificultad</small>
+                            <span class="badge bg-warning">{{ flat_rate.difficulty_level }}/5</span>
+                        </div>
+                        {% if wo_service %}
+                        <div class="col-12 mt-3">
+                            <small class="text-muted d-block">Orden de Trabajo</small>
+                            <a href="{% url 'frontend:workorder_timeline' wo_service.wo.wo_id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye me-1"></i>
+                                Ver WO-{{ wo_service.wo.wo_number }}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Error State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">Servicio No Encontrado</h4>
+                <p class="text-muted">
+                    El servicio solicitado no existe o no está disponible.
+                </p>
+                <a href="{% url 'frontend:flat_rate_calculator' %}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Volver a Calculadora
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let completedCount = 0;
+    let totalItems = {{ checklist_stats.total_items }};
+    let criticalItems = {{ checklist_stats.critical_items }};
+    let completedCritical = 0;
+    let timerInterval;
+    let startTime;
+    let elapsedSeconds = 0;
+    
+    // Elements
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const completionPercentage = document.getElementById('completionPercentage');
+    const completedItemsDisplay = document.getElementById('completedItems');
+    const completeChecklistBtn = document.getElementById('completeChecklistBtn');
+    const validationMessage = document.getElementById('validationMessage');
+    const elapsedTimeDisplay = document.getElementById('elapsedTime');
+    
+    // Checkbox change handler
+    document.querySelectorAll('.item-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const itemCard = this.closest('.checklist-item');
+            const isCritical = this.dataset.critical === 'true';
+            const itemId = itemCard.dataset.itemId;
+            
+            if (this.checked) {
+                completedCount++;
+                itemCard.classList.add('completed');
+                
+                if (isCritical) {
+                    completedCritical++;
+                    const criticalStatus = document.getElementById(`critical_status_${itemId}`);
+                    if (criticalStatus) {
+                        criticalStatus.className = 'bi bi-check-circle text-success critical-status';
+                    }
+                }
+            } else {
+                completedCount--;
+                itemCard.classList.remove('completed');
+                
+                if (isCritical) {
+                    completedCritical--;
+                    const criticalStatus = document.getElementById(`critical_status_${itemId}`);
+                    if (criticalStatus) {
+                        criticalStatus.className = 'bi bi-circle text-danger critical-status';
+                    }
+                }
+            }
+            
+            updateProgress();
+            validateCompletion();
+        });
+    });
+    
+    // Update progress function
+    function updateProgress() {
+        const percentage = totalItems > 0 ? (completedCount / totalItems) * 100 : 0;
+        
+        progressBar.style.width = percentage + '%';
+        progressText.textContent = `${completedCount} / ${totalItems}`;
+        completionPercentage.textContent = Math.round(percentage);
+        completedItemsDisplay.textContent = completedCount;
+        
+        // Update progress circle
+        const progressCircle = document.querySelector('.progress-circle');
+        const degrees = (percentage / 100) * 360;
+        progressCircle.style.setProperty('--progress', degrees + 'deg');
+    }
+    
+    // Validate completion function
+    function validateCompletion() {
+        const allCriticalCompleted = completedCritical >= criticalItems;
+        const allItemsCompleted = completedCount >= totalItems;
+        
+        if (allCriticalCompleted && allItemsCompleted) {
+            completeChecklistBtn.disabled = false;
+            completeChecklistBtn.className = 'btn btn-success';
+            validationMessage.classList.remove('show');
+        } else if (!allCriticalCompleted) {
+            completeChecklistBtn.disabled = true;
+            completeChecklistBtn.className = 'btn btn-outline-success';
+            validationMessage.classList.add('show');
+            document.getElementById('validationText').textContent = 
+                `Debe completar todos los items críticos (${completedCritical}/${criticalItems}) antes de continuar.`;
+        } else {
+            completeChecklistBtn.disabled = true;
+            completeChecklistBtn.className = 'btn btn-outline-success';
+            validationMessage.classList.add('show');
+            document.getElementById('validationText').textContent = 
+                `Debe completar todos los items (${completedCount}/${totalItems}) para finalizar.`;
+        }
+    }
+    
+    // Bulk actions
+    document.getElementById('checkAllBtn').addEventListener('click', function() {
+        document.querySelectorAll('.item-checkbox:not(:checked)').forEach(checkbox => {
+            checkbox.click();
+        });
+    });
+    
+    document.getElementById('uncheckAllBtn').addEventListener('click', function() {
+        document.querySelectorAll('.item-checkbox:checked').forEach(checkbox => {
+            checkbox.click();
+        });
+    });
+    
+    // Notes functionality
+    document.querySelectorAll('.notes-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            const notesSection = document.getElementById(`notes_${itemId}`);
+            notesSection.classList.toggle('show');
+        });
+    });
+    
+    // Close notes
+    document.querySelectorAll('.item-notes .btn-close').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.closest('.item-notes').classList.remove('show');
+        });
+    });
+    
+    // Save notes
+    document.querySelectorAll('.save-notes-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const itemId = this.dataset.itemId;
+            const notesText = document.getElementById(`notes_text_${itemId}`).value;
+            
+            // In a real implementation, this would save to the backend
+            console.log(`Saving notes for item ${itemId}:`, notesText);
+            
+            // Show success feedback
+            this.innerHTML = '<i class=\"bi bi-check me-1\"></i>Guardado';
+            this.className = 'btn btn-sm btn-success save-notes-btn';
+            
+            setTimeout(() => {
+                this.innerHTML = '<i class=\"bi bi-save me-1\"></i>Guardar Notas';
+                this.className = 'btn btn-sm btn-primary save-notes-btn';
+            }, 2000);
+        });
+    });
+    
+    // Timer functionality
+    function updateTimer() {
+        const hours = Math.floor(elapsedSeconds / 3600);
+        const minutes = Math.floor((elapsedSeconds % 3600) / 60);
+        const seconds = elapsedSeconds % 60;
+        
+        elapsedTimeDisplay.textContent = 
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    document.getElementById('startTimerBtn').addEventListener('click', function() {
+        if (!timerInterval) {
+            startTime = Date.now() - (elapsedSeconds * 1000);
+            timerInterval = setInterval(() => {
+                elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+                updateTimer();
+            }, 1000);
+        }
+    });
+    
+    document.getElementById('pauseTimerBtn').addEventListener('click', function() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    });
+    
+    document.getElementById('resetTimerBtn').addEventListener('click', function() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        elapsedSeconds = 0;
+        updateTimer();
+    });
+    
+    // Complete checklist
+    completeChecklistBtn.addEventListener('click', function() {
+        if (completedCount >= totalItems && completedCritical >= criticalItems) {
+            // In a real implementation, this would submit to the backend
+            alert(`Checklist completado exitosamente!\\nTiempo total: ${elapsedTimeDisplay.textContent}\\nItems completados: ${completedCount}/${totalItems}`);
+        }
+    });
+    
+    // Save progress
+    document.getElementById('saveProgressBtn').addEventListener('click', function() {
+        // In a real implementation, this would save progress to the backend
+        const progress = {
+            completed_items: Array.from(document.querySelectorAll('.item-checkbox:checked')).map(cb => cb.closest('.checklist-item').dataset.itemId),
+            elapsed_time: elapsedSeconds,
+            notes: {}
+        };
+        
+        // Collect notes
+        document.querySelectorAll('.item-notes textarea').forEach(textarea => {
+            const itemId = textarea.id.replace('notes_text_', '');
+            if (textarea.value.trim()) {
+                progress.notes[itemId] = textarea.value.trim();
+            }
+        });
+        
+        console.log('Saving progress:', progress);
+        
+        // Show success feedback
+        this.innerHTML = '<i class=\"bi bi-check me-1\"></i>Guardado';
+        this.className = 'btn btn-outline-success';
+        
+        setTimeout(() => {
+            this.innerHTML = '<i class=\"bi bi-save me-1\"></i>Guardar Progreso';
+            this.className = 'btn btn-outline-primary';
+        }, 2000);
+    });
+    
+    // Print checklist
+    document.getElementById('printChecklistBtn').addEventListener('click', function() {
+        window.print();
+    });
+    
+    // Show/hide notes toggle
+    document.getElementById('showNotesBtn').addEventListener('click', function() {
+        const allNotes = document.querySelectorAll('.item-notes');
+        const isShowing = Array.from(allNotes).some(note => note.classList.contains('show'));
+        
+        allNotes.forEach(note => {
+            if (isShowing) {
+                note.classList.remove('show');
+            } else {
+                note.classList.add('show');
+            }
+        });
+        
+        this.innerHTML = isShowing ? 
+            '<i class=\"bi bi-chat-text me-1\"></i>Mostrar Notas' : 
+            '<i class=\"bi bi-chat-text-fill me-1\"></i>Ocultar Notas';
+    });
+    
+    // Initialize
+    updateProgress();
+    validateCompletion();
+    updateTimer();
+});
+</script>
+{% endblock %}

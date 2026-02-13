@@ -1,0 +1,89 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Crear Orden de Trabajo - MovIAx{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/workorder-wizard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-plus-circle me-2 text-primary"></i>
+                        Crear Orden de Trabajo
+                    </h2>
+                    <p class="text-muted mb-0">Asistente paso a paso para crear una nueva orden de trabajo</p>
+                </div>
+                <div>
+                    <a href="{% url 'frontend:workorder_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver a Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wizard Progress -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="wizard-progress">
+                        {% for step in steps %}
+                            <div class="wizard-step {% if step.number == current_step %}active{% elif step.number < current_step %}completed{% endif %}">
+                                <div class="step-number">
+                                    {% if step.number < current_step %}
+                                        <i class="bi bi-check"></i>
+                                    {% else %}
+                                        {{ step.number }}
+                                    {% endif %}
+                                </div>
+                                <div class="step-content">
+                                    <div class="step-title">{{ step.title }}</div>
+                                    <div class="step-icon">
+                                        <i class="{{ step.icon }}"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if not forloop.last %}
+                                <div class="wizard-connector {% if step.number < current_step %}completed{% endif %}"></div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wizard Content -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" id="wizardForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="current_step" value="{{ current_step }}">
+                        
+                        {% if current_step == 1 %}
+                            {% include 'frontend/workorders/wizard_steps/step1_client_equipment.html' %}
+                        {% elif current_step == 2 %}
+                            {% include 'frontend/workorders/wizard_steps/step2_services.html' %}
+                        {% elif current_step == 3 %}
+                            {% include 'frontend/workorders/wizard_steps/step3_scheduling.html' %}
+                        {% elif current_step == 4 %}
+                            {% include 'frontend/workorders/wizard_steps/step4_confirmation.html' %}
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,577 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Búsqueda de Catálogo OEM - MovIAx{% endblock %}
+
+{% block body_class %}oem-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .catalog-header {
+        background: linear-gradient(135deg, #6f42c1 0%, #e83e8c 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .catalog-item-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .catalog-item-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-color: #6f42c1;
+    }
+    .part-number-badge {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        padding: 0.5rem 1rem;
+        border-radius: 0.25rem;
+        font-size: 1.1rem;
+    }
+    .availability-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .price-display {
+        background: #f8f9fa;
+        border-radius: 0.25rem;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .compatibility-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin: 0.5rem 0;
+    }
+    .compatibility-tag {
+        background: #e9ecef;
+        color: #495057;
+        padding: 0.2rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.7rem;
+    }
+    .search-filters {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .advanced-filters {
+        display: none;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+    .advanced-filters.show {
+        display: block;
+    }
+    .discount-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #dc3545;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="catalog-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 mb-1">
+                    <i class="bi bi-search me-2"></i>
+                    Búsqueda de Catálogo OEM
+                </h1>
+                <p class="mb-0 opacity-75">
+                    Búsqueda avanzada de partes OEM con filtros VIN y compatibilidad
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-light">
+                        <i class="bi bi-download me-1"></i>
+                        Exportar
+                    </button>
+                    <button class="btn btn-outline-light">
+                        <i class="bi bi-bookmark me-1"></i>
+                        Favoritos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="search-filters">
+        <form method="get" id="searchForm">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">
+                        <i class="bi bi-search me-1"></i>
+                        Buscar Parte
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="search" 
+                           name="search" 
+                           value="{{ filters.search }}"
+                           placeholder="Número de parte, descripción...">
+                </div>
+                <div class="col-md-2">
+                    <label for="oem_code" class="form-label">
+                        <i class="bi bi-building me-1"></i>
+                        Marca OEM
+                    </label>
+                    <select class="form-select" id="oem_code" name="oem_code">
+                        <option value="">Todas las Marcas</option>
+                        {% for brand in oem_brands %}
+                        <option value="{{ brand.oem_code }}" 
+                                {% if brand.oem_code == filters.oem_code %}selected{% endif %}>
+                            {{ brand.name }} ({{ brand.oem_code }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="group_code" class="form-label">
+                        <i class="bi bi-collection me-1"></i>
+                        Grupo
+                    </label>
+                    <select class="form-select" id="group_code" name="group_code">
+                        <option value="">Todos los Grupos</option>
+                        {% for group in taxonomy_groups %}
+                        <option value="{{ group.group_code }}" 
+                                {% if group.group_code == filters.group_code %}selected{% endif %}>
+                            {{ group.group_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="is_discontinued" class="form-label">Estado</label>
+                    <select class="form-select" id="is_discontinued" name="is_discontinued">
+                        <option value="">Todos</option>
+                        <option value="false" {% if filters.is_discontinued == 'false' %}selected{% endif %}>Activos</option>
+                        <option value="true" {% if filters.is_discontinued == 'true' %}selected{% endif %}>Descontinuados</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="btn-group w-100" role="group">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="toggleAdvanced">
+                            <i class="bi bi-funnel"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Advanced Filters -->
+            <div class="advanced-filters" id="advancedFilters">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="vin_pattern" class="form-label">
+                            <i class="bi bi-card-text me-1"></i>
+                            Patrón VIN
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="vin_pattern" 
+                               name="vin_pattern" 
+                               value="{{ filters.vin_pattern }}"
+                               placeholder="Ej: 1HGBH41JXMN109186">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="model_code" class="form-label">
+                            <i class="bi bi-car-front me-1"></i>
+                            Código de Modelo
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="model_code" 
+                               name="model_code" 
+                               value="{{ filters.model_code }}"
+                               placeholder="Ej: CIVIC, ACCORD">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="engine_code" class="form-label">
+                            <i class="bi bi-gear me-1"></i>
+                            Código de Motor
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="engine_code" 
+                               name="engine_code" 
+                               value="{{ filters.engine_code }}"
+                               placeholder="Ej: K20A, B16A">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-secondary w-100" id="clearFilters">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Results -->
+    <div class="row">
+        <div class="col-12">
+            {% if catalog_items %}
+            <!-- Results Header -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-ul me-2"></i>
+                    {{ pagination.count }} resultado{{ pagination.count|pluralize }} encontrado{{ pagination.count|pluralize }}
+                </h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary active" data-view="grid">
+                        <i class="bi bi-grid"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-view="list">
+                        <i class="bi bi-list"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Catalog Items Grid -->
+            <div class="row" id="catalogGrid">
+                {% for item in catalog_items %}
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="catalog-item-card h-100">
+                        <div class="card-header bg-light">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="part-number-badge bg-{{ item.part_type_class }} text-white">
+                                        {{ item.part_number }}
+                                    </div>
+                                    <small class="text-muted d-block mt-1">
+                                        {{ item.oem_code.name }} ({{ item.oem_code.oem_code }})
+                                    </small>
+                                </div>
+                                <div>
+                                    <span class="availability-indicator bg-{{ item.availability_class }} text-white">
+                                        {{ item.availability_label }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <!-- Description -->
+                            <h6 class="card-title">{{ item.description_es|default:item.description_en|default:"Sin descripción"|truncatechars:60 }}</h6>
+                            
+                            <!-- Pricing -->
+                            {% if item.list_price or item.net_price %}
+                            <div class="price-display position-relative">
+                                {% if item.discount_percent > 0 %}
+                                <div class="discount-badge">-{{ item.discount_percent|floatformat:0 }}%</div>
+                                {% endif %}
+                                <div class="row">
+                                    {% if item.list_price %}
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Precio Lista</small>
+                                        <strong class="{% if item.net_price %}text-decoration-line-through text-muted{% endif %}">
+                                            {{ item.formatted_list_price }}
+                                        </strong>
+                                    </div>
+                                    {% endif %}
+                                    {% if item.net_price %}
+                                    <div class="col-6">
+                                        <small class="text-muted d-block">Precio Neto</small>
+                                        <strong class="text-success">{{ item.formatted_net_price }}</strong>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Specifications -->
+                            <div class="row g-2 mb-3">
+                                {% if item.weight_kg %}
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Peso</small>
+                                    <span>{{ item.weight_kg }} kg</span>
+                                </div>
+                                {% endif %}
+                                {% if item.dimensions %}
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Dimensiones</small>
+                                    <span>{{ item.dimensions }}</span>
+                                </div>
+                                {% endif %}
+                                {% if item.material %}
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Material</small>
+                                    <span>{{ item.material }}</span>
+                                </div>
+                                {% endif %}
+                                {% if item.part_number_type %}
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Tipo</small>
+                                    <span class="badge bg-{{ item.part_type_class }}">{{ item.part_type_label }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Compatibility Information -->
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-1">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Compatibilidad
+                                </small>
+                                <div class="compatibility-summary small">
+                                    {{ item.compatibility_summary }}
+                                </div>
+                            </div>
+                            
+                            <!-- Group Information -->
+                            {% if item.group_code %}
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-1">Grupo</small>
+                                <span class="badge bg-info">{{ item.group_code.group_name }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-footer bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    {{ item.updated_at|date:"d/m/Y"|default:"N/A" }}
+                                </small>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary" title="Ver detalles">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success" title="Buscar equivalencias">
+                                        <i class="bi bi-arrow-left-right"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" title="Agregar a cotización">
+                                        <i class="bi bi-cart-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.total_pages > 1 %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <nav aria-label="Paginación de catálogo OEM">
+                        <ul class="pagination justify-content-center">
+                            {% if pagination.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'-1' }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in pagination.page_range %}
+                            <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'1' }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.total_pages }}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    
+                    <div class="text-center text-muted">
+                        Mostrando {{ pagination.start_index }} - {{ pagination.end_index }} de {{ pagination.count }} resultados
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No se encontraron partes</h4>
+                <p class="text-muted">
+                    {% if filters.search or filters.oem_code or filters.group_code %}
+                    No hay partes que coincidan con los filtros aplicados.
+                    <br>
+                    <button type="button" class="btn btn-outline-primary mt-2" id="clearAllFilters">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Limpiar Filtros
+                    </button>
+                    {% else %}
+                    Utilice los filtros de búsqueda para encontrar partes OEM.
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle advanced filters
+    const toggleAdvanced = document.getElementById('toggleAdvanced');
+    const advancedFilters = document.getElementById('advancedFilters');
+    
+    toggleAdvanced.addEventListener('click', function() {
+        advancedFilters.classList.toggle('show');
+        const icon = this.querySelector('i');
+        if (advancedFilters.classList.contains('show')) {
+            icon.className = 'bi bi-funnel-fill';
+            this.classList.add('active');
+        } else {
+            icon.className = 'bi bi-funnel';
+            this.classList.remove('active');
+        }
+    });
+    
+    // Clear filters
+    const clearFilters = document.getElementById('clearFilters');
+    const clearAllFilters = document.getElementById('clearAllFilters');
+    
+    function clearAllFormFilters() {
+        const form = document.getElementById('searchForm');
+        const inputs = form.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (input.type === 'text') {
+                input.value = '';
+            } else if (input.type === 'select-one') {
+                input.selectedIndex = 0;
+            }
+        });
+        form.submit();
+    }
+    
+    if (clearFilters) {
+        clearFilters.addEventListener('click', clearAllFormFilters);
+    }
+    
+    if (clearAllFilters) {
+        clearAllFilters.addEventListener('click', clearAllFormFilters);
+    }
+    
+    // Auto-submit form on filter change
+    const filterSelects = document.querySelectorAll('#oem_code, #group_code, #is_discontinued');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Search input debounce
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            this.form.submit();
+        }, 800);
+    });
+    
+    // View toggle (grid/list)
+    const viewButtons = document.querySelectorAll('[data-view]');
+    const catalogGrid = document.getElementById('catalogGrid');
+    
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            viewButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            const view = this.dataset.view;
+            if (view === 'list') {
+                catalogGrid.className = 'row';
+                catalogGrid.querySelectorAll('.col-lg-6').forEach(col => {
+                    col.className = 'col-12 mb-2';
+                });
+            } else {
+                catalogGrid.className = 'row';
+                catalogGrid.querySelectorAll('.col-12').forEach(col => {
+                    col.className = 'col-lg-6 col-xl-4 mb-4';
+                });
+            }
+        });
+    });
+    
+    // Card hover effects
+    document.querySelectorAll('.catalog-item-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.borderColor = '#6f42c1';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.borderColor = '#e0e0e0';
+        });
+    });
+    
+    // Action button handlers
+    document.querySelectorAll('.btn-outline-success').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Find equivalences for this part
+            const card = this.closest('.catalog-item-card');
+            const partNumber = card.querySelector('.part-number-badge').textContent.trim();
+            const oemCode = card.querySelector('.card-header small').textContent.match(/\(([^)]+)\)/)[1];
+            
+            // Redirect to equivalence search
+            window.location.href = `/oem/equivalences/?oem_code=${oemCode}&search=${partNumber}`;
+        });
+    });
+    
+    // Show advanced filters if any advanced filter has value
+    const advancedInputs = document.querySelectorAll('#vin_pattern, #model_code, #engine_code');
+    const hasAdvancedValues = Array.from(advancedInputs).some(input => input.value.trim() !== '');
+    
+    if (hasAdvancedValues) {
+        advancedFilters.classList.add('show');
+        toggleAdvanced.classList.add('active');
+        toggleAdvanced.querySelector('i').className = 'bi bi-funnel-fill';
+    }
+});
+</script>
+{% endblock %}

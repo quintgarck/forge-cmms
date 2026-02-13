@@ -1,0 +1,25 @@
+{% load navigation_tags %}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb bg-light p-3 rounded">
+        {% for breadcrumb in breadcrumbs %}
+            {% if breadcrumb.url %}
+                <li class="breadcrumb-item">
+                    <a href="{{ breadcrumb.url }}" class="text-decoration-none">
+                        {% if breadcrumb.icon %}
+                            <i class="bi bi-{{ breadcrumb.icon }}"></i>
+                        {% endif %}
+                        {{ breadcrumb.name }}
+                    </a>
+                </li>
+            {% else %}
+                <li class="breadcrumb-item active" aria-current="page">
+                    {% if breadcrumb.icon %}
+                        <i class="bi bi-{{ breadcrumb.icon }}"></i>
+                    {% endif %}
+                    {{ breadcrumb.name }}
+                </li>
+            {% endif %}
+        {% endfor %}
+    </ol>
+</nav>

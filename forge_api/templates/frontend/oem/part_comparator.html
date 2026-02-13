@@ -1,0 +1,584 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Comparador de Partes OEM vs Aftermarket - MovIAx{% endblock %}
+
+{% block body_class %}oem-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comparator-header {
+        background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .search-section {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 2px dashed #dee2e6;
+    }
+    .comparison-result {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+    .oem-part-section {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 2rem;
+    }
+    .equivalences-section {
+        padding: 2rem;
+    }
+    .equivalence-item {
+        border: 1px solid #e0e0e0;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    .equivalence-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-color: #20c997;
+    }
+    .vs-divider {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #20c997;
+        font-weight: bold;
+        margin: 1rem 0;
+    }
+    .confidence-visual {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.1rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .confidence-visual::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: conic-gradient(
+            var(--confidence-color) 0deg,
+            var(--confidence-color) calc(var(--confidence-percent) * 3.6deg),
+            #e9ecef calc(var(--confidence-percent) * 3.6deg)
+        );
+        border-radius: 50%;
+    }
+    .confidence-visual .confidence-text {
+        position: relative;
+        z-index: 1;
+        background: white;
+        color: #333;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+    }
+    .summary-stats {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin: 2rem 0;
+    }
+    .part-detail-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .no-results-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    .search-form {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="comparator-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 mb-1">
+                    <i class="bi bi-shuffle me-2"></i>
+                    Comparador de Partes OEM vs Aftermarket
+                </h1>
+                <p class="mb-0 opacity-75">
+                    Compare partes OEM con equivalencias aftermarket y analice opciones
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-light">
+                        <i class="bi bi-bookmark me-1"></i>
+                        Favoritos
+                    </button>
+                    <button class="btn btn-outline-light">
+                        <i class="bi bi-download me-1"></i>
+                        Exportar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-section">
+        <div class="search-form">
+            <form method="get">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="oem_code" class="form-label">
+                            <i class="bi bi-building me-1"></i>
+                            Marca OEM
+                        </label>
+                        <select class="form-select" id="oem_code" name="oem_code" required>
+                            <option value="">Seleccione una marca...</option>
+                            {% for brand in oem_brands %}
+                            <option value="{{ brand.oem_code }}" 
+                                    {% if brand.oem_code == search_form.oem_code %}selected{% endif %}>
+                                {{ brand.name }} ({{ brand.oem_code }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="oem_part" class="form-label">
+                            <i class="bi bi-search me-1"></i>
+                            Número de Parte OEM
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="oem_part" 
+                               name="oem_part" 
+                               value="{{ search_form.oem_part }}"
+                               placeholder="Ej: 12345-ABC-123"
+                               required>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi bi-shuffle me-2"></i>
+                            Comparar Partes
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        {% if not search_performed %}
+        <div class="text-center mt-4">
+            <i class="bi bi-info-circle text-info fs-1"></i>
+            <h5 class="text-muted mt-2">Ingrese los datos de la parte OEM para comenzar la comparación</h5>
+            <p class="text-muted">
+                Seleccione la marca OEM e ingrese el número de parte para encontrar equivalencias aftermarket
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Comparison Results -->
+    {% if search_performed %}
+        {% if comparison_data %}
+        <div class="comparison-result">
+            <!-- OEM Part Section -->
+            <div class="oem-part-section">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-1">
+                            <i class="bi bi-gear-fill me-2"></i>
+                            Parte OEM Original
+                        </h4>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <h5 class="mb-0">{{ search_form.oem_part }}</h5>
+                                <p class="mb-0 opacity-75">
+                                    {% for brand in oem_brands %}
+                                        {% if brand.oem_code == search_form.oem_code %}
+                                            {{ brand.name }} ({{ brand.oem_code }})
+                                        {% endif %}
+                                    {% endfor %}
+                                </p>
+                            </div>
+                            {% if comparison_data.oem_part %}
+                            <div class="col-md-6">
+                                <div class="row g-2">
+                                    {% if comparison_data.oem_part.list_price %}
+                                    <div class="col-6">
+                                        <small class="opacity-75 d-block">Precio Lista</small>
+                                        <strong>{{ comparison_data.oem_part.currency_code }} {{ comparison_data.oem_part.list_price }}</strong>
+                                    </div>
+                                    {% endif %}
+                                    {% if comparison_data.oem_part.net_price %}
+                                    <div class="col-6">
+                                        <small class="opacity-75 d-block">Precio Neto</small>
+                                        <strong>{{ comparison_data.oem_part.currency_code }} {{ comparison_data.oem_part.net_price }}</strong>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% if comparison_data.oem_part.description_es or comparison_data.oem_part.description_en %}
+                        <div class="mt-3">
+                            <p class="mb-0 opacity-90">
+                                {{ comparison_data.oem_part.description_es|default:comparison_data.oem_part.description_en }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="d-flex justify-content-end align-items-center">
+                            <div class="me-3">
+                                <div class="h2 mb-0">{{ comparison_data.summary.total_equivalences }}</div>
+                                <small class="opacity-75">Equivalencias</small>
+                            </div>
+                            <div>
+                                <div class="h2 mb-0 text-warning">{{ comparison_data.summary.avg_confidence|floatformat:0 }}%</div>
+                                <small class="opacity-75">Confianza Prom.</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VS Divider -->
+            <div class="vs-divider">
+                <span class="bg-white px-3 py-1 rounded-pill border">VS</span>
+            </div>
+
+            <!-- Equivalences Section -->
+            <div class="equivalences-section">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0">
+                        <i class="bi bi-arrow-left-right me-2"></i>
+                        Equivalencias Aftermarket
+                    </h4>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary active" data-sort="confidence">
+                            Por Confianza
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" data-sort="type">
+                            Por Tipo
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" data-sort="verified">
+                            Verificadas
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Statistics -->
+                <div class="summary-stats">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="h4 mb-0 text-success">{{ comparison_data.summary.direct_equivalences }}</div>
+                            <small class="text-muted">Directas</small>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="h4 mb-0 text-info">{{ comparison_data.summary.compatible_equivalences }}</div>
+                            <small class="text-muted">Compatibles</small>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="h4 mb-0 text-primary">{{ comparison_data.summary.upgrade_equivalences }}</div>
+                            <small class="text-muted">Mejoras</small>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="h4 mb-0 text-warning">{{ comparison_data.summary.verified_count }}</div>
+                            <small class="text-muted">Verificadas</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Equivalences List -->
+                {% if comparison_data.equivalences %}
+                <div class="row" id="equivalencesList">
+                    {% for equiv in comparison_data.equivalences %}
+                    <div class="col-lg-6 mb-4 equivalence-item-wrapper" 
+                         data-confidence="{{ equiv.confidence_score|default:0 }}"
+                         data-type="{{ equiv.equivalence_type }}"
+                         data-verified="{{ equiv.verified_by|yesno:'true,false' }}">
+                        <div class="equivalence-item h-100">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="me-3">
+                                            <span class="badge bg-{{ equiv.type_class }} fs-6 px-3 py-2">
+                                                <i class="{{ equiv.type_icon }} me-1"></i>
+                                                {{ equiv.type_label }}
+                                            </span>
+                                        </div>
+                                        {% if equiv.verified_by %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-shield-check me-1"></i>
+                                            Verificado
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <h5 class="mb-2">{{ equiv.aftermarket_sku|default:"Parte Genérica" }}</h5>
+                                    <p class="text-muted mb-2">Equivalencia {{ equiv.type_label|lower }} para {{ equiv.oem_part_number }}</p>
+                                    
+                                    {% if equiv.notes %}
+                                    <div class="mt-2">
+                                        <small class="text-muted d-block">Notas:</small>
+                                        <div class="small bg-light p-2 rounded">{{ equiv.notes|truncatechars:100 }}</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <div class="confidence-visual" 
+                                         style="--confidence-percent: {{ equiv.confidence_score|default:0 }}; --confidence-color: {% if equiv.confidence_score >= 90 %}#28a745{% elif equiv.confidence_score >= 75 %}#17a2b8{% elif equiv.confidence_score >= 50 %}#ffc107{% else %}#dc3545{% endif %};">
+                                        <div class="confidence-text">
+                                            {{ equiv.confidence_score|default:0 }}%
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">{{ equiv.confidence_label }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        {% if equiv.verified_by %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-person-check me-1"></i>
+                                            Verificado por {{ equiv.verified_by.name|default:equiv.verified_by.username }}
+                                            {% if equiv.verified_date %}el {{ equiv.verified_date|date:"d/m/Y" }}{% endif %}
+                                        </small>
+                                        {% else %}
+                                        <small class="text-warning">
+                                            <i class="bi bi-exclamation-triangle me-1"></i>
+                                            Sin verificar
+                                        </small>
+                                        {% endif %}
+                                        
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-primary" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success" title="Agregar a cotización">
+                                                <i class="bi bi-cart-plus"></i>
+                                            </button>
+                                            {% if not equiv.verified_by %}
+                                            <button type="button" class="btn btn-outline-warning" title="Verificar">
+                                                <i class="bi bi-shield-check"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="no-results-state">
+                    <i class="bi bi-search fs-1"></i>
+                    <h5 class="mt-3">No se encontraron equivalencias</h5>
+                    <p class="text-muted">
+                        No hay equivalencias aftermarket registradas para esta parte OEM.
+                        <br>
+                        <button class="btn btn-outline-primary mt-2">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Agregar Equivalencia
+                        </button>
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% elif no_results %}
+        <!-- No Results Found -->
+        <div class="comparison-result">
+            <div class="no-results-state">
+                <i class="bi bi-exclamation-triangle text-warning fs-1"></i>
+                <h4 class="mt-3">Parte OEM No Encontrada</h4>
+                <p class="text-muted">
+                    No se encontró información para la parte <strong>{{ search_form.oem_part }}</strong> 
+                    de la marca <strong>{{ search_form.oem_code }}</strong>.
+                    <br><br>
+                    Verifique que el número de parte y la marca sean correctos, o agregue esta parte al catálogo.
+                </p>
+                <div class="mt-3">
+                    <button class="btn btn-primary me-2">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Agregar al Catálogo
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="history.back()">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Intentar Otra Búsqueda
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {% elif comparison_error %}
+        <!-- Error State -->
+        <div class="comparison-result">
+            <div class="no-results-state">
+                <i class="bi bi-exclamation-circle text-danger fs-1"></i>
+                <h4 class="mt-3">Error en la Comparación</h4>
+                <p class="text-muted">
+                    Ocurrió un error al realizar la comparación. Por favor, inténtelo nuevamente.
+                    <br>
+                    Si el problema persiste, contacte al administrador del sistema.
+                </p>
+                <button class="btn btn-outline-primary mt-2" onclick="location.reload()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    Reintentar
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sort functionality
+    const sortButtons = document.querySelectorAll('[data-sort]');
+    const equivalencesList = document.getElementById('equivalencesList');
+    
+    sortButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            sortButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            const sortBy = this.dataset.sort;
+            sortEquivalences(sortBy);
+        });
+    });
+    
+    function sortEquivalences(sortBy) {
+        if (!equivalencesList) return;
+        
+        const items = Array.from(equivalencesList.querySelectorAll('.equivalence-item-wrapper'));
+        
+        items.sort((a, b) => {
+            switch (sortBy) {
+                case 'confidence':
+                    return parseInt(b.dataset.confidence) - parseInt(a.dataset.confidence);
+                case 'type':
+                    const typeOrder = { 'DIRECT': 1, 'COMPATIBLE': 2, 'UPGRADE': 3, 'DOWNGRADE': 4 };
+                    return (typeOrder[a.dataset.type] || 5) - (typeOrder[b.dataset.type] || 5);
+                case 'verified':
+                    return (b.dataset.verified === 'true' ? 1 : 0) - (a.dataset.verified === 'true' ? 1 : 0);
+                default:
+                    return 0;
+            }
+        });
+        
+        // Re-append sorted items
+        items.forEach(item => equivalencesList.appendChild(item));
+        
+        // Add animation
+        items.forEach((item, index) => {
+            item.style.animation = 'none';
+            setTimeout(() => {
+                item.style.animation = `fadeInUp 0.3s ease ${index * 0.1}s both`;
+            }, 10);
+        });
+    }
+    
+    // Confidence visual animations
+    document.querySelectorAll('.confidence-visual').forEach(visual => {
+        const percent = visual.style.getPropertyValue('--confidence-percent');
+        visual.style.setProperty('--confidence-percent', '0');
+        
+        setTimeout(() => {
+            visual.style.setProperty('--confidence-percent', percent);
+        }, 500);
+    });
+    
+    // Equivalence item hover effects
+    document.querySelectorAll('.equivalence-item').forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.borderColor = '#20c997';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.borderColor = '#e0e0e0';
+        });
+    });
+    
+    // Form validation
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const oemCode = document.getElementById('oem_code').value;
+            const oemPart = document.getElementById('oem_part').value.trim();
+            
+            if (!oemCode || !oemPart) {
+                e.preventDefault();
+                alert('Por favor, complete todos los campos requeridos.');
+                return false;
+            }
+        });
+    }
+    
+    // Auto-focus on part number input when brand is selected
+    const oemCodeSelect = document.getElementById('oem_code');
+    const oemPartInput = document.getElementById('oem_part');
+    
+    if (oemCodeSelect && oemPartInput) {
+        oemCodeSelect.addEventListener('change', function() {
+            if (this.value) {
+                oemPartInput.focus();
+            }
+        });
+    }
+});
+
+// Add CSS animation keyframes
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

@@ -1,0 +1,1192 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Marcas OEM - MovIAx{% endblock %}
+
+{% block body_class %}oem-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --brand-primary: #2563EB;
+        --brand-primary-dark: #1E40AF;
+        --brand-accent: #06B6D4;
+        --brand-gradient: linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #06B6D4 100%);
+        --brand-gradient-hover: linear-gradient(135deg, #1D4ED8 0%, #6D28D9 50%, #0891B2 100%);
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --transition-fast: 0.15s ease;
+        --transition-normal: 0.3s ease;
+        --transition-slow: 0.5s ease;
+    }
+
+    [data-theme="dark"] {
+        --brand-bg-primary: #1E293B;
+        --brand-bg-secondary: #0F172A;
+        --brand-bg-tertiary: #334155;
+        --brand-text-primary: #F8FAFC;
+        --brand-text-secondary: #E2E8F0;
+        --brand-text-muted: #94A3B8;
+        --brand-border: #475569;
+        --brand-border-light: #64748B;
+        --brand-success: #10B981;
+        --brand-warning: #F59E0B;
+        --brand-danger: #EF4444;
+        --brand-info: #3B82F6;
+        --brand-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
+        --brand-shadow-hover: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        --brand-card-bg: #1E293B;
+        --brand-input-bg: #0F172A;
+        --brand-hover-bg: #334155;
+    }
+
+    [data-theme="light"] {
+        --brand-bg-primary: #FFFFFF;
+        --brand-bg-secondary: #EEF2F6;
+        --brand-bg-tertiary: #E2E8F0;
+        --brand-text-primary: #1E293B;
+        --brand-text-secondary: #475569;
+        --brand-text-muted: #64748B;
+        --brand-border: #CBD5E1;
+        --brand-border-light: #94A3B8;
+        --brand-success: #059669;
+        --brand-warning: #D97706;
+        --brand-danger: #DC2626;
+        --brand-info: #2563EB;
+        --brand-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        --brand-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --brand-card-bg: #FFFFFF;
+        --brand-input-bg: #FFFFFF;
+        --brand-hover-bg: #E2E8F0;
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        backdrop-filter: blur(8px);
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+
+    .loading-overlay.active {
+        display: flex;
+        opacity: 1;
+    }
+
+    [data-theme="dark"] .loading-overlay {
+        background: rgba(15, 23, 42, 0.95);
+    }
+
+    .loading-spinner {
+        text-align: center;
+    }
+
+    .loading-spinner .spinner-border {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-width: 0.25rem;
+    }
+
+    .loading-spinner p {
+        margin-top: 1rem;
+        font-size: 1rem;
+        color: var(--brand-primary);
+        font-weight: 500;
+    }
+
+    [data-theme="dark"] .loading-spinner p {
+        color: #60A5FA;
+    }
+
+    .brand-header {
+        background: var(--brand-bg-secondary);
+        color: var(--brand-text-primary);
+        border-radius: 0.75rem;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--brand-border);
+        box-shadow: var(--card-shadow);
+    }
+
+    .brand-header h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--brand-text-primary);
+    }
+
+    .brand-header p {
+        opacity: 0.8;
+        font-size: 0.9375rem;
+        color: var(--brand-text-secondary);
+    }
+
+    .brand-header .btn-light {
+        background: var(--brand-primary);
+        border: none;
+        color: white;
+        font-weight: 500;
+        padding: 0.625rem 1.25rem;
+        transition: all var(--transition-fast);
+    }
+
+    .brand-header .btn-light:hover {
+        background: var(--brand-primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        color: white;
+    }
+
+    .brand-header .btn-outline-light {
+        background: transparent;
+        border: 1px solid var(--brand-border);
+        color: var(--brand-text-secondary);
+        font-weight: 500;
+        transition: all var(--transition-fast);
+    }
+
+    .brand-header .btn-outline-light:hover {
+        background: var(--brand-hover-bg);
+        border-color: var(--brand-border-light);
+        color: var(--brand-text-primary);
+    }
+
+    .header-stats {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .header-stat {
+        min-width: 60px;
+    }
+
+    .header-stat .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .header-stat .stat-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.7;
+    }
+
+    .header-stat-divider {
+        width: 1px;
+        height: 32px;
+        background: var(--brand-border);
+    }
+
+    .brand-header .btn {
+        border-radius: 0.375rem;
+    }
+
+    .brand-header .btn-primary {
+        background: var(--brand-primary);
+        border: none;
+    }
+
+    .brand-header .btn-primary:hover {
+        background: var(--brand-primary-dark);
+    }
+
+    .brand-header .dropdown-menu {
+        background: var(--brand-card-bg);
+        border: 1px solid var(--brand-border);
+        box-shadow: var(--brand-shadow-hover);
+    }
+
+    .brand-header .dropdown-item {
+        color: var(--brand-text-primary);
+        padding: 0.5rem 1rem;
+    }
+
+    .brand-header .dropdown-item:hover {
+        background: var(--brand-hover-bg);
+    }
+
+    .brand-header .dropdown-menu {
+        background: white;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        border-radius: 0.75rem;
+        padding: 0.5rem;
+        min-width: 180px;
+    }
+
+    [data-theme="dark"] .brand-header .dropdown-menu {
+        background: #1E293B;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .brand-header .dropdown-item {
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        transition: all var(--transition-fast);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .brand-header .dropdown-item:hover {
+        background: var(--brand-hover-bg);
+    }
+
+    .search-filters {
+        background: var(--brand-bg-secondary);
+        border-radius: 0.75rem;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--brand-border);
+        box-shadow: var(--card-shadow);
+    }
+
+    .search-filters:hover {
+        box-shadow: var(--brand-shadow-hover);
+    }
+
+    .search-filters .form-control,
+    .search-filters .form-select {
+        background: var(--brand-input-bg);
+        border: 1px solid var(--brand-border);
+        border-radius: 0.625rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.9375rem;
+        transition: all var(--transition-fast);
+        color: var(--brand-text-primary);
+    }
+
+    .search-filters .form-control:focus,
+    .search-filters .form-select:focus {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        background: var(--brand-input-bg);
+    }
+
+    [data-theme="dark"] .search-filters .form-control:focus,
+    [data-theme="dark"] .search-filters .form-select:focus {
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25);
+    }
+
+    .search-filters .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--brand-text-secondary);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .search-filters .btn-primary {
+        background: var(--brand-primary);
+        border: none;
+        border-radius: 0.625rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all var(--transition-fast);
+    }
+
+    .search-filters .btn-primary:hover {
+        background: var(--brand-primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .search-filters .btn-outline-secondary {
+        border: 1px solid var(--brand-border);
+        border-radius: 0.625rem;
+        color: var(--brand-text-secondary);
+        transition: all var(--transition-fast);
+    }
+
+    .search-filters .btn-outline-secondary:hover {
+        background: var(--brand-hover-bg);
+        border-color: var(--brand-border-light);
+        color: var(--brand-text-primary);
+        transform: translateY(-2px);
+    }
+
+    .brand-list-table {
+        font-size: 0.9375rem;
+    }
+
+    .brand-list-table thead th {
+        background: var(--brand-bg-tertiary);
+        border-bottom: 2px solid var(--brand-border);
+        color: var(--brand-text-primary);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        padding: 1rem;
+    }
+
+    .brand-list-table tbody td {
+        border-bottom: 1px solid var(--brand-border);
+        padding: 1rem;
+        vertical-align: middle;
+        color: var(--brand-text-primary);
+    }
+
+    .brand-list-table tbody tr {
+        transition: background-color var(--transition-fast);
+    }
+
+    .brand-list-table tbody tr:hover {
+        background-color: var(--brand-bg-tertiary);
+    }
+
+    .brand-list-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .brand-logo {
+        width: 48px;
+        height: 48px;
+        background: var(--brand-bg-tertiary);
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--brand-primary);
+        border: 1px solid var(--brand-border);
+        flex-shrink: 0;
+    }
+
+    .brand-list-table tbody tr:hover .brand-logo {
+        background: var(--brand-primary);
+        color: white;
+    }
+
+    .status-badge {
+        padding: 0.375rem 0.875rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .status-badge.active {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--brand-success);
+    }
+
+    .status-badge.inactive {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--brand-danger);
+    }
+
+    .status-badge.pending {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--brand-warning);
+    }
+
+    [data-theme="dark"] .status-badge.active {
+        background: rgba(16, 185, 129, 0.2);
+    }
+
+    [data-theme="dark"] .status-badge.inactive {
+        background: rgba(239, 68, 68, 0.2);
+    }
+
+    [data-theme="dark"] .status-badge.pending {
+        background: rgba(245, 158, 11, 0.2);
+    }
+
+    .support-score-ring {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+        transition: transform var(--transition-normal);
+    }
+
+    .support-score-ring.excellent {
+        background: var(--brand-success);
+    }
+
+    .support-score-ring.good {
+        background: var(--brand-info);
+    }
+
+    .support-score-ring.fair {
+        background: var(--brand-warning);
+    }
+
+    .support-score-ring.poor {
+        background: var(--brand-danger);
+    }
+
+    .brand-card:hover .support-score-ring {
+        transform: scale(1.1);
+    }
+
+    .support-score-ring.excellent {
+        background: linear-gradient(135deg, #10B981, #059669);
+    }
+
+    .support-score-ring.good {
+        background: linear-gradient(135deg, #3B82F6, #2563EB);
+    }
+
+    .support-score-ring.fair {
+        background: linear-gradient(135deg, #F59E0B, #D97706);
+    }
+
+    .support-score-ring.poor {
+        background: linear-gradient(135deg, #EF4444, #DC2626);
+    }
+
+    .support-features {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .support-features i {
+        font-size: 0.875rem;
+    }
+    }
+
+    .action-buttons .btn-edit {
+        color: var(--brand-primary);
+        background: rgba(37, 99, 235, 0.15);
+        border: none;
+    }
+
+    .action-buttons .btn-edit:hover {
+        background: var(--brand-primary);
+        color: white;
+    }
+
+    .action-buttons .btn-delete {
+        color: var(--brand-danger);
+        background: rgba(239, 68, 68, 0.15);
+        border: none;
+    }
+
+    .action-buttons .btn-delete:hover {
+        background: var(--brand-danger);
+        color: white;
+    }
+
+    .action-buttons .btn-web {
+        color: var(--brand-success);
+        background: rgba(16, 185, 129, 0.15);
+        border: none;
+    }
+
+    .action-buttons .btn-web:hover {
+        background: var(--brand-success);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--brand-card-bg);
+        border-radius: 0.75rem;
+        border: 1px solid var(--brand-border);
+        margin: 2rem 0;
+    }
+
+    .empty-state-icon {
+        width: 100px;
+        height: 100px;
+        background: var(--brand-bg-secondary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        border: 2px solid var(--brand-border);
+    }
+
+    .empty-state-icon i {
+        font-size: 2.5rem;
+        color: var(--brand-text-muted);
+    }
+
+    .empty-state h4 {
+        font-weight: 600;
+        color: var(--brand-text-primary);
+        margin-bottom: 0.75rem;
+    }
+
+    .empty-state p {
+        color: var(--brand-text-muted);
+        margin-bottom: 1.5rem;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .empty-state .btn-primary {
+        background: var(--brand-primary);
+        border: none;
+        border-radius: 0.75rem;
+        padding: 0.875rem 2rem;
+        font-weight: 600;
+        transition: all var(--transition-fast);
+    }
+
+    .empty-state .btn-primary:hover {
+        background: var(--brand-primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+    }
+
+    @media (max-width: 768px) {
+        .brand-header {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .brand-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .brand-header .btn-toolbar {
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .header-stats {
+            justify-content: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--brand-border);
+        }
+
+        .header-stat-divider {
+            display: none;
+        }
+
+        .search-filters {
+            padding: 1.25rem;
+        }
+
+        .brand-card .card-header {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .brand-card .card-footer {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+
+    .toast-container {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .toast-notification {
+        background: var(--brand-card-bg);
+        border: 1px solid var(--brand-border);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+        box-shadow: var(--brand-shadow-hover);
+        min-width: 320px;
+        max-width: 420px;
+        animation: slideInRight 0.3s ease;
+    }
+
+    .toast-notification .toast-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .toast-notification .toast-icon.success {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--brand-success);
+    }
+
+    .toast-notification .toast-icon.error {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--brand-danger);
+    }
+
+    .toast-notification .toast-icon.warning {
+        background: rgba(245, 158, 11, 0.15);
+        color: var(--brand-warning);
+    }
+
+    .toast-notification .toast-icon.info {
+        background: rgba(59, 130, 246, 0.15);
+        color: var(--brand-info);
+    }
+
+    .toast-notification .toast-content {
+        flex: 1;
+    }
+
+    .toast-notification .toast-title {
+        font-weight: 600;
+        color: var(--brand-text-primary);
+        font-size: 0.9375rem;
+    }
+
+    .toast-notification .toast-message {
+        color: var(--brand-text-muted);
+        font-size: 0.8125rem;
+        margin-top: 0.25rem;
+    }
+
+    .toast-notification .toast-close {
+        background: none;
+        border: none;
+        color: var(--brand-text-muted);
+        cursor: pointer;
+        padding: 0.25rem;
+        transition: color var(--transition-fast);
+    }
+
+    .toast-notification .toast-close:hover {
+        color: var(--brand-text-primary);
+    }
+
+    .skeleton {
+        background: linear-gradient(90deg, var(--brand-bg-tertiary) 25%, var(--brand-hover-bg) 50%, var(--brand-bg-tertiary) 75%);
+        background-size: 200% 100%;
+        animation: skeleton-loading 1.5s infinite;
+        border-radius: 0.5rem;
+    }
+
+    @keyframes skeleton-loading {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .skeleton-text {
+        height: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .skeleton-title {
+        height: 1.5rem;
+        width: 60%;
+        margin-bottom: 0.75rem;
+    }
+
+    .skeleton-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 0.75rem;
+    }
+
+    .skeleton-badge {
+        width: 80px;
+        height: 1.5rem;
+        border-radius: 2rem;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p>Procesando...</p>
+        </div>
+    </div>
+
+    <div class="brand-header">
+        <div class="row align-items-end">
+            <div class="col-lg-7">
+                <h1 class="h2 mb-1">
+                    <i class="bi bi-building me-2"></i>
+                    Gestión de Marcas OEM
+                </h1>
+                <p class="mb-0 opacity-75 small">
+                    Administración de marcas OEM con información de soporte y catálogo
+                </p>
+            </div>
+            <div class="col-lg-5 mt-3 mt-lg-0">
+                <div class="header-stats d-flex justify-content-lg-end gap-3 flex-wrap">
+                    <div class="header-stat text-center">
+                        <div class="stat-value text-primary" id="statTotal">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="header-stat-divider"></div>
+                    <div class="header-stat text-center">
+                        <div class="stat-value text-success" id="statActive">0</div>
+                        <div class="stat-label">Activos</div>
+                    </div>
+                    <div class="header-stat-divider"></div>
+                    <div class="header-stat text-center">
+                        <div class="stat-value text-info" id="statCountries">0</div>
+                        <div class="stat-label">Países</div>
+                    </div>
+                    <div class="header-stat-divider"></div>
+                    <div class="header-stat text-center">
+                        <div class="stat-value text-warning" id="statParts">0</div>
+                        <div class="stat-label">Partes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3 align-items-center">
+            <div class="col-lg-8">
+                <div class="btn-toolbar gap-2" role="toolbar">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-download me-1"></i>
+                            Exportar
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                            <li>
+                                <form method="post" action="{% url 'frontend:oem_manufacturer_management' %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="export_format" value="pdf">
+                                    <button type="submit" class="dropdown-item" onclick="showLoadingOverlay('Generando PDF...'); this.closest('form').submit(); return false;">
+                                        <i class="bi bi-file-pdf text-danger me-2"></i>
+                                        PDF
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <form method="post" action="{% url 'frontend:oem_manufacturer_management' %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="export_format" value="xlsx">
+                                    <button type="submit" class="dropdown-item" onclick="showLoadingOverlay('Generando Excel...'); this.closest('form').submit(); return false;">
+                                        <i class="bi bi-file-excel text-success me-2"></i>
+                                        Excel
+                                    </button>
+                                </form>
+                            </li>
+                            <li>
+                                <form method="post" action="{% url 'frontend:oem_manufacturer_management' %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="export_format" value="csv">
+                                    <button type="submit" class="dropdown-item" onclick="showLoadingOverlay('Generando CSV...'); this.closest('form').submit(); return false;">
+                                        <i class="bi bi-file-spreadsheet text-info me-2"></i>
+                                        CSV
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    <a href="{% url 'frontend:oem_brand_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Nueva Marca
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="search-filters">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-lg-4 col-md-12">
+                <label for="search" class="form-label">
+                    <i class="bi bi-search me-1"></i>
+                    Buscar Marca
+                </label>
+                <input type="text" 
+                       class="form-control" 
+                       id="search" 
+                       name="search" 
+                       value="{{ filters.search }}"
+                       placeholder="Nombre, código OEM...">
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label for="country" class="form-label">
+                    <i class="bi bi-globe me-1"></i>
+                    País
+                </label>
+                <select class="form-select" id="country" name="country">
+                    <option value="">Todos los Países</option>
+                    {% for country_option in countries %}
+                    <option value="{{ country_option }}" 
+                            {% if country_option == filters.country %}selected{% endif %}>
+                        {{ country_option }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-3">
+                <label for="is_active" class="form-label">Estado</label>
+                <select class="form-select" id="is_active" name="is_active">
+                    <option value="">Todos</option>
+                    <option value="true" {% if filters.is_active == 'true' %}selected{% endif %}>Activos</option>
+                    <option value="false" {% if filters.is_active == 'false' %}selected{% endif %}>Inactivos</option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1" title="Buscar">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="clearFilters" title="Limpiar filtros">
+                        <i class="bi bi-x-circle"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            {% if brands %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 brand-list-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 280px;">Marca OEM</th>
+                            <th>País</th>
+                            <th>Soporte</th>
+                            <th>Partes</th>
+                            <th>Estado</th>
+                            <th style="width: 150px;" class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for brand in brands %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="brand-logo me-3">
+                                        {{ brand.oem_code|slice:":2" }}
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">{{ brand.name }}</h6>
+                                        <small class="text-muted">{{ brand.oem_code }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if brand.country %}
+                                <span>
+                                    <i class="bi bi-globe me-1 text-muted"></i>
+                                    {{ brand.country }}
+                                </span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="support-score-ring {{ brand.support_class }}">
+                                        {{ brand.support_score }}%
+                                    </div>
+                                    <div class="support-features">
+                                        {% if brand.website %}
+                                        <i class="bi bi-globe text-muted" title="Website"></i>
+                                        {% endif %}
+                                        {% if brand.support_email %}
+                                        <i class="bi bi-envelope text-muted" title="Email"></i>
+                                        {% endif %}
+                                        {% if not brand.website and not brand.support_email %}
+                                        <i class="bi bi-x-circle text-muted" title="Sin contacto"></i>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="fw-semibold">{{ brand.catalog_items_count }}</span>
+                                <small class="text-muted d-block">partes</small>
+                            </td>
+                            <td>
+                                <span class="status-badge {{ brand.status_class }}">
+                                    <i class="{{ brand.status_icon }}"></i>
+                                    {{ brand.status_label }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary" 
+                                            title="Ver catálogo"
+                                            onclick="viewCatalog('{{ brand.oem_code }}')">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% if brand.website %}
+                                    <button type="button" 
+                                            class="btn btn-outline-success" 
+                                            title="Visitar sitio web"
+                                            onclick="window.open('{{ brand.website }}', '_blank')">
+                                        <i class="bi bi-globe"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-building"></i>
+                </div>
+                <h4>No se encontraron marcas OEM</h4>
+                <p>
+                    {% if filters.search or filters.country or filters.is_active %}
+                    No hay marcas que coincidan con los filtros aplicados. 
+                    Intente ajustar los criterios de búsqueda.
+                    {% else %}
+                    Comience agregando la primera marca OEM al sistema para gestionar su catálogo de fabricantes.
+                    {% endif %}
+                </p>
+                {% if filters.search or filters.country or filters.is_active %}
+                <button type="button" class="btn btn-outline-primary" id="clearAllFilters">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                    Limpiar Filtros
+                </button>
+                {% else %}
+                <a href="{% url 'frontend:oem_brand_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Agregar Primera Marca
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if brands %}
+    {% with active_count=brands|length %}
+    {% with total_parts=0 %}
+    {% for brand in brands %}
+    {% with total_parts=total_parts|add:brand.catalog_items_count %}
+    {% endwith %}
+    {% endfor %}
+    {% endwith %}
+    {% endwith %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const brandCards = document.querySelectorAll('.brand-card');
+    const totalBrands = brandCards.length;
+    const activeBrands = brandCards.length;
+    const countries = new Set();
+    let totalParts = 0;
+
+    brandCards.forEach(card => {
+        const countryText = card.querySelector('.country-info span');
+        if (countryText) {
+            countries.add(countryText.textContent.trim());
+        }
+        
+        const partsCell = row.querySelector('td:nth-child(4) .fw-semibold');
+        if (partsCell) {
+            const parts = parseInt(partsCell.textContent.replace(/[^0-9]/g, '')) || 0;
+            totalParts += parts;
+        }
+    });
+
+    const statTotal = document.getElementById('statTotal');
+    const statActive = document.getElementById('statActive');
+    const statCountries = document.getElementById('statCountries');
+    const statParts = document.getElementById('statParts');
+
+    if (statTotal) statTotal.textContent = totalBrands;
+    if (statActive) statActive.textContent = activeBrands;
+    if (statCountries) statCountries.textContent = countries.size || '{{ countries|length }}';
+    if (statParts) statParts.textContent = totalParts.toLocaleString() || '0';
+
+    const clearFilters = document.getElementById('clearFilters');
+    const clearAllFilters = document.getElementById('clearAllFilters');
+    const searchInput = document.getElementById('search');
+    const filterSelects = document.querySelectorAll('#country, #is_active');
+    
+    function clearAllFormFilters() {
+        const form = document.querySelector('form');
+        if (!form) return;
+        
+        const inputs = form.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            if (input.type === 'text') {
+                input.value = '';
+            } else if (input.type === 'select-one') {
+                input.selectedIndex = 0;
+            }
+        });
+        
+        showToast('info', 'Filtros limpiados', 'Se han restablecido los filtros de búsqueda');
+        setTimeout(() => form.submit(), 800);
+    }
+    
+    if (clearFilters) {
+        clearFilters.addEventListener('click', clearAllFormFilters);
+    }
+    
+    if (clearAllFilters) {
+        clearAllFilters.addEventListener('click', clearAllFormFilters);
+    }
+    
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            showToast('info', 'Filtrando...', 'Actualizando resultados');
+            this.form.submit();
+        });
+    });
+    
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (this.value.length >= 3 || this.value.length === 0) {
+                    this.form.submit();
+                }
+            }, 500);
+        });
+        
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.form.submit();
+            }
+        });
+    }
+    
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const title = this.getAttribute('title') || 'Acción';
+            showToast('info', 'Procesando', `Ejecutando: ${title}`);
+        });
+    });
+    
+    const exportForms = document.querySelectorAll('form[method="post"]');
+    exportForms.forEach(form => {
+        form.addEventListener('submit', function() {
+            const format = this.querySelector('input[name="export_format"]').value.toUpperCase();
+            showToast('info', 'Exportando', `Generando archivo ${format}`);
+        });
+    });
+});
+
+function viewCatalog(oemCode) {
+    showToast('info', 'Cargando', 'Redirigiendo al catálogo...');
+    setTimeout(() => {
+        window.location.href = `/oem/catalog/?oem_code=${oemCode}`;
+    }, 500);
+}
+
+function showLoadingOverlay(message = 'Procesando...') {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        const messageEl = overlay.querySelector('p');
+        if (messageEl) {
+            messageEl.textContent = message;
+        }
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function hideLoadingOverlay() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+function showToast(type = 'info', title = '', message = '', duration = 5000) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const icons = {
+        success: 'bi-check-circle',
+        error: 'bi-x-circle',
+        warning: 'bi-exclamation-triangle',
+        info: 'bi-info-circle'
+    };
+    
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = `
+        <div class="toast-icon ${type}">
+            <i class="bi ${icons[type] || icons.info}"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove();">
+            <i class="bi bi-x"></i>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideInRight 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+if (typeof showToast === 'undefined') {
+    window.showToast = showToast;
+}
+</script>
+{% endblock %}

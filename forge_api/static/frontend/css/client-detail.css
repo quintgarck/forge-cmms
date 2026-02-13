@@ -1,0 +1,233 @@
+/* Client Detail View Styles */
+
+.client-detail-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.client-avatar {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.credit-status-card {
+    border-left: 4px solid;
+}
+
+.credit-status-card.status-success {
+    border-left-color: #28a745;
+}
+
+.credit-status-card.status-warning {
+    border-left-color: #ffc107;
+}
+
+.credit-status-card.status-danger {
+    border-left-color: #dc3545;
+}
+
+.credit-status-card.status-info {
+    border-left-color: #17a2b8;
+}
+
+.stats-card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+
+.service-timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.service-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.service-timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.service-timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -0.75rem;
+    top: 0.25rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    background: #28a745;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.workorder-table {
+    font-size: 0.9rem;
+}
+
+.workorder-table th {
+    background-color: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.workorder-table td {
+    vertical-align: middle;
+}
+
+.equipment-card {
+    transition: all 0.2s ease-in-out;
+    border: 1px solid #e9ecef;
+}
+
+.equipment-card:hover {
+    border-color: #007bff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 123, 255, 0.075);
+}
+
+.info-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.badge-status {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Progress bars */
+.progress-thin {
+    height: 0.25rem;
+}
+
+.progress-credit {
+    height: 0.5rem;
+    background-color: #e9ecef;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .client-detail-header {
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .client-avatar {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 1rem;
+    }
+    
+    .stats-card .h4 {
+        font-size: 1.25rem;
+    }
+    
+    .workorder-table {
+        font-size: 0.8rem;
+    }
+    
+    .equipment-card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Print styles */
+@media print {
+    .btn, .dropdown, .card-header .btn-group, 
+    .client-detail-header .btn-group {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #dee2e6 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+    
+    .badge {
+        border: 1px solid currentColor;
+        color: #000 !important;
+    }
+    
+    .client-detail-header {
+        background: #f8f9fa !important;
+        color: #000 !important;
+    }
+    
+    .progress-bar {
+        background-color: #000 !important;
+    }
+}
+
+/* Animation for loading states */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-indicator.success {
+    background-color: #28a745;
+}
+
+.status-indicator.warning {
+    background-color: #ffc107;
+}
+
+.status-indicator.danger {
+    background-color: #dc3545;
+}
+
+.status-indicator.info {
+    background-color: #17a2b8;
+}
+
+/* Enhanced card styling */
+.enhanced-card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.enhanced-card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.enhanced-card .card-header {
+    background-color: rgba(0, 123, 255, 0.05);
+    border-bottom: 1px solid rgba(0, 123, 255, 0.125);
+}

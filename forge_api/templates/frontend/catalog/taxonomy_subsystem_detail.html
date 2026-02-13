@@ -1,0 +1,248 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+{% load navigation_tags %}
+
+{% block title %}{{ subsystem.name_es }} - Subsistema de Taxonomía - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'frontend/css/taxonomy.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    {% render_breadcrumbs breadcrumbs %}
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="h3 mb-2">
+                <i class="bi bi-diagram-3 text-success"></i>
+                {{ subsystem.name_es }}
+                <span class="badge bg-success ms-2">{{ subsystem.subsystem_code }}</span>
+                {% if not subsystem.is_active %}
+                    <span class="badge bg-warning ms-1">Inactivo</span>
+                {% endif %}
+            </h1>
+            {% if subsystem.scope %}
+                <p class="text-muted mb-0">{{ subsystem.scope }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="btn-group" role="group">
+            <a href="{% url 'frontend:taxonomy_subsystem_edit' system_id=system_id pk=subsystem.subsystem_code %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i> Acciones
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'frontend:taxonomy_system_detail' system_id %}">
+                        <i class="bi bi-arrow-up"></i> Ver Sistema Padre
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'frontend:taxonomy_group_create' subsystem_id=subsystem.id %}">
+                        <i class="bi bi-plus-circle"></i> Agregar Grupo
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'frontend:taxonomy_subsystem_delete' system_id=system_id pk=subsystem.subsystem_code %}">
+                        <i class="bi bi-trash"></i> Eliminar Subsistema
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información principal -->
+        <div class="col-lg-8">
+            <!-- Estadísticas del subsistema -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-collection" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2">{{ subsystem_stats.groups_count|default:0 }}</h4>
+                            <p class="mb-0">Grupos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <i class="bi bi-nodes" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2">{{ subsystem_stats.total_items|default:0 }}</h4>
+                            <p class="mb-0">Total Items</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grupos -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-collection"></i> Grupos
+                    </h5>
+                    <a href="{% url 'frontend:taxonomy_group_create' subsystem_id=subsystem.subsystem_code %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus"></i> Agregar Grupo
+                    </a>
+                </div>
+                
+                {% if groups %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th>Orden</th>
+                                    <th width="120">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for group in groups %}
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-info">{{ group.code }}</span>
+                                        </td>
+                                        <td>
+                                            <strong>{{ group.name }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">
+                                                {{ group.description|default:"Sin descripción"|truncatechars:40 }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {% if group.is_active %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle"></i> Activo
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-warning">
+                                                    <i class="bi bi-pause-circle"></i> Inactivo
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">{{ group.sort_order|default:0 }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'frontend:taxonomy_group_detail' group.id %}" 
+                                                   class="btn btn-outline-info" title="Ver">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a href="{% url 'frontend:taxonomy_group_edit' subsystem_id=subsystem.id pk=group.id %}" 
+                                                   class="btn btn-outline-primary" title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-collection text-muted" style="font-size: 3rem;"></i>
+                        <h5 class="text-muted mt-3">No hay grupos</h5>
+                        <p class="text-muted">Comience agregando el primer grupo a este subsistema</p>
+                        <a href="{% url 'frontend:taxonomy_group_create' subsystem_id=subsystem.id %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Agregar Primer Grupo
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Información del subsistema -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle"></i> Información del Subsistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>ID:</strong></div>
+                        <div class="col-sm-7">{{ subsystem.subsystem_code }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Código:</strong></div>
+                        <div class="col-sm-7">
+                            <span class="badge bg-success">{{ subsystem.subsystem_code }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Orden:</strong></div>
+                        <div class="col-sm-7">{{ subsystem.sort_order|default:0 }}</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-sm-5"><strong>Estado:</strong></div>
+                        <div class="col-sm-7">
+                            {% if subsystem.is_active %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Activo
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-pause-circle"></i> Inactivo
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sistema padre -->
+            {% if system %}
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-diagram-2"></i> Sistema Padre
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>{{ system.name_es }}</h6>
+                        <p class="text-muted mb-2">{{ system.scope|default:"Sin descripción"|truncatechars:80 }}</p>
+                        <a href="{% url 'frontend:taxonomy_system_detail' system_id %}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-arrow-up"></i> Ver Sistema
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Navegación rápida -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-compass"></i> Navegación Rápida
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'frontend:taxonomy_tree' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-diagram-3"></i> Ver Árbol Completo
+                        </a>
+                        <a href="{% url 'frontend:taxonomy_subsystem_list' system_id=system_id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-list"></i> Lista de Subsistemas
+                        </a>
+                        <a href="{% url 'frontend:taxonomy_group_create' subsystem_id=subsystem.subsystem_code %}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-plus"></i> Nuevo Grupo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

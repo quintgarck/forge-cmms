@@ -1,0 +1,816 @@
+/* Estilos para el árbol de taxonomía jerárquica */
+
+/* Instrucciones del árbol */
+.card-header small strong {
+    color: #0d6efd;
+}
+
+/* Mejorar visibilidad de los nodos */
+.tree-node {
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.node-content {
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+/* Indicador visual de que el nodo es clickeable */
+.node-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 2px solid transparent;
+    border-radius: 0.375rem;
+    transition: border-color 0.2s ease;
+    pointer-events: none;
+}
+
+.node-content:hover::before {
+    border-color: rgba(13, 110, 253, 0.3);
+}
+
+.node-content.selected::before {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
+}
+
+/* Nodo seleccionado y expandido - estados combinados */
+.tree-node[data-expanded="true"] > .node-content.selected {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+    border-color: #2196f3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3), 0 2px 8px rgba(33, 150, 243, 0.2);
+}
+
+/* Indicador visual de nodo con hijos disponibles */
+.tree-node:has(.node-children) > .node-content .node-toggle {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tree-node:not(:has(.node-children)) > .node-content .node-toggle {
+    opacity:0.3;
+    visibility: hidden;
+}
+
+.taxonomy-tree-container {
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+.taxonomy-tree {
+    padding: 1rem;
+}
+
+.tree-node {
+    margin-bottom: 0.5rem;
+    position: relative;
+}
+
+.node-content {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    background-color: #fff;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.node-content:hover {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.node-content.selected {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+}
+
+/* Visual feedback más fuerte para nodo seleccionado */
+.node-content.selected .node-title strong {
+    color: #1976d2;
+}
+
+.node-content.selected .node-icon i {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+.node-toggle {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.node-toggle:hover {
+    background-color: #e9ecef;
+}
+
+.node-toggle i {
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+}
+
+.node-toggle.expanded i {
+    transform: rotate(90deg);
+}
+
+.node-icon {
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+}
+
+.node-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.node-title {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.node-description {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.node-actions {
+    margin-left: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.node-content:hover .node-actions {
+    opacity: 1;
+}
+
+/* Botones de acción siempre visibles */
+.node-actions.always-visible {
+    opacity: 1 !important;
+}
+
+.node-actions.always-visible .btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Mejorar visibilidad de badges */
+.badge.bg-light {
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+.badge.bg-light.text-dark {
+    color: #212529 !important;
+}
+
+.badge.bg-light.text-success {
+    color: #198754 !important;
+    border-color: #198754 !important;
+}
+
+.badge.bg-light.text-info {
+    color: #0dcaf0 !important;
+    border-color: #0dcaf0 !important;
+}
+
+/* Asegurar que los enlaces en node-actions funcionen */
+.node-actions a.btn {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.node-actions a.btn:hover {
+    text-decoration: none;
+}
+
+.node-children {
+    margin-left: 2rem;
+    margin-top: 0.5rem;
+    padding-left: 1rem;
+    border-left: 2px solid #e9ecef;
+    position: relative;
+}
+
+.node-children[style*="block"],
+.node-children:not([style*="none"]):not([style="display: none"]) {
+    display: block !important;
+}
+
+.node-children::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, #e9ecef 0%, transparent 100%);
+}
+
+/* Animación suave al mostrar hijos */
+.node-children {
+    animation: fadeInSlide 0.3s ease-out;
+}
+
+/* Estilos específicos por tipo de nodo */
+.system-node .node-content {
+    border-left: 4px solid #007bff;
+}
+
+.subsystem-node .node-content {
+    border-left: 4px solid #28a745;
+}
+
+.group-node .node-content {
+    border-left: 4px solid #17a2b8;
+}
+
+/* Estados de nodo */
+.node-content.inactive {
+    opacity: 0.6;
+    background-color: #f8f9fa;
+}
+
+.node-content.inactive .node-title {
+    color: #6c757d;
+}
+
+/* Animaciones */
+.node-children {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        max-height: 1000px;
+        transform: translateY(0);
+    }
+}
+
+.node-children.collapsing {
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        max-height: 1000px;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        max-height: 0;
+        transform: translateY(-10px);
+    }
+}
+
+/* Búsqueda y filtros */
+.search-results-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.search-result-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.search-result-item:hover {
+    background-color: #f8f9fa;
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-title {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.search-result-path {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 0.25rem;
+}
+
+.search-result-description {
+    font-size: 0.875rem;
+    color: #495057;
+}
+
+/* Highlighting para búsqueda */
+.highlight {
+    background-color: #fff3cd;
+    padding: 0.1rem 0.2rem;
+    border-radius: 0.2rem;
+    font-weight: 500;
+}
+
+/* Loading states */
+
+.node-loading {
+    position: relative;
+}
+
+.node-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e9ecef;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    transform: translateY(-50%);
+}
+
+@keyframes spin {
+    0% { transform: translateY(-50%) rotate(0deg); }
+    100% { transform: translateY(-50%) rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .taxonomy-tree-container {
+        max-height: 400px;
+    }
+    
+    .node-content {
+        padding: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .node-actions {
+        opacity: 1;
+        margin-left: 0;
+        margin-top: 0.5rem;
+        width: 100%;
+    }
+    
+    .node-children {
+        margin-left: 1rem;
+        padding-left: 0.5rem;
+    }
+    
+    .node-info {
+        width: 100%;
+    }
+    
+    .node-title {
+        font-size: 0.9rem;
+    }
+    
+    .node-description {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .node-content {
+        padding: 0.375rem;
+    }
+    
+    .node-icon {
+        margin-right: 0.5rem;
+        font-size: 1rem;
+    }
+    
+    .node-toggle {
+        width: 16px;
+        height: 16px;
+        margin-right: 0.375rem;
+    }
+    
+    .node-toggle i {
+        font-size: 0.7rem;
+    }
+    
+    .node-children {
+        margin-left: 0.5rem;
+        padding-left: 0.375rem;
+    }
+}
+
+/* Estilos para badges */
+.badge {
+    font-size: 0.75rem;
+}
+
+.badge.bg-primary {
+    background-color: #007bff !important;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529 !important;
+}
+
+/* Estilos para botones pequeños */
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Estilos para el panel de detalles */
+.node-details-card {
+    border: 1px solid #e9ecef;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    background-color: #fff;
+}
+
+.node-details-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.node-details-icon {
+    margin-right: 0.75rem;
+    font-size: 1.5rem;
+}
+
+.node-details-title {
+    font-weight: 500;
+    margin: 0;
+}
+
+.node-details-body {
+    font-size: 0.875rem;
+}
+
+.node-details-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.node-details-row:last-child {
+    border-bottom: none;
+}
+
+.node-details-label {
+    font-weight: 500;
+    color: #495057;
+}
+
+.node-details-value {
+    color: #6c757d;
+}
+
+/* Estilos para estadísticas */
+.stats-card {
+    text-align: center;
+    padding: 1rem;
+}
+
+.stats-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.stats-number {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.stats-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Transiciones suaves */
+* {
+    transition: color 0.15s ease-in-out, 
+                background-color 0.15s ease-in-out, 
+                border-color 0.15s ease-in-out, 
+                box-shadow 0.15s ease-in-out;
+}
+
+/* Mejoras de accesibilidad */
+.node-content:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.btn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Estilos para botones deshabilitados en sidebar */
+#btn-create-subsystem:disabled,
+#btn-create-group:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Hint de selección */
+#selection-hint {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+
+#selection-hint .text-success {
+    color: #198754 !important;
+}
+
+/* ==========================================
+   ESTILOS PARA NAVEGACIÓN CONTEXTUAL HÍBRIDA
+   ========================================== */
+
+/* Nodo expandido - indicador visual */
+.tree-node[data-expanded="true"] > .node-content {
+    background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+    border-color: #dee2e6;
+}
+
+.tree-node.system-node[data-expanded="true"] > .node-content {
+    border-left-color: #007bff;
+    border-left-width: 6px;
+}
+
+.tree-node.subsystem-node[data-expanded="true"] > .node-content {
+    border-left-color: #28a745;
+    border-left-width: 6px;
+}
+
+/* Toggle expandido - animación suave */
+.node-toggle.expanded {
+    background-color: #e9ecef;
+    transform: rotate(0deg);
+}
+
+.node-toggle.expanded i {
+    transform: rotate(90deg);
+    transition: transform 0.3s ease;
+}
+
+/* Panel de información del nodo activo */
+#active-node-info {
+    animation: fadeIn 0.3s ease;
+    border-left: 4px solid #0d6efd;
+}
+
+#active-node-info.system-active {
+    border-left-color: #007bff;
+}
+
+#active-node-info.subsystem-active {
+    border-left-color: #28a745;
+}
+
+#active-node-info.group-active {
+    border-left-color: #17a2b8;
+}
+
+/* Botones contextuales mejorados */
+#contextual-actions .btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+#contextual-actions .btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+#contextual-actions .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+/* Hint de selección mejorado */
+#selection-hint {
+    border-left: 3px solid #ffc107;
+    background: linear-gradient(to right, #fff8e1 0%, #ffffff 100%);
+    transition: all 0.3s ease;
+}
+
+#selection-hint.success-hint {
+    border-left-color: #28a745;
+    background: linear-gradient(to right, #e8f5e9 0%, #ffffff 100%);
+}
+
+#selection-hint.info-hint {
+    border-left-color: #17a2b8;
+    background: linear-gradient(to right, #e1f5fe 0%, #ffffff 100%);
+}
+
+/* Animación de fade in */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Indicador de nodo clickeable mejorado */
+.node-toggle {
+    transition: all 0.2s ease;
+    border-radius: 4px;
+}
+
+.node-toggle:hover {
+    background-color: #dee2e6;
+    transform: scale(1.1);
+}
+
+.node-toggle:active {
+    transform: scale(0.95);
+}
+
+/* Mejorar visualización de nodos hijos */
+.node-children {
+    position: relative;
+    padding-left: 1.5rem;
+    margin-left: 1rem;
+}
+
+.node-children::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 20px;
+    width: 2px;
+    background: linear-gradient(to bottom, 
+        rgba(0,0,0,0.1) 0%, 
+        rgba(0,0,0,0.05) 50%, 
+        transparent 100%);
+}
+
+/* Destacar nodo seleccionado con animación */
+.node-content.selected {
+    animation: selectPulse 0.4s ease;
+}
+
+@keyframes selectPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(13, 110, 253, 0.1);
+    }
+    100% {
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.3);
+    }
+}
+
+/* Responsive: navegación contextual */
+@media (max-width: 768px) {
+    #active-node-info {
+        font-size: 0.9rem;
+    }
+    
+    #contextual-actions .btn {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+    }
+    
+    #contextual-actions .btn small {
+        font-size: 0.65rem;
+    }
+}
+
+/* Estilos para modo oscuro (opcional) */
+@media (prefers-color-scheme: dark) {
+    .taxonomy-tree-container {
+        border-color: #495057;
+        background-color: #212529;
+    }
+    
+    .node-content {
+        background-color: #343a40;
+        border-color: #495057;
+        color: #fff;
+    }
+    
+    .node-content:hover {
+        background-color: #495057;
+        border-color: #6c757d;
+    }
+    
+    .node-content.selected {
+        background-color: #1e3a5f;
+        border-color: #2196f3;
+    }
+    
+    .node-toggle:hover {
+        background-color: #495057;
+    }
+    
+    .node-children {
+        border-left-color: #495057;
+    }
+    
+    .search-result-item:hover {
+        background-color: #495057;
+    }
+    
+    #active-node-info {
+        background-color: #343a40;
+        border-color: #495057;
+    }
+    
+    #selection-hint {
+        background: linear-gradient(to right, #3e3e00 0%, #2d2d2d 100%);
+        border-left-color: #ffc107;
+    }
+    
+    /* Nodo expandido en modo oscuro - CORRECCIÓN */
+    .tree-node[data-expanded="true"] > .node-content {
+        background: linear-gradient(to right, #2d3748 0%, #343a40 100%);
+        border-color: #4a5568;
+    }
+    
+    .tree-node.system-node[data-expanded="true"] > .node-content {
+        border-left-color: #4299e1;
+    }
+    
+    .tree-node.subsystem-node[data-expanded="true"] > .node-content {
+        border-left-color: #48bb78;
+    }
+    
+    /* Toggle expandido en modo oscuro */
+    .node-toggle.expanded {
+        background-color: #4a5568;
+    }
+    
+    /* Hints de selección en modo oscuro */
+    #selection-hint.success-hint {
+        border-left-color: #48bb78;
+        background: linear-gradient(to right, #1a2f1a 0%, #2d2d2d 100%);
+    }
+    
+    #selection-hint.info-hint {
+        border-left-color: #4fd1c5;
+        background: linear-gradient(to right, #1a3a3f 0%, #2d2d2d 100%);
+    }
+    
+    /* Nodo seleccionado y expandido en modo oscuro */
+    .tree-node[data-expanded="true"] > .node-content.selected {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d3748 100%);
+        border-color: #4299e1;
+    }
+}

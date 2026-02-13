@@ -1,0 +1,596 @@
+﻿{% extends 'frontend/base.html' %}
+{% load static %}
+
+{% block title %}Calculadora de Tiempos Estándar - MovIAx{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calculator-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .calculator-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-color: #007bff;
+    }
+    .time-range-visual {
+        background: linear-gradient(90deg, #28a745 0%, #ffc107 50%, #dc3545 100%);
+        height: 8px;
+        border-radius: 4px;
+        position: relative;
+        margin: 1rem 0;
+    }
+    .time-marker {
+        position: absolute;
+        top: -5px;
+        width: 18px;
+        height: 18px;
+        background: white;
+        border: 3px solid #007bff;
+        border-radius: 50%;
+        transform: translateX(-50%);
+    }
+    .difficulty-indicator {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .tools-skills-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    .tool-skill-item {
+        background: #f8f9fa;
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        text-align: center;
+        font-size: 0.8rem;
+    }
+    .calculator-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .search-filters {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .time-calculator {
+        position: sticky;
+        top: 20px;
+        z-index: 100;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="calculator-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h3 mb-1">
+                    <i class="bi bi-calculator me-2"></i>
+                    Calculadora de Tiempos Estándar
+                </h1>
+                <p class="mb-0 opacity-75">
+                    Gestión de estándares de tiempo plano con calculadora integrada
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="btn-group" role="group">
+                    <button class="btn btn-light">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Nuevo Estándar
+                    </button>
+                    <button class="btn btn-outline-light">
+                        <i class="bi bi-download me-1"></i>
+                        Exportar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="search-filters">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label">
+                    <i class="bi bi-search me-1"></i>
+                    Buscar Servicio
+                </label>
+                <input type="text" 
+                       class="form-control" 
+                       id="search" 
+                       name="search" 
+                       value="{{ filters.search }}"
+                       placeholder="Código, descripción o grupo...">
+            </div>
+            <div class="col-md-3">
+                <label for="equipment_type" class="form-label">
+                    <i class="bi bi-gear me-1"></i>
+                    Tipo de Equipo
+                </label>
+                <select class="form-select" id="equipment_type" name="equipment_type">
+                    <option value="">Todos los Tipos</option>
+                    {% for type in equipment_types %}
+                    <option value="{{ type.equipment_type_id }}" 
+                            {% if type.equipment_type_id == filters.equipment_type|add:0 %}selected{% endif %}>
+                        {{ type.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="group_code" class="form-label">
+                    <i class="bi bi-collection me-1"></i>
+                    Grupo de Servicio
+                </label>
+                <select class="form-select" id="group_code" name="group_code">
+                    <option value="">Todos los Grupos</option>
+                    {% for group in taxonomy_groups %}
+                    <option value="{{ group.group_code }}" 
+                            {% if group.group_code == filters.group_code %}selected{% endif %}>
+                        {{ group.group_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i>
+                    Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
+        <!-- Standards List -->
+        <div class="col-lg-8">
+            {% if standards %}
+            <div class="row">
+                {% for standard in standards %}
+                <div class="col-xl-6 mb-4">
+                    <div class="calculator-card h-100">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ standard.service_code }}</h6>
+                                    <small class="text-muted">{{ standard.group_code }}</small>
+                                </div>
+                                <span class="difficulty-indicator bg-{{ standard.difficulty_class }} text-white">
+                                    {{ standard.difficulty_label }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <!-- Service Description -->
+                            <p class="mb-3">{{ standard.description|truncatechars:80 }}</p>
+                            
+                            <!-- Time Range Visualization -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">Rango de Tiempo</small>
+                                    <strong class="text-primary">{{ standard.time_range.standard }}h</strong>
+                                </div>
+                                <div class="time-range-visual">
+                                    <div class="time-marker" style="left: 50%;"></div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-success">Min: {{ standard.time_range.min }}h</small>
+                                    <small class="text-danger">Max: {{ standard.time_range.max }}h</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Equipment Type -->
+                            {% if standard.equipment_type %}
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-1">
+                                    <i class="bi bi-gear me-1"></i>
+                                    Tipo de Equipo
+                                </small>
+                                <span class="badge bg-info">{{ standard.equipment_type.name }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Tools and Skills Required -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">
+                                        <i class="bi bi-tools me-1"></i>
+                                        Herramientas
+                                    </small>
+                                    <span class="badge bg-secondary">{{ standard.tools_count }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">
+                                        <i class="bi bi-person-check me-1"></i>
+                                        Habilidades
+                                    </small>
+                                    <span class="badge bg-secondary">{{ standard.skills_count }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Time Variance -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">Varianza de Tiempo</small>
+                                    <small class="text-warning">±{{ standard.time_range.variance|floatformat:1 }}h</small>
+                                </div>
+                                <div class="progress" style="height: 4px;">
+                                    <div class="progress-bar bg-warning" 
+                                         style="width: {% widthratio standard.time_range.variance standard.time_range.max 100 %}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-clock me-1"></i>
+                                    Actualizado {{ standard.updated_at|date:\"d/m/Y\"|default:\"N/A\" }}
+                                </small>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" 
+                                            class="btn btn-outline-primary calculate-btn"
+                                            data-standard-id="{{ standard.flat_rate_id }}"
+                                            data-standard-hours="{{ standard.time_range.standard }}"
+                                            data-service-code="{{ standard.service_code }}"
+                                            title="Usar en calculadora">
+                                        <i class="bi bi-calculator"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" title="Ver detalles">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="bi bi-calculator text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No se encontraron estándares</h4>
+                <p class="text-muted">
+                    {% if filters.search or filters.equipment_type or filters.group_code %}
+                    No hay estándares que coincidan con los filtros aplicados.
+                    <br>
+                    <a href=\"{% url 'frontend:flat_rate_calculator' %}\" class=\"btn btn-outline-primary mt-2\">
+                        <i class=\"bi bi-arrow-clockwise me-1\"></i>
+                        Limpiar Filtros
+                    </a>
+                    {% else %}
+                    Comience creando el primer estándar de tiempo.
+                    <br>
+                    <button class=\"btn btn-primary mt-2\">
+                        <i class=\"bi bi-plus-lg me-1\"></i>
+                        Crear Primer Estándar
+                    </button>
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Time Calculator Sidebar -->
+        <div class="col-lg-4">
+            <div class="time-calculator">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-calculator me-2"></i>
+                            Calculadora de Tiempo
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="timeCalculatorForm">
+                            <!-- Selected Service -->
+                            <div class="mb-3">
+                                <label class="form-label">Servicio Seleccionado</label>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="selectedService" 
+                                           placeholder="Seleccione un servicio..."
+                                           readonly>
+                                    <button class="btn btn-outline-secondary" type="button" id="clearSelection">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Difficulty Multiplier -->
+                            <div class="mb-3">
+                                <label for="difficultyMultiplier" class="form-label">
+                                    Factor de Dificultad
+                                    <span class="text-muted">(0.5 - 2.0)</span>
+                                </label>
+                                <input type="range" 
+                                       class="form-range" 
+                                       id="difficultyMultiplier" 
+                                       min="0.5" 
+                                       max="2.0" 
+                                       step="0.1" 
+                                       value="1.0">
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted">Fácil (0.5x)</small>
+                                    <small class="text-primary" id="multiplierValue">1.0x</small>
+                                    <small class="text-muted">Difícil (2.0x)</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Technician Experience -->
+                            <div class="mb-3">
+                                <label for="techExperience" class="form-label">Experiencia del Técnico</label>
+                                <select class="form-select" id="techExperience">
+                                    <option value="1.2">Aprendiz (+20%)</option>
+                                    <option value="1.0" selected>Estándar (100%)</option>
+                                    <option value="0.9">Experimentado (-10%)</option>
+                                    <option value="0.8">Experto (-20%)</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Additional Factors -->
+                            <div class="mb-3">
+                                <label class="form-label">Factores Adicionales</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="rushJob" value="1.3">
+                                    <label class="form-check-label" for="rushJob">
+                                        Trabajo Urgente (+30%)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="customerWaiting" value="1.1">
+                                    <label class="form-check-label" for="customerWaiting">
+                                        Cliente Esperando (+10%)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="outdoorWork" value="1.2">
+                                    <label class="form-check-label" for="outdoorWork">
+                                        Trabajo Exterior (+20%)
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Results -->
+                            <div class="border-top pt-3">
+                                <h6 class="text-muted mb-3">Tiempo Calculado</h6>
+                                
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <div class="text-center p-2 bg-light rounded">
+                                            <small class="text-muted d-block">Tiempo Base</small>
+                                            <strong id="baseTime">0.0h</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="text-center p-2 bg-primary text-white rounded">
+                                            <small class="opacity-75 d-block">Tiempo Final</small>
+                                            <strong id="finalTime">0.0h</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted d-block mb-1">Desglose de Factores</small>
+                                    <div id="factorBreakdown" class="small text-muted">
+                                        Seleccione un servicio para calcular
+                                    </div>
+                                </div>
+                                
+                                <button type="button" class="btn btn-success w-100" id="applyCalculation">
+                                    <i class="bi bi-check-lg me-1"></i>
+                                    Aplicar a Orden de Trabajo
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-graph-up me-2"></i>
+                            Estadísticas Rápidas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2 text-center">
+                            <div class="col-6">
+                                <div class="border rounded p-2">
+                                    <div class="h5 mb-0 text-primary">{{ standards|length }}</div>
+                                    <small class="text-muted">Estándares</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="border rounded p-2">
+                                    <div class="h5 mb-0 text-success">85%</div>
+                                    <small class="text-muted">Precisión</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let selectedStandard = null;
+    let baseHours = 0;
+    
+    // Calculator elements
+    const selectedServiceInput = document.getElementById('selectedService');
+    const difficultySlider = document.getElementById('difficultyMultiplier');
+    const multiplierValue = document.getElementById('multiplierValue');
+    const techExperience = document.getElementById('techExperience');
+    const baseTimeDisplay = document.getElementById('baseTime');
+    const finalTimeDisplay = document.getElementById('finalTime');
+    const factorBreakdown = document.getElementById('factorBreakdown');
+    const clearButton = document.getElementById('clearSelection');
+    const applyButton = document.getElementById('applyCalculation');
+    
+    // Service selection
+    document.querySelectorAll('.calculate-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const standardId = this.dataset.standardId;
+            const standardHours = parseFloat(this.dataset.standardHours);
+            const serviceCode = this.dataset.serviceCode;
+            
+            selectedStandard = {
+                id: standardId,
+                hours: standardHours,
+                code: serviceCode
+            };
+            
+            baseHours = standardHours;
+            selectedServiceInput.value = serviceCode;
+            baseTimeDisplay.textContent = standardHours.toFixed(1) + 'h';
+            
+            // Highlight selected card
+            document.querySelectorAll('.calculator-card').forEach(card => {
+                card.classList.remove('border-primary');
+            });
+            this.closest('.calculator-card').classList.add('border-primary');
+            
+            calculateTime();
+        });
+    });
+    
+    // Clear selection
+    clearButton.addEventListener('click', function() {
+        selectedStandard = null;
+        baseHours = 0;
+        selectedServiceInput.value = '';
+        baseTimeDisplay.textContent = '0.0h';
+        finalTimeDisplay.textContent = '0.0h';
+        factorBreakdown.textContent = 'Seleccione un servicio para calcular';
+        
+        document.querySelectorAll('.calculator-card').forEach(card => {
+            card.classList.remove('border-primary');
+        });
+    });
+    
+    // Difficulty slider
+    difficultySlider.addEventListener('input', function() {
+        multiplierValue.textContent = parseFloat(this.value).toFixed(1) + 'x';
+        calculateTime();
+    });
+    
+    // Experience change
+    techExperience.addEventListener('change', calculateTime);
+    
+    // Additional factors
+    document.querySelectorAll('input[type=\"checkbox\"]').forEach(checkbox => {
+        checkbox.addEventListener('change', calculateTime);
+    });
+    
+    // Calculate time function
+    function calculateTime() {
+        if (!selectedStandard) return;
+        
+        let totalMultiplier = 1.0;
+        let factors = [];
+        
+        // Difficulty multiplier
+        const difficulty = parseFloat(difficultySlider.value);
+        totalMultiplier *= difficulty;
+        factors.push(`Dificultad: ${difficulty.toFixed(1)}x`);
+        
+        // Experience multiplier
+        const experience = parseFloat(techExperience.value);
+        totalMultiplier *= experience;
+        const expLabel = techExperience.options[techExperience.selectedIndex].text;
+        factors.push(`Experiencia: ${expLabel}`);
+        
+        // Additional factors
+        document.querySelectorAll('input[type=\"checkbox\"]:checked').forEach(checkbox => {
+            const factor = parseFloat(checkbox.value);
+            totalMultiplier *= factor;
+            factors.push(checkbox.nextElementSibling.textContent.trim());
+        });
+        
+        // Calculate final time
+        const finalTime = baseHours * totalMultiplier;
+        finalTimeDisplay.textContent = finalTime.toFixed(1) + 'h';
+        
+        // Update factor breakdown
+        factorBreakdown.innerHTML = factors.join('<br>') + 
+            `<br><strong>Multiplicador Total: ${totalMultiplier.toFixed(2)}x</strong>`;
+        
+        // Update apply button state
+        applyButton.disabled = false;
+    }
+    
+    // Apply calculation
+    applyButton.addEventListener('click', function() {
+        if (!selectedStandard) return;
+        
+        const finalTime = parseFloat(finalTimeDisplay.textContent);
+        
+        // In a real implementation, this would create a work order or add to existing one
+        alert(`Tiempo calculado: ${finalTime.toFixed(1)}h para servicio ${selectedStandard.code}`);
+    });
+    
+    // Auto-submit form on filter change
+    const filterSelects = document.querySelectorAll('#equipment_type, #group_code');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Search input debounce
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            this.form.submit();
+        }, 500);
+    });
+    
+    // Card hover effects
+    document.querySelectorAll('.calculator-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            if (!this.classList.contains('border-primary')) {
+                this.style.borderColor = '#007bff';
+            }
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            if (!this.classList.contains('border-primary')) {
+                this.style.borderColor = '#e0e0e0';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Reporte de Tipos de Equipo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 24px;
+        }
+        
+        .header p {
+            margin: 5px 0;
+            color: #7f8c8d;
+        }
+        
+        .summary {
+            background-color: #ecf0f1;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .summary-table th, .summary-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #bdc3c7;
+        }
+        
+        .summary-table th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .data-table th, .data-table td {
+            padding: 8px;
+            text-align: left;
+            border: 1px solid #bdc3c7;
+        }
+        
+        .data-table th {
+            background-color: #2c3e50;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .data-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .status-active {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .status-inactive {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #7f8c8d;
+            border-top: 1px solid #bdc3c7;
+            padding-top: 10px;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>REPORTE DE TIPOS DE EQUIPO</h1>
+        <p>FORGEDB - Sistema de Gestión de Equipos</p>
+        <p>Fecha de generación: {{ export_date|date:"d/m/Y H:i:s" }}</p>
+    </div>
+    
+    <div class="summary">
+        <h2>Resumen del Reporte</h2>
+        <table class="summary-table">
+            <tr>
+                <th>Total de Tipos de Equipo:</th>
+                <td><strong>{{ total_count }}</strong></td>
+            </tr>
+            <tr>
+                <th>Fecha de Exportación:</th>
+                <td>{{ export_date|date:"d/m/Y H:i:s" }}</td>
+            </tr>
+        </table>
+    </div>
+    
+    <h2>Listado Completo de Tipos de Equipo</h2>
+    
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Categoría</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th>Icono</th>
+                <th>Fecha Creación</th>
+                <th>Última Actualización</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for eq_type in equipment_types %}
+            <tr>
+                <td>{{ eq_type.type_id }}</td>
+                <td><strong>{{ eq_type.type_code }}</strong></td>
+                <td>{{ eq_type.name }}</td>
+                <td>{{ eq_type.category|title }}</td>
+                <td>{{ eq_type.description|default:"Sin descripción" }}</td>
+                <td>
+                    {% if eq_type.is_active %}
+                        <span class="status-active">ACTIVO</span>
+                    {% else %}
+                        <span class="status-inactive">INACTIVO</span>
+                    {% endif %}
+                </td>
+                <td>{{ eq_type.icon|default:"-" }}</td>
+                <td>{{ eq_type.created_at|date:"d/m/Y H:i" }}</td>
+                <td>{{ eq_type.updated_at|date:"d/m/Y H:i"|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="9" style="text-align: center; font-style: italic;">
+                    No se encontraron tipos de equipo registrados
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="footer">
+        <p>Documento generado automáticamente por FORGEDB</p>
+        <p>Página 1 de 1</p>
+    </div>
+</body>
+</html>

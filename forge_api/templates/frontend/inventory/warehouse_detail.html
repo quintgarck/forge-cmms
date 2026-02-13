@@ -1,0 +1,368 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ warehouse.name }} - Almacén - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/warehouse-detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="h3 mb-2">{{ warehouse.name }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:warehouse_list' %}">Almacenes</a></li>
+                    <li class="breadcrumb-item active">{{ warehouse.name|truncatechars:30 }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'frontend:warehouse_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+            <a href="{% url 'frontend:warehouse_update' warehouse.id %}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Editar
+            </a>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-cog me-2"></i>Acciones
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'frontend:stock_movement_create' %}?warehouse_id={{ warehouse.id }}">
+                        <i class="fas fa-plus me-2"></i>Nuevo Movimiento
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'frontend:stock_list' %}?warehouse_id={{ warehouse.id }}">
+                        <i class="fas fa-boxes me-2"></i>Ver Stock
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete()">
+                        <i class="fas fa-trash me-2"></i>Eliminar
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Information -->
+        <div class="col-lg-8">
+            <!-- Warehouse Info Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-warehouse me-2"></i>Información del Almacén
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="warehouse-detail">
+                                <h6>Código del Almacén</h6>
+                                <p class="fw-bold">{{ warehouse.code }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="warehouse-detail">
+                                <h6>Estado</h6>
+                                {% if warehouse.is_active %}
+                                    <span class="badge bg-success fs-6">
+                                        <i class="fas fa-check me-1"></i>Activo
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary fs-6">
+                                        <i class="fas fa-times me-1"></i>Inactivo
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if warehouse.description %}
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="warehouse-detail">
+                                    <h6>Descripción</h6>
+                                    <p class="text-muted">{{ warehouse.description|linebreaks }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="row mt-3">
+                        {% if warehouse.location %}
+                            <div class="col-md-6">
+                                <div class="warehouse-detail">
+                                    <h6>Ubicación</h6>
+                                    <p class="fw-medium">
+                                        <i class="fas fa-map-marker-alt me-2"></i>
+                                        {{ warehouse.location }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if warehouse.manager_name %}
+                            <div class="col-md-6">
+                                <div class="warehouse-detail">
+                                    <h6>Encargado</h6>
+                                    <p class="fw-medium">
+                                        <i class="fas fa-user me-2"></i>
+                                        {{ warehouse.manager_name }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock Summary -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-boxes me-2"></i>Stock en Almacén
+                    </h5>
+                    <a href="{% url 'frontend:stock_list' %}?warehouse_id={{ warehouse.id }}" class="btn btn-sm btn-outline-primary">
+                        Ver Todo el Stock
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if warehouse_stock %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Categoría</th>
+                                        <th>Stock Actual</th>
+                                        <th>Stock Mínimo</th>
+                                        <th>Estado</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for stock in warehouse_stock %}
+                                        <tr class="{% if stock.status == 'out_of_stock' %}table-danger{% elif stock.status == 'low_stock' %}table-warning{% endif %}">
+                                            <td>
+                                                <strong>{{ stock.product_code }}</strong><br>
+                                                <small class="text-muted">{{ stock.product_name|truncatechars:30 }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge category-{{ stock.category|lower }}">
+                                                    {{ stock.category|capfirst }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold {% if stock.current_stock <= 0 %}text-danger{% elif stock.current_stock <= stock.minimum_stock %}text-warning{% else %}text-success{% endif %}">
+                                                    {{ stock.current_stock|floatformat:2 }}
+                                                </span>
+                                            </td>
+                                            <td>{{ stock.minimum_stock|floatformat:2|default:"-" }}</td>
+                                            <td>
+                                                {% if stock.status == 'in_stock' %}
+                                                    <span class="badge bg-success">En Stock</span>
+                                                {% elif stock.status == 'low_stock' %}
+                                                    <span class="badge bg-warning">Stock Bajo</span>
+                                                {% elif stock.status == 'out_of_stock' %}
+                                                    <span class="badge bg-danger">Sin Stock</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if stock.total_value %}
+                                                    ${{ stock.total_value|floatformat:2 }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+                            <h5>Sin productos en stock</h5>
+                            <p class="text-muted">Este almacén no tiene productos registrados.</p>
+                            <a href="{% url 'frontend:stock_movement_create' %}?warehouse_id={{ warehouse.id }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Agregar Stock
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Movements -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Movimientos Recientes
+                    </h5>
+                    <a href="{% url 'frontend:stock_movements' %}?warehouse_id={{ warehouse.id }}" class="btn btn-sm btn-outline-primary">
+                        Ver Todos
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if recent_movements %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Producto</th>
+                                        <th>Tipo</th>
+                                        <th>Cantidad</th>
+                                        <th>Motivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for movement in recent_movements %}
+                                        <tr>
+                                            <td>{{ movement.created_at|date:"d/m H:i" }}</td>
+                                            <td>
+                                                <strong>{{ movement.product_code }}</strong><br>
+                                                <small class="text-muted">{{ movement.product_name|truncatechars:25 }}</small>
+                                            </td>
+                                            <td>
+                                                {% if movement.movement_type == 'in' %}
+                                                    <span class="badge bg-success">Entrada</span>
+                                                {% elif movement.movement_type == 'out' %}
+                                                    <span class="badge bg-danger">Salida</span>
+                                                {% elif movement.movement_type == 'adjustment' %}
+                                                    <span class="badge bg-info">Ajuste</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Transferencia</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if movement.movement_type == 'in' %}
+                                                    <span class="text-success">+{{ movement.quantity|floatformat:2 }}</span>
+                                                {% else %}
+                                                    <span class="text-danger">-{{ movement.quantity|floatformat:2 }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">{{ movement.reason|capfirst }}</span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                            <h5>Sin movimientos recientes</h5>
+                            <p class="text-muted">No hay movimientos registrados para este almacén.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Stats Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Estadísticas Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Total de Productos:</span>
+                            <strong>{{ warehouse.total_products|default:"0" }}</strong>
+                        </div>
+                    </div>
+                    <div class="stat-item mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Valor Total:</span>
+                            <strong>${{ warehouse.total_value|floatformat:2|default:"0.00" }}</strong>
+                        </div>
+                    </div>
+                    <div class="stat-item mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Stock Bajo:</span>
+                            <strong class="text-warning">{{ warehouse.low_stock_count|default:"0" }}</strong>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="d-flex justify-content-between">
+                            <span>Sin Stock:</span>
+                            <strong class="text-danger">{{ warehouse.out_of_stock_count|default:"0" }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'frontend:stock_movement_create' %}?warehouse_id={{ warehouse.id }}" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Nuevo Movimiento
+                        </a>
+                        
+                        <a href="{% url 'frontend:stock_list' %}?warehouse_id={{ warehouse.id }}" class="btn btn-outline-primary">
+                            <i class="fas fa-boxes me-2"></i>Ver Stock Completo
+                        </a>
+                        
+                        <a href="{% url 'frontend:stock_movements' %}?warehouse_id={{ warehouse.id }}" class="btn btn-outline-info">
+                            <i class="fas fa-history me-2"></i>Historial Completo
+                        </a>
+                        
+                        <a href="{% url 'frontend:warehouse_update' warehouse.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-edit me-2"></i>Editar Almacén
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar este almacén?</p>
+                <p class="text-muted">Esta acción no se puede deshacer y eliminará todos los datos asociados.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{% url 'frontend:warehouse_delete' warehouse.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete() {
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

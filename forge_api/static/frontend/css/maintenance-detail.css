@@ -1,0 +1,466 @@
+/* Maintenance Detail Styles */
+
+.card {
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+    border-radius: 0.35rem;
+    margin-bottom: 1.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    padding: 1rem 1.25rem;
+}
+
+.card-title {
+    color: #5a5c69;
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+/* Status and Priority Indicators */
+.status-indicator, .priority-indicator, .type-indicator, .duration-indicator {
+    text-align: center;
+    padding: 1rem;
+}
+
+.status-indicator h6, .priority-indicator h6, .type-indicator h6, .duration-indicator h6 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+/* Status badges */
+.status-scheduled {
+    background-color: #6c757d;
+    color: white;
+}
+
+.status-in_progress {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.status-completed {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-cancelled {
+    background-color: #6c757d;
+    color: white;
+}
+
+.status-overdue {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Priority badges */
+.priority-low {
+    background-color: #28a745;
+    color: white;
+}
+
+.priority-medium {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.priority-high {
+    background-color: #fd7e14;
+    color: white;
+}
+
+.priority-critical {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Badge styling */
+.badge.fs-6 {
+    font-size: 0.9rem !important;
+    padding: 0.5em 0.75em;
+    border-radius: 0.375rem;
+}
+
+/* Equipment information */
+.equipment-info h6 {
+    color: #5a5c69;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.equipment-info p {
+    margin-bottom: 0.5rem;
+    color: #6c757d;
+}
+
+.equipment-status .badge {
+    font-size: 0.8rem;
+}
+
+/* Timeline styles */
+.timeline {
+    position: relative;
+    padding-left: 2rem;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e3e6f0;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0.25rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e3e6f0;
+}
+
+.timeline-marker.bg-primary {
+    background-color: #4e73df !important;
+}
+
+.timeline-marker.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.timeline-marker.bg-success {
+    background-color: #28a745 !important;
+}
+
+.timeline-marker.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.timeline-content h6 {
+    color: #5a5c69;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.timeline-content small {
+    color: #6c757d;
+}
+
+/* Quick actions */
+.d-grid .btn {
+    margin-bottom: 0.5rem;
+    border-radius: 0.35rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.d-grid .btn:hover {
+    transform: translateY(-1px);
+}
+
+.d-grid .btn:last-child {
+    margin-bottom: 0;
+}
+
+/* Breadcrumb styling */
+.breadcrumb {
+    background-color: transparent;
+    padding: 0;
+    margin-bottom: 0.5rem;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: ">";
+    color: #6c757d;
+}
+
+.breadcrumb-item a {
+    color: #4e73df;
+    text-decoration: none;
+}
+
+.breadcrumb-item a:hover {
+    text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+    color: #6c757d;
+}
+
+/* Dropdown menu styling */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(33, 40, 50, 0.15);
+    border-radius: 0.35rem;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fc;
+}
+
+.dropdown-item.text-warning:hover {
+    background-color: #fff3cd;
+}
+
+.dropdown-item.text-danger:hover {
+    background-color: #f8d7da;
+}
+
+/* Button styling */
+.btn {
+    border-radius: 0.35rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.btn-primary:hover {
+    background-color: #2e59d9;
+    border-color: #2653d4;
+}
+
+.btn-outline-primary {
+    color: #4e73df;
+    border-color: #4e73df;
+}
+
+.btn-outline-primary:hover {
+    background-color: #4e73df;
+    border-color: #4e73df;
+}
+
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-info {
+    color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+.btn-outline-info:hover {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+}
+
+/* Modal styling */
+.modal-content {
+    border: none;
+    box-shadow: 0 0.5rem 2rem 0 rgba(33, 40, 50, 0.2);
+    border-radius: 0.5rem;
+}
+
+.modal-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.modal-title {
+    color: #5a5c69;
+    font-weight: 600;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    background-color: #f8f9fc;
+    border-top: 1px solid #e3e6f0;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* Status change info styling */
+#statusChangeInfo {
+    background-color: #f8f9fc;
+    padding: 1rem;
+    border-radius: 0.35rem;
+    margin-top: 1rem;
+    border-left: 4px solid #4e73df;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .d-flex.justify-content-between.align-items-start {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .d-flex.gap-2 {
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn {
+        margin-bottom: 0.5rem;
+    }
+    
+    .status-indicator, .priority-indicator, .type-indicator, .duration-indicator {
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .timeline {
+        padding-left: 1.5rem;
+    }
+    
+    .timeline-marker {
+        left: -1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .row .col-md-3, .row .col-md-6 {
+        margin-bottom: 1rem;
+    }
+    
+    .badge.fs-6 {
+        font-size: 0.8rem !important;
+    }
+    
+    .d-grid .btn {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* Animation for status updates */
+.status-updating {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+/* Hover effects */
+.card:hover {
+    box-shadow: 0 0.25rem 2rem 0 rgba(33, 40, 50, 0.2);
+    transition: box-shadow 0.3s ease;
+}
+
+/* Icon styling */
+.fas, .far {
+    margin-right: 0.25rem;
+}
+
+/* Equipment card link styling */
+.equipment-info a {
+    text-decoration: none;
+}
+
+.equipment-info a:hover {
+    text-decoration: underline;
+}
+
+/* Notes section styling */
+.bg-light {
+    background-color: #f8f9fc !important;
+    border: 1px solid #e3e6f0;
+}
+
+/* Print styles */
+@media print {
+    .btn, .dropdown, .modal {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+    
+    .badge {
+        border: 1px solid #000 !important;
+        color: #000 !important;
+        background: transparent !important;
+    }
+    
+    .timeline::before {
+        background-color: #000 !important;
+    }
+    
+    .timeline-marker {
+        border-color: #000 !important;
+        background-color: #000 !important;
+    }
+}
+
+/* Loading states */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.loading-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 0.25em solid #f3f3f3;
+    border-top: 0.25em solid #4e73df;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

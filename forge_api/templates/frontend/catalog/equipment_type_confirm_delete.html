@@ -1,0 +1,411 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-container {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    .delete-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    .warning-card {
+        border: 2px solid #ffc107;
+        border-radius: 0.5rem;
+        background: #fff3cd;
+        margin-bottom: 1.5rem;
+    }
+    .info-card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    .dependency-item {
+        padding: 0.75rem;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items-center;
+        justify-content: between;
+    }
+    .dependency-item:last-child {
+        border-bottom: none;
+    }
+    .delete-actions {
+        position: sticky;
+        bottom: 20px;
+        background: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+        z-index: 100;
+    }
+    .danger-zone {
+        border: 2px solid #dc3545;
+        border-radius: 0.5rem;
+        background: #f8d7da;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="delete-container">
+        <!-- Header -->
+        <div class="delete-header">
+            <i class="bi bi-exclamation-triangle" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+            <h1 class="h2 mb-2">Confirmar Eliminación</h1>
+            <p class="mb-0 opacity-75">
+                Esta acción no se puede deshacer
+            </p>
+        </div>
+
+        <!-- Warning -->
+        <div class="warning-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle text-warning me-3" style="font-size: 2rem;"></i>
+                    <div>
+                        <h5 class="mb-1 text-warning">¡Atención!</h5>
+                        <p class="mb-0">
+                            Está a punto de eliminar permanentemente el tipo de equipo 
+                            <strong>"{{ object.name }}"</strong>. Esta acción no se puede deshacer.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equipment Type Information -->
+        <div class="info-card card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Información del Tipo de Equipo
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="{{ object.icon|default:'bi-gear-wide-connected' }} text-primary me-3" style="font-size: 2rem;"></i>
+                            <div>
+                                <h6 class="mb-0">{{ object.name }}</h6>
+                                <small class="text-muted">{{ object.type_code }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-end">
+                            <span class="badge bg-{{ object.category|lower }} mb-2">
+                                {{ object.category|title }}
+                            </span>
+                            <br>
+                            {% if object.is_active %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Activo
+                            </span>
+                            {% else %}
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Inactivo
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if object.description %}
+                <div class="mt-3">
+                    <h6 class="text-muted">Descripción</h6>
+                    <p class="mb-0">{{ object.description }}</p>
+                </div>
+                {% endif %}
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Fecha de Creación</h6>
+                        <p class="mb-0">{{ object.created_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Última Actualización</h6>
+                        <p class="mb-0">{{ object.updated_at|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dependencies Check -->
+        {% if has_dependencies %}
+        <div class="info-card card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-link-45deg me-2"></i>
+                    Dependencias Encontradas
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-warning mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Este tipo de equipo tiene elementos relacionados que podrían verse afectados:
+                </p>
+                
+                <div class="list-group list-group-flush">
+                    {% for dependency in dependencies %}
+                    <div class="dependency-item">
+                        <div class="d-flex align-items-center flex-grow-1">
+                            <i class="{{ dependency.icon }} text-{{ dependency.type_class }} me-3"></i>
+                            <div>
+                                <strong>{{ dependency.count }} {{ dependency.type_name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ dependency.description }}</small>
+                            </div>
+                        </div>
+                        <div>
+                            <a href="{{ dependency.url }}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye me-1"></i>
+                                Ver
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="alert alert-warning mt-3 mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Nota:</strong> Al eliminar este tipo de equipo, los elementos relacionados 
+                    podrían quedar sin clasificación o requerir reasignación manual.
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="info-card card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Sin Dependencias
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-success mb-0">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Este tipo de equipo no tiene elementos relacionados. Es seguro eliminarlo.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Danger Zone -->
+        <div class="danger-zone">
+            <h5 class="text-danger mb-3">
+                <i class="bi bi-shield-exclamation me-2"></i>
+                Zona de Peligro
+            </h5>
+            <p class="text-danger mb-3">
+                Una vez eliminado, no podrá recuperar este tipo de equipo ni su configuración. 
+                Todos los datos asociados se perderán permanentemente.
+            </p>
+            
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                <label class="form-check-label text-danger" for="confirmDelete">
+                    <strong>Entiendo que esta acción es irreversible y acepto eliminar permanentemente este tipo de equipo</strong>
+                </label>
+            </div>
+            
+            {% if has_dependencies %}
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="confirmDependencies" required>
+                <label class="form-check-label text-danger" for="confirmDependencies">
+                    <strong>Entiendo que existen elementos relacionados que podrían verse afectados</strong>
+                </label>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="delete-actions">
+            <form method="post" id="delete-form">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{{ cancel_url }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>
+                        Cancelar
+                    </a>
+                    
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'frontend:equipment_type_detail' object.type_id %}" class="btn btn-outline-info">
+                            <i class="bi bi-eye me-2"></i>
+                            Ver Detalles
+                        </a>
+                        <button type="submit" class="btn btn-danger" id="delete-btn" disabled>
+                            <i class="bi bi-trash me-2"></i>
+                            Eliminar Permanentemente
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="finalConfirmModal" tabindex="-1" aria-labelledby="finalConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="finalConfirmModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmación Final
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3 mb-3">¿Está completamente seguro?</h5>
+                    <p class="text-muted">
+                        Esta es su última oportunidad para cancelar. 
+                        El tipo de equipo <strong>"{{ object.name }}"</strong> será eliminado permanentemente.
+                    </p>
+                </div>
+                
+                <div class="form-group mt-4">
+                    <label for="confirmationText" class="form-label">
+                        Para confirmar, escriba <strong>{{ object.type_code }}</strong>:
+                    </label>
+                    <input type="text" class="form-control" id="confirmationText" placeholder="Escriba el código aquí">
+                    <div class="invalid-feedback" id="confirmationError" style="display: none;">
+                        El código no coincide
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-2"></i>
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-danger" id="final-delete-btn" disabled>
+                    <i class="bi bi-trash me-2"></i>
+                    Eliminar Definitivamente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmDeleteCheckbox = document.getElementById('confirmDelete');
+    const confirmDependenciesCheckbox = document.getElementById('confirmDependencies');
+    const deleteBtn = document.getElementById('delete-btn');
+    const deleteForm = document.getElementById('delete-form');
+    const finalConfirmModal = new bootstrap.Modal(document.getElementById('finalConfirmModal'));
+    const confirmationText = document.getElementById('confirmationText');
+    const finalDeleteBtn = document.getElementById('final-delete-btn');
+    const confirmationError = document.getElementById('confirmationError');
+    
+    const expectedCode = '{{ object.type_code }}';
+    const hasDependencies = {{ has_dependencies|yesno:"true,false" }};
+    
+    // Enable/disable delete button based on checkboxes
+    function updateDeleteButton() {
+        const confirmChecked = confirmDeleteCheckbox.checked;
+        const dependenciesChecked = !hasDependencies || (confirmDependenciesCheckbox && confirmDependenciesCheckbox.checked);
+        
+        deleteBtn.disabled = !(confirmChecked && dependenciesChecked);
+    }
+    
+    // Event listeners for checkboxes
+    confirmDeleteCheckbox.addEventListener('change', updateDeleteButton);
+    if (confirmDependenciesCheckbox) {
+        confirmDependenciesCheckbox.addEventListener('change', updateDeleteButton);
+    }
+    
+    // Handle form submission
+    deleteForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!deleteBtn.disabled) {
+            finalConfirmModal.show();
+        }
+    });
+    
+    // Handle confirmation text input
+    confirmationText.addEventListener('input', function() {
+        const isValid = this.value.trim().toUpperCase() === expectedCode.toUpperCase();
+        
+        if (isValid) {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+            confirmationError.style.display = 'none';
+            finalDeleteBtn.disabled = false;
+        } else {
+            this.classList.remove('is-valid');
+            if (this.value.trim()) {
+                this.classList.add('is-invalid');
+                confirmationError.style.display = 'block';
+            }
+            finalDeleteBtn.disabled = true;
+        }
+    });
+    
+    // Handle final deletion
+    finalDeleteBtn.addEventListener('click', function() {
+        if (confirmationText.value.trim().toUpperCase() === expectedCode.toUpperCase()) {
+            // Show loading state
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Eliminando...';
+            
+            // Submit the form
+            deleteForm.submit();
+        }
+    });
+    
+    // Reset modal when closed
+    document.getElementById('finalConfirmModal').addEventListener('hidden.bs.modal', function() {
+        confirmationText.value = '';
+        confirmationText.classList.remove('is-valid', 'is-invalid');
+        confirmationError.style.display = 'none';
+        finalDeleteBtn.disabled = true;
+        finalDeleteBtn.innerHTML = '<i class="bi bi-trash me-2"></i>Eliminar Definitivamente';
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Escape key to cancel
+        if (e.key === 'Escape' && !document.querySelector('.modal.show')) {
+            window.location.href = '{{ cancel_url }}';
+        }
+    });
+    
+    // Warning on page unload
+    let formSubmitted = false;
+    deleteForm.addEventListener('submit', function() {
+        formSubmitted = true;
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (!formSubmitted && (confirmDeleteCheckbox.checked || (confirmDependenciesCheckbox && confirmDependenciesCheckbox.checked))) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+});
+</script>
+{% endblock %}

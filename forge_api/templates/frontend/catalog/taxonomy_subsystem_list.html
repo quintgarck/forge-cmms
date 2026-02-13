@@ -1,0 +1,112 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+{% load navigation_tags %}
+
+{% block title %}Subsistemas de Taxonomía - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'frontend/css/taxonomy.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    {% render_breadcrumbs breadcrumbs %}
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-diagram-2 text-primary"></i>
+                Subsistemas de Taxonomía
+            </h1>
+            {% if system %}
+                <p class="text-muted mb-0">Sistema: <strong>{{ system.name_es }}</strong></p>
+            {% endif %}
+        </div>
+        
+        <div class="btn-group" role="group">
+            <a href="{% url 'frontend:taxonomy_subsystem_create' system_id=system_id %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Subsistema
+            </a>
+            <a href="{% url 'frontend:taxonomy_system_detail' system_id %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Sistema
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-10">
+                    <input type="text" class="form-control" name="search"
+                           value="{{ current_search }}" placeholder="Buscar subsistemas...">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de subsistemas -->
+    <div class="card">
+        {% if subsystems %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Grupos</th>
+                            <th>Orden</th>
+                            <th width="150">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subsystem in subsystems %}
+                            <tr>
+                                <td><span class="badge bg-primary">{{ subsystem.subsystem_code }}</span></td>
+                                <td><strong>{{ subsystem.name_es }}</strong></td>
+                                <td>{{ subsystem.scope|default:"Sin descripción"|truncatechars:50 }}</td>
+                                <td><span class="badge bg-secondary">{{ subsystem.groups_count|default:0 }}</span></td>
+                                <td>{{ subsystem.sort_order }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'frontend:taxonomy_subsystem_detail' subsystem.subsystem_code %}" 
+                                           class="btn btn-outline-info" title="Ver">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'frontend:taxonomy_subsystem_edit' system_id=system_id pk=subsystem.subsystem_code %}" 
+                                           class="btn btn-outline-primary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a href="{% url 'frontend:taxonomy_subsystem_delete' system_id=system_id pk=subsystem.subsystem_code %}" 
+                                           class="btn btn-outline-danger" title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="card-body text-center py-5">
+                <i class="bi bi-diagram-2 text-muted" style="font-size: 3rem;"></i>
+                <h5 class="text-muted mt-3">No se encontraron subsistemas</h5>
+                <a href="{% url 'frontend:taxonomy_subsystem_create' system_id=system_id %}" class="btn btn-primary mt-2">
+                    <i class="bi bi-plus-circle"></i> Crear Primer Subsistema
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

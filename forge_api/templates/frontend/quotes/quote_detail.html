@@ -1,0 +1,302 @@
+{% extends "frontend/base/base.html" %}
+{% load static %}
+
+{% block title %}Detalle de Cotización - MovIAx{% endblock %}
+
+{% block body_class %}quote-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">MovIAx</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'frontend:quote_list' %}">Cotizaciones</a></li>
+                        <li class="breadcrumb-item active">Detalle</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Detalle de Cotización</h4>
+            </div>
+        </div>
+    </div>
+
+    {% if quote %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4 class="header-title">Información de la Cotización</h4>
+                            <div class="table-responsive">
+                                <table class="table table-borderless mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="ps-0">Número:</td>
+                                            <td class="text-end"><strong>{{ quote.quote_number }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-0">Fecha:</td>
+                                            <td class="text-end">{{ quote.quote_date|date:"d/m/Y" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-0">Válida Hasta:</td>
+                                            <td class="text-end">{{ quote.valid_until|date:"d/m/Y"|default:"No especificada" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-0">Estado:</td>
+                                            <td class="text-end">
+                                                <span class="badge 
+                                                    {% if quote.status == 'APPROVED' %}bg-success
+                                                    {% elif quote.status == 'SENT' %}bg-info
+                                                    {% elif quote.status == 'REJECTED' %}bg-danger
+                                                    {% elif quote.status == 'EXPIRED' %}bg-secondary
+                                                    {% elif quote.status == 'CONVERTED' %}bg-primary
+                                                    {% elif quote.status == 'DRAFT' %}bg-warning
+                                                    {% else %}bg-light{% endif %}">
+                                                    {% if quote.status == 'DRAFT' %}Borrador
+                                                    {% elif quote.status == 'SENT' %}Enviada
+                                                    {% elif quote.status == 'APPROVED' %}Aprobada
+                                                    {% elif quote.status == 'REJECTED' %}Rechazada
+                                                    {% elif quote.status == 'EXPIRED' %}Expirada
+                                                    {% elif quote.status == 'CONVERTED' %}Convertida
+                                                    {% else %}{{ quote.status }}{% endif %}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        {% if quote.converted_to_wo_id %}
+                                        <tr>
+                                            <td class="ps-0">Orden de Trabajo:</td>
+                                            <td class="text-end">
+                                                <a href="{% url 'frontend:workorder_detail' quote.converted_to_wo_id %}" class="badge bg-primary">
+                                                    WO-{{ quote.converted_to_wo_id }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if quote.work_order %}
+                                        <tr>
+                                            <td class="ps-0">Estado WO:</td>
+                                            <td class="text-end">
+                                                <span class="badge bg-info">{{ quote.work_order.status|default:'N/A' }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if quote.invoice %}
+                                        <tr>
+                                            <td class="ps-0">Factura:</td>
+                                            <td class="text-end">
+                                                <a href="{% url 'frontend:invoice_detail' quote.invoice.invoice_id %}" class="badge bg-success">
+                                                    {{ quote.invoice.invoice_number }}
+                                                </a>
+                                                <span class="badge bg-secondary ms-1">{{ quote.invoice.status|default:'N/A' }}</span>
+                                            </td>
+                                        </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h4 class="header-title">Cliente</h4>
+                            <div class="table-responsive">
+                                <table class="table table-borderless mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="ps-0">Nombre:</td>
+                                            <td class="text-end">{{ quote.client.name|default:'N/A' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-0">Email:</td>
+                                            <td class="text-end">{{ quote.client.email|default:'-' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="ps-0">Teléfono:</td>
+                                            <td class="text-end">{{ quote.client.phone|default:'-' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items de la cotización -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Items de la Cotización</h5>
+                </div>
+                <div class="card-body">
+                    {% if quote.items %}
+                    <div class="table-responsive">
+                        <table class="table table-centered mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Descripción</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-center">Horas</th>
+                                    <th class="text-end">Tarifa/Hora</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in quote.items %}
+                                <tr>
+                                    <td>{{ item.service_code|default:'-' }}</td>
+                                    <td>{{ item.description }}</td>
+                                    <td class="text-center">{{ item.quantity }}</td>
+                                    <td class="text-center">{{ item.hours|floatformat:2 }}</td>
+                                    <td class="text-end">${{ item.hourly_rate|floatformat:2 }}</td>
+                                    <td class="text-end"><strong>${{ item.line_total|floatformat:2 }}</strong></td>
+                                </tr>
+                                {% if item.notes %}
+                                <tr>
+                                    <td colspan="6" class="text-muted small ps-4">
+                                        <i class="bi bi-info-circle"></i> {{ item.notes }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-4">No hay items en esta cotización</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de totales -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title">Resumen de Totales</h4>
+                    <div class="table-responsive">
+                        <table class="table table-centered mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Concepto</th>
+                                    <th class="text-end">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Subtotal</td>
+                                    <td class="text-end">${{ quote.subtotal|floatformat:2 }}</td>
+                                </tr>
+                                {% if quote.discount_percent > 0 or quote.discount_amount > 0 %}
+                                <tr>
+                                    <td>Descuento 
+                                        {% if quote.discount_percent > 0 %}({{ quote.discount_percent }}%){% endif %}
+                                    </td>
+                                    <td class="text-end">-${{ quote.discount_amount|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Subtotal después de descuento</td>
+                                    <td class="text-end">${{ quote.subtotal|add:quote.discount_amount|add:"-"|floatformat:2 }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td>Impuestos ({{ quote.tax_percent }}%)</td>
+                                    <td class="text-end">${{ quote.tax_amount|floatformat:2 }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-dark"><b>Total</b></td>
+                                    <td class="text-dark text-end"><b>${{ quote.total|floatformat:2 }} {{ quote.currency_code|default:'MXN' }}</b></td>
+                                </tr>
+                                <tr>
+                                    <td>Total de Horas</td>
+                                    <td class="text-end"><strong>{{ quote.total_hours|floatformat:2 }} hrs</strong></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title">Acciones</h4>
+                    <div class="d-grid gap-2">
+                        {% if can_convert %}
+                        <form method="post" action="{% url 'frontend:quote_convert_to_wo' quote.quote_id %}" onsubmit="return confirm('¿Convertir esta cotización a orden de trabajo?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-arrow-right-circle"></i> Convertir a Orden de Trabajo
+                            </button>
+                        </form>
+                        {% endif %}
+                        {% if can_edit %}
+                        <a href="{% url 'frontend:quote_create' %}?edit={{ quote.quote_id }}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar Cotización
+                        </a>
+                        {% endif %}
+                        {% if can_send and quote.status == 'DRAFT' %}
+                        <button class="btn btn-info" onclick="alert('Función de envío próximamente');">
+                            <i class="bi bi-send"></i> Enviar por Email
+                        </button>
+                        {% endif %}
+                        <a href="{% url 'frontend:quote_pdf' quote.quote_id %}" class="btn btn-danger" target="_blank">
+                            <i class="bi bi-file-earmark-pdf"></i> Generar PDF
+                        </a>
+                        <a href="{% url 'frontend:quote_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la Lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {% if quote.terms_and_conditions %}
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h4 class="header-title">Términos y Condiciones</h4>
+                    <p class="text-muted small">{{ quote.terms_and_conditions|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if quote.notes %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title">Notas</h4>
+                    <p class="text-muted">{{ quote.notes|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">Cotización no encontrada</h4>
+                    <p class="text-muted">La cotización que está buscando no existe o ha sido eliminada.</p>
+                    <a href="{% url 'frontend:quote_list' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left"></i> Volver a la lista de cotizaciones
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,727 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Reglas de Negocio - MovIAx{% endblock %}
+
+{% block body_class %}alert-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rule-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .rule-card.active {
+        border-left-color: #198754;
+    }
+    
+    .rule-card.inactive {
+        border-left-color: #6c757d;
+    }
+    
+    .rule-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .code-editor {
+        font-family: 'Courier New', monospace;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 0.75rem;
+        min-height: 120px;
+        resize: vertical;
+    }
+    
+    .rule-visual-editor {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .condition-block, .action-block {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin: 0.5rem 0;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .rule-flow {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .flow-arrow {
+        font-size: 1.5rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+    
+    .severity-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+    
+    .severity-critical { background-color: #dc3545; }
+    .severity-high { background-color: #fd7e14; }
+    .severity-medium { background-color: #0dcaf0; }
+    .severity-low { background-color: #6c757d; }
+    
+    .rule-stats .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .schema-group {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+    
+    .schema-header {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-bottom: 1px solid #dee2e6;
+        font-weight: 600;
+    }
+    
+    .rule-builder {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-gear-fill me-2 text-primary"></i>
+                        Gestión de Reglas de Negocio
+                    </h2>
+                    <p class="text-muted mb-0">Editor visual para reglas de validación y automatización</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newRuleModal">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Nueva Regla
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="refreshRules()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Actualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rule Statistics -->
+    <div class="row mb-4 rule-stats">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="bi bi-gear fs-2 text-primary me-2"></i>
+                        <h3 class="mb-0">{{ rules|length }}</h3>
+                    </div>
+                    <p class="text-muted mb-0">Total de Reglas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="bi bi-check-circle fs-2 text-success me-2"></i>
+                        <h3 class="mb-0 text-success">{{ rules|length }}</h3>
+                    </div>
+                    <p class="text-muted mb-0">Activas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="bi bi-exclamation-triangle fs-2 text-warning me-2"></i>
+                        <h3 class="mb-0 text-warning">0</h3>
+                    </div>
+                    <p class="text-muted mb-0">Con Errores</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="bi bi-folder fs-2 text-info me-2"></i>
+                        <h3 class="mb-0 text-info">{{ rules_by_schema|length }}</h3>
+                    </div>
+                    <p class="text-muted mb-0">Esquemas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Rule Builder -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-diagram-3 me-2"></i>
+                        Constructor Visual de Reglas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="rule-visual-editor">
+                        <div class="rule-flow">
+                            <div class="condition-block">
+                                <h6 class="mb-2">
+                                    <i class="bi bi-question-circle me-1"></i>
+                                    CONDICIÓN
+                                </h6>
+                                <p class="mb-0 small">CUANDO [evento] Y [condición] ES VERDADERA</p>
+                            </div>
+                            <div class="flow-arrow">
+                                <i class="bi bi-arrow-right"></i>
+                            </div>
+                            <div class="action-block">
+                                <h6 class="mb-2">
+                                    <i class="bi bi-lightning me-1"></i>
+                                    ACCIÓN
+                                </h6>
+                                <p class="mb-0 small">ENTONCES [ejecutar acción] CON [severidad]</p>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#ruleBuilderModal">
+                                <i class="bi bi-plus me-1"></i>
+                                Usar Constructor Visual
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules by Schema -->
+    {% for schema, schema_rules in rules_by_schema.items %}
+    <div class="schema-group">
+        <div class="schema-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-database me-2"></i>
+                    <strong>Esquema: {{ schema|title }}</strong>
+                    <span class="badge bg-primary ms-2">{{ schema_rules|length }} reglas</span>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" type="button" 
+                        data-bs-toggle="collapse" data-bs-target="#schema-{{ forloop.counter }}" 
+                        aria-expanded="true">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        <div class="collapse show" id="schema-{{ forloop.counter }}">
+            <div class="p-3">
+                {% for rule in schema_rules %}
+                <div class="rule-card card mb-3 {% if rule.is_active %}active{% else %}inactive{% endif %}">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3">
+                                        <i class="{{ rule.action_icon }} fs-4 text-primary"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <h5 class="mb-0 me-2">{{ rule.rule_code }}</h5>
+                                            <span class="severity-indicator severity-{{ rule.severity }}"></span>
+                                            <span class="badge bg-{{ rule.severity_class }} me-2">
+                                                {{ rule.severity|title }}
+                                            </span>
+                                            <span class="badge bg-{{ rule.status_class }}">
+                                                <i class="{{ rule.status_icon }} me-1"></i>
+                                                {{ rule.status_text }}
+                                            </span>
+                                        </div>
+                                        <h6 class="text-primary mb-2">{{ rule.rule_name }}</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <small class="text-muted d-block">
+                                                    <strong>Condición:</strong>
+                                                </small>
+                                                <code class="small">{{ rule.condition_text|truncatechars:80 }}</code>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <small class="text-muted d-block">
+                                                    <strong>Acción:</strong>
+                                                </small>
+                                                <code class="small">{{ rule.action_text|truncatechars:80 }}</code>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center text-muted small mt-2">
+                                            <i class="bi bi-table me-1"></i>
+                                            <span class="me-3">{{ rule.applies_to_table|default:"Todas las tablas" }}</span>
+                                            <i class="bi bi-arrow-repeat me-1"></i>
+                                            <span class="me-3">{{ rule.trigger_event|title|default:"Todos los eventos" }}</span>
+                                            <i class="bi bi-sort-numeric-up me-1"></i>
+                                            <span>Orden: {{ rule.execution_order }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-outline-primary btn-sm" 
+                                            onclick="editRule({{ rule.rule_id }})">
+                                        <i class="bi bi-pencil me-1"></i>
+                                        Editar
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm" 
+                                            onclick="testRule({{ rule.rule_id }})">
+                                        <i class="bi bi-play me-1"></i>
+                                        Probar
+                                    </button>
+                                    {% if rule.is_active %}
+                                    <button class="btn btn-outline-warning btn-sm" 
+                                            onclick="toggleRule({{ rule.rule_id }}, false)">
+                                        <i class="bi bi-pause me-1"></i>
+                                        Desactivar
+                                    </button>
+                                    {% else %}
+                                    <button class="btn btn-outline-success btn-sm" 
+                                            onclick="toggleRule({{ rule.rule_id }}, true)">
+                                        <i class="bi bi-play me-1"></i>
+                                        Activar
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox fs-1 mb-2"></i>
+                    <p>No hay reglas definidas para este esquema</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-gear-wide fs-1 text-muted mb-3"></i>
+            <h4 class="text-muted">No hay reglas de negocio configuradas</h4>
+            <p class="text-muted">Comience creando su primera regla de negocio para automatizar validaciones.</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newRuleModal">
+                <i class="bi bi-plus-circle me-1"></i>
+                Crear Primera Regla
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- New Rule Modal -->
+<div class="modal fade" id="newRuleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Regla de Negocio</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newRuleForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Código de Regla *</label>
+                                <input type="text" class="form-control" name="rule_code" required>
+                                <div class="form-text">Identificador único para la regla</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Nombre de Regla *</label>
+                                <input type="text" class="form-control" name="rule_name" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de Condición</label>
+                                <select class="form-select" name="condition_type">
+                                    {% for type in condition_types %}
+                                    <option value="{{ type.value }}">{{ type.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de Acción</label>
+                                <select class="form-select" name="action_type">
+                                    {% for type in action_types %}
+                                    <option value="{{ type.value }}">{{ type.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Condición *</label>
+                        <textarea class="form-control code-editor" name="condition_text" rows="4" required
+                                  placeholder="Ejemplo: stock_quantity < minimum_stock"></textarea>
+                        <div class="form-text">Expresión que define cuándo se ejecuta la regla</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Acción *</label>
+                        <textarea class="form-control code-editor" name="action_text" rows="3" required
+                                  placeholder="Ejemplo: Generar alerta de stock bajo"></textarea>
+                        <div class="form-text">Acción a ejecutar cuando se cumple la condición</div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Esquema</label>
+                                <input type="text" class="form-control" name="applies_to_schema" 
+                                       placeholder="inv, wo, etc.">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Tabla</label>
+                                <input type="text" class="form-control" name="applies_to_table" 
+                                       placeholder="products, work_orders, etc.">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Evento Disparador</label>
+                                <select class="form-select" name="trigger_event">
+                                    <option value="">Cualquier evento</option>
+                                    {% for event in trigger_events %}
+                                    <option value="{{ event.value }}">{{ event.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Severidad</label>
+                                <select class="form-select" name="severity">
+                                    {% for level in severity_levels %}
+                                    <option value="{{ level.value }}" {% if level.value == 'medium' %}selected{% endif %}>
+                                        {{ level.label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Orden de Ejecución</label>
+                                <input type="number" class="form-control" name="execution_order" value="100" min="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" name="is_active" checked>
+                                    <label class="form-check-label">Regla Activa</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="stop_on_match">
+                                    <label class="form-check-label">Detener en Coincidencia</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notas</label>
+                        <textarea class="form-control" name="notes" rows="2" 
+                                  placeholder="Descripción adicional o comentarios sobre la regla"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="saveRule()">
+                    <i class="bi bi-check me-1"></i>
+                    Guardar Regla
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rule Builder Modal -->
+<div class="modal fade" id="ruleBuilderModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Constructor Visual de Reglas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="rule-builder">
+                    <div class="text-center mb-4">
+                        <h6 class="text-muted">Construya su regla paso a paso</h6>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-question-circle me-1"></i>
+                                        Definir Condición
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Campo</label>
+                                        <select class="form-select" id="conditionField">
+                                            <option value="">Seleccionar campo...</option>
+                                            <option value="stock_quantity">Cantidad en Stock</option>
+                                            <option value="price">Precio</option>
+                                            <option value="status">Estado</option>
+                                            <option value="created_at">Fecha de Creación</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Operador</label>
+                                        <select class="form-select" id="conditionOperator">
+                                            <option value="<">Menor que</option>
+                                            <option value="<=">Menor o igual que</option>
+                                            <option value="=">Igual a</option>
+                                            <option value="!=">Diferente de</option>
+                                            <option value=">=">Mayor o igual que</option>
+                                            <option value=">">Mayor que</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Valor</label>
+                                        <input type="text" class="form-control" id="conditionValue" 
+                                               placeholder="Ingrese el valor...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-lightning me-1"></i>
+                                        Definir Acción
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Tipo de Acción</label>
+                                        <select class="form-select" id="actionType">
+                                            <option value="alert">Generar Alerta</option>
+                                            <option value="block">Bloquear Operación</option>
+                                            <option value="warn">Mostrar Advertencia</option>
+                                            <option value="log">Registrar Evento</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Mensaje</label>
+                                        <textarea class="form-control" id="actionMessage" rows="3"
+                                                  placeholder="Mensaje a mostrar o registrar..."></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Severidad</label>
+                                        <select class="form-select" id="actionSeverity">
+                                            <option value="low">Baja</option>
+                                            <option value="medium" selected>Media</option>
+                                            <option value="high">Alta</option>
+                                            <option value="critical">Crítica</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="mb-2">Vista Previa de la Regla</h6>
+                                <div id="rulePreview" class="font-monospace small text-muted">
+                                    Seleccione los campos para ver la vista previa...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="applyVisualRule()">
+                    <i class="bi bi-check me-1"></i>
+                    Aplicar Regla
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Visual rule builder functionality
+    const conditionField = document.getElementById('conditionField');
+    const conditionOperator = document.getElementById('conditionOperator');
+    const conditionValue = document.getElementById('conditionValue');
+    const actionType = document.getElementById('actionType');
+    const actionMessage = document.getElementById('actionMessage');
+    const actionSeverity = document.getElementById('actionSeverity');
+    const rulePreview = document.getElementById('rulePreview');
+
+    function updateRulePreview() {
+        const field = conditionField.value;
+        const operator = conditionOperator.value;
+        const value = conditionValue.value;
+        const action = actionType.value;
+        const message = actionMessage.value;
+        const severity = actionSeverity.value;
+
+        if (field && operator && value && action) {
+            const preview = `CUANDO ${field} ${operator} ${value} ENTONCES ${action.toUpperCase()}: "${message}" (${severity.toUpperCase()})`;
+            rulePreview.textContent = preview;
+            rulePreview.classList.remove('text-muted');
+            rulePreview.classList.add('text-primary');
+        } else {
+            rulePreview.textContent = 'Seleccione los campos para ver la vista previa...';
+            rulePreview.classList.remove('text-primary');
+            rulePreview.classList.add('text-muted');
+        }
+    }
+
+    // Add event listeners for rule builder
+    if (conditionField) {
+        [conditionField, conditionOperator, conditionValue, actionType, actionMessage, actionSeverity].forEach(element => {
+            element.addEventListener('change', updateRulePreview);
+            element.addEventListener('input', updateRulePreview);
+        });
+    }
+});
+
+// Global functions
+function refreshRules() {
+    window.location.reload();
+}
+
+function editRule(ruleId) {
+    // In a real implementation, this would open an edit modal with the rule data
+    alert(`Editando regla ${ruleId}. Esta funcionalidad se implementará próximamente.`);
+}
+
+function testRule(ruleId) {
+    // In a real implementation, this would test the rule against sample data
+    alert(`Probando regla ${ruleId}. Esta funcionalidad se implementará próximamente.`);
+}
+
+function toggleRule(ruleId, activate) {
+    // In a real implementation, this would toggle the rule status via API
+    const action = activate ? 'activar' : 'desactivar';
+    if (confirm(`¿Está seguro de que desea ${action} esta regla?`)) {
+        alert(`Regla ${ruleId} ${activate ? 'activada' : 'desactivada'}. Esta funcionalidad se implementará próximamente.`);
+    }
+}
+
+function saveRule() {
+    const form = document.getElementById('newRuleForm');
+    const formData = new FormData(form);
+    
+    // Basic validation
+    const requiredFields = ['rule_code', 'rule_name', 'condition_text', 'action_text'];
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!formData.get(field)) {
+            isValid = false;
+            const input = form.querySelector(`[name="${field}"]`);
+            input.classList.add('is-invalid');
+        } else {
+            const input = form.querySelector(`[name="${field}"]`);
+            input.classList.remove('is-invalid');
+        }
+    });
+    
+    if (!isValid) {
+        alert('Por favor, complete todos los campos requeridos.');
+        return;
+    }
+    
+    // In a real implementation, this would save via API
+    alert('Regla guardada exitosamente. Esta funcionalidad se implementará próximamente.');
+    
+    // Close modal and refresh
+    const modal = bootstrap.Modal.getInstance(document.getElementById('newRuleModal'));
+    modal.hide();
+    form.reset();
+}
+
+function applyVisualRule() {
+    const field = document.getElementById('conditionField').value;
+    const operator = document.getElementById('conditionOperator').value;
+    const value = document.getElementById('conditionValue').value;
+    const actionType = document.getElementById('actionType').value;
+    const message = document.getElementById('actionMessage').value;
+    const severity = document.getElementById('actionSeverity').value;
+
+    if (!field || !operator || !value || !actionType || !message) {
+        alert('Por favor, complete todos los campos del constructor visual.');
+        return;
+    }
+
+    // Apply to new rule form
+    const newRuleForm = document.getElementById('newRuleForm');
+    newRuleForm.querySelector('[name="condition_text"]').value = `${field} ${operator} ${value}`;
+    newRuleForm.querySelector('[name="action_text"]').value = message;
+    newRuleForm.querySelector('[name="action_type"]').value = actionType;
+    newRuleForm.querySelector('[name="severity"]').value = severity;
+
+    // Close visual builder and open new rule modal
+    const builderModal = bootstrap.Modal.getInstance(document.getElementById('ruleBuilderModal'));
+    builderModal.hide();
+    
+    const newRuleModal = new bootstrap.Modal(document.getElementById('newRuleModal'));
+    newRuleModal.show();
+}
+</script>
+{% endblock %}

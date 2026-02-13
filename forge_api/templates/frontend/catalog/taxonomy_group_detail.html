@@ -1,0 +1,185 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+{% load navigation_tags %}
+
+{% block title %}{{ group.name }} - Grupo de Taxonomía - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'frontend/css/taxonomy.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    {% render_breadcrumbs breadcrumbs %}
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="h3 mb-2">
+                <i class="bi bi-collection text-info"></i>
+                {{ group.name }}
+                <span class="badge bg-info ms-2">{{ group.code }}</span>
+                {% if not group.is_active %}
+                    <span class="badge bg-warning ms-1">Inactivo</span>
+                {% endif %}
+            </h1>
+            {% if group.description %}
+                <p class="text-muted mb-0">{{ group.description }}</p>
+            {% endif %}
+        </div>
+        
+        <div class="btn-group" role="group">
+            <a href="{% url 'frontend:taxonomy_group_edit' subsystem_id=subsystem_id pk=group.id %}" class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    <i class="bi bi-gear"></i> Acciones
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'frontend:taxonomy_subsystem_detail' subsystem_id %}">
+                        <i class="bi bi-arrow-up"></i> Ver Subsistema Padre
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'frontend:taxonomy_system_detail' system_id %}">
+                        <i class="bi bi-diagram-2"></i> Ver Sistema
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'frontend:taxonomy_group_delete' subsystem_id=subsystem_id pk=group.id %}">
+                        <i class="bi bi-trash"></i> Eliminar Grupo
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información principal -->
+        <div class="col-lg-8">
+            <!-- Estadísticas del grupo -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="bi bi-nodes" style="font-size: 2rem;"></i>
+                            <h4 class="mt-2">{{ group_stats.total_items|default:0 }}</h4>
+                            <p class="mb-0">Items Asociados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información detallada -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle"></i> Información Detallada
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Código:</strong></div>
+                        <div class="col-md-9">
+                            <span class="badge bg-info">{{ group.code }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Nombre:</strong></div>
+                        <div class="col-md-9">{{ group.name }}</div>
+                    </div>
+                    {% if group.description %}
+                        <div class="row mb-3">
+                            <div class="col-md-3"><strong>Descripción:</strong></div>
+                            <div class="col-md-9">{{ group.description }}</div>
+                        </div>
+                    {% endif %}
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Orden:</strong></div>
+                        <div class="col-md-9">{{ group.sort_order|default:0 }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-3"><strong>Estado:</strong></div>
+                        <div class="col-md-9">
+                            {% if group.is_active %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Activo
+                                </span>
+                            {% else %}
+                                <span class="badge bg-warning">
+                                    <i class="bi bi-pause-circle"></i> Inactivo
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Jerarquía -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-diagram-3"></i> Jerarquía
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if system %}
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Sistema</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>{{ system.name }}</span>
+                                <a href="{% url 'frontend:taxonomy_system_detail' system_id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if subsystem %}
+                        <div class="mb-3">
+                            <h6 class="text-muted mb-1">Subsistema</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>{{ subsystem.name }}</span>
+                                <a href="{% url 'frontend:taxonomy_subsystem_detail' subsystem_id %}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <div>
+                        <h6 class="text-muted mb-1">Grupo (Actual)</h6>
+                        <span class="badge bg-info">{{ group.name }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navegación rápida -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-compass"></i> Navegación Rápida
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'frontend:taxonomy_tree' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-diagram-3"></i> Ver Árbol Completo
+                        </a>
+                        <a href="{% url 'frontend:taxonomy_group_list' subsystem_id=subsystem_id %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-list"></i> Lista de Grupos
+                        </a>
+                        <a href="{% url 'frontend:taxonomy_subsystem_detail' subsystem_id %}" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-arrow-up"></i> Ver Subsistema
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

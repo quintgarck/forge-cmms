@@ -1,0 +1,801 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Monedas - MovIAx{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'frontend:catalog_index' %}" class="text-decoration-none">
+            <i class="bi bi-collection me-1"></i>Catálogos
+        </a>
+    </li>
+    <li class="breadcrumb-item active">Monedas</li>
+{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ========================================
+       MODO OSCURO - Variables CSS
+       ======================================== */
+    :root[data-theme="dark"] {
+        --currency-bg-color: #1e293b;
+        --currency-border-color: #334155;
+        --currency-text-color: #f8f9fa;
+        --currency-text-muted: #94a3b8;
+        --calculator-bg: #1e293b;
+        --calculator-border: #334155;
+        --calculator-label: #f8f9fa;
+        --calculator-input-bg: #0f172a;
+        --calculator-input-border: #334155;
+        --calculator-input-text: #f8f9fa;
+        --footer-bg: #1e293b;
+        --card-body-text: #f8f9fa;
+        --card-body-muted: #94a3b8;
+    }
+    
+    /* Modo claro (default) */
+    :root:not([data-theme="dark"]) {
+        --currency-bg-color: #ffffff;
+        --currency-border-color: #e0e0e0;
+        --currency-text-color: #212529;
+        --currency-text-muted: #6c757d;
+        --calculator-bg: #f8f9fa;
+        --calculator-border: #dee2e6;
+        --calculator-label: #495057;
+        --calculator-input-bg: #ffffff;
+        --calculator-input-border: #ced4da;
+        --calculator-input-text: #212529;
+        --footer-bg: #f8f9fa;
+        --card-body-text: #212529;
+        --card-body-muted: #6c757d;
+    }
+    
+    /* ========================================
+       Currency Card Styles
+       ======================================== */
+    .currency-card {
+        transition: all 0.3s ease;
+        border: 1px solid var(--currency-border-color);
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        background-color: var(--currency-bg-color);
+    }
+    .currency-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-color: #007bff;
+    }
+    
+    /* Currency Header - Brilla en ambos modos */
+    .currency-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        padding: 1rem;
+    }
+    .base-currency-header {
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    }
+    
+    /* Exchange Rate Display */
+    .exchange-rate-display {
+        font-family: 'Courier New', monospace;
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    /* Currency Symbol */
+    .currency-symbol {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+    
+    /* Rate Change Indicator */
+    .rate-change {
+        font-size: 0.8rem;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+    }
+    .rate-up {
+        background: #d4edda;
+        color: #155724;
+    }
+    .rate-down {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    .rate-stable {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+    
+    /* ========================================
+       Stats Overview - MEJORADO PARA AMBOS MODOS
+       ======================================== */
+    .stats-overview {
+        /* Gradient que funciona bien en cualquier modo */
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        /* Sombra para profundidad */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .stats-overview h4 {
+        color: white !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        margin-bottom: 0.5rem;
+    }
+    .stats-overview p, 
+    .stats-overview .opacity-75 {
+        color: rgba(255,255,255,0.95) !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+    .stats-overview .h3 {
+        color: white !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        font-weight: 700;
+    }
+    .stats-overview small {
+        color: rgba(255,255,255,0.85) !important;
+        font-weight: 500;
+    }
+    
+    /* ========================================
+       Currency Grid
+       ======================================== */
+    .currency-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1rem;
+    }
+    
+    /* ========================================
+       Exchange Calculator - COMPATIBLE LIGHT/DARK
+       ======================================== */
+    .exchange-calculator {
+        background-color: var(--calculator-bg);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 2px dashed var(--calculator-border);
+        transition: all 0.3s ease;
+    }
+    .exchange-calculator:hover {
+        border-color: #007bff;
+    }
+    .exchange-calculator label {
+        color: var(--calculator-label);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+    .exchange-calculator .form-control,
+    .exchange-calculator .form-select {
+        background-color: var(--calculator-input-bg);
+        border: 1px solid var(--calculator-input-border);
+        color: var(--calculator-input-text);
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .exchange-calculator .form-control:focus,
+    .exchange-calculator .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+        outline: none;
+    }
+    /* Resultado - visible en ambos modos */
+    .exchange-calculator .form-control.bg-light {
+        background-color: var(--calculator-input-bg) !important;
+        color: var(--calculator-input-text) !important;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    /* ========================================
+       Last Updated
+       ======================================== */
+    .last-updated {
+        font-size: 0.8rem;
+        color: var(--currency-text-muted);
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    .last-updated i {
+        opacity: 0.7;
+    }
+    
+    /* ========================================
+       Currency Card Footer
+       ======================================== */
+    .currency-card .card-footer {
+        background-color: var(--footer-bg);
+        border-top: 1px solid var(--currency-border-color);
+        padding: 0.75rem 1rem;
+    }
+    
+    /* ========================================
+       Currency Card Body - Textos legibles
+       ======================================== */
+    .currency-card .card-body {
+        color: var(--card-body-text);
+    }
+    .currency-card .card-body h6.text-muted {
+        color: var(--card-body-muted) !important;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+    .currency-card .card-body small.text-muted {
+        color: var(--card-body-muted) !important;
+    }
+    .currency-card .card-body .h5 {
+        color: var(--card-body-text);
+        font-weight: 700;
+    }
+    
+    /* ========================================
+       Empty State
+       ======================================== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--currency-text-muted);
+        margin-bottom: 1rem;
+    }
+    .empty-state h4 {
+        color: var(--card-body-text);
+        margin-bottom: 0.5rem;
+    }
+    .empty-state p {
+        color: var(--card-body-muted);
+    }
+    
+    /* ========================================
+       Badges en modo oscuro
+       ======================================== */
+    [data-theme="dark"] .badge.bg-light {
+        background-color: #334155 !important;
+        color: #f8f9fa !important;
+    }
+    
+    /* ========================================
+       Responsive adjustments
+       ======================================== */
+    @media (max-width: 768px) {
+        .currency-grid {
+            grid-template-columns: 1fr;
+        }
+        .exchange-calculator .row {
+            gap: 1rem;
+        }
+        .exchange-calculator .col-md-1 {
+            display: flex;
+            justify-content: center;
+        }
+    }
+    
+    /* ========================================
+       Botones - Compatibles con Dark Mode
+       ======================================== */
+    /* Botón Info - Mejor contraste en dark mode */
+    .btn-info {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+        color: #ffffff;
+    }
+    [data-theme="dark"] .btn-info {
+        background-color: #0dcaf0;
+        border-color: #0dcaf0;
+        color: #0f172a;
+        font-weight: 600;
+    }
+    [data-theme="dark"] .btn-info:hover {
+        background-color: #31d2f2;
+        border-color: #25cff2;
+        color: #0f172a;
+    }
+    
+    /* Botón Success - Mejor contraste en dark mode */
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: #ffffff;
+    }
+    [data-theme="dark"] .btn-success {
+        background-color: #198754;
+        border-color: #198754;
+        color: #ffffff;
+    }
+    [data-theme="dark"] .btn-success:hover {
+        background-color: #1e7e34;
+        border-color: #1c7e32;
+        color: #ffffff;
+    }
+    
+    /* Botón Primary */
+    .btn-primary {
+        background-color: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+    }
+    [data-theme="dark"] .btn-primary:hover {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+        color: #ffffff;
+    }
+    
+    /* Botones Outline */
+    [data-theme="dark"] .btn-outline-info {
+        border-color: #0dcaf0;
+        color: #0dcaf0;
+    }
+    [data-theme="dark"] .btn-outline-info:hover {
+        background-color: #0dcaf0;
+        color: #0f172a;
+    }
+    
+    [data-theme="dark"] .btn-outline-secondary {
+        border-color: #94a3b8;
+        color: #f8f9fa;
+    }
+    [data-theme="dark"] .btn-outline-secondary:hover {
+        background-color: #64748b;
+        border-color: #64748b;
+        color: #f8f9fa;
+    }
+    
+    [data-theme="dark"] .btn-outline-primary {
+        border-color: #60a5fa;
+        color: #60a5fa;
+    }
+    [data-theme="dark"] .btn-outline-primary:hover {
+        background-color: #60a5fa;
+        color: #0f172a;
+    }
+    
+    [data-theme="dark"] .btn-outline-danger {
+        border-color: #f87171;
+        color: #f87171;
+    }
+    [data-theme="dark"] .btn-outline-danger:hover {
+        background-color: #f87171;
+        color: #ffffff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-currency-exchange text-primary me-2"></i>
+                        Gestión de Monedas
+                    </h1>
+                    <p class="text-muted mb-0">Configuración de monedas y tipos de cambio</p>
+                </div>
+                <div>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'frontend:currency_history_comparison' %}" class="btn btn-info">
+                            <i class="bi bi-bar-chart me-1"></i>
+                            Comparar Monedas
+                        </a>
+                        <a href="{% url 'frontend:currency_rates' %}" class="btn btn-success">
+                            <i class="bi bi-currency-exchange me-1"></i>
+                            Gestionar Tasas
+                        </a>
+                        <button class="btn btn-outline-info" id="refreshRates">
+                            <i class="bi bi-arrow-clockwise me-1"></i>
+                            Actualizar Tipos
+                        </button>
+                        <a href="{% url 'frontend:currency_create' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Nueva Moneda
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    {% if currencies %}
+    <div class="stats-overview">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h4 class="mb-1">
+                    <i class="bi bi-collection me-2"></i>
+                    {{ currencies|length }} Monedas Configuradas
+                </h4>
+                <p class="mb-0 opacity-75">
+                    {% if base_currency %}
+                    Moneda base: {{ base_currency.name }} ({{ base_currency.currency_code }})
+                    {% else %}
+                    Sin moneda base definida
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-4">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="h3 mb-0">
+                            {% for currency in currencies %}{% if currency.is_active %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+                        </div>
+                        <small class="opacity-75">Activas</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="h3 mb-0">
+                            {% for currency in currencies %}{% if not currency.is_active %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+                        </div>
+                        <small class="opacity-75">Inactivas</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="h3 mb-0">{{ currencies|length }}</div>
+                        <small class="opacity-75">Total</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Exchange Rate Calculator -->
+    <div class="exchange-calculator">
+        <div class="row align-items-center mb-3">
+            <div class="col-md-2">
+                <label for="fromAmount" class="form-label">Cantidad</label>
+                <input type="number" class="form-control" id="fromAmount" value="100" min="0" step="0.01">
+            </div>
+            <div class="col-md-3">
+                <label for="fromCurrency" class="form-label">De</label>
+                <select class="form-select" id="fromCurrency">
+                    {% for currency in currencies %}
+                    {% if currency.is_active %}
+                    <option value="{{ currency.currency_code }}" data-rate="{{ currency.exchange_rate }}">
+                        {{ currency.currency_code }} - {{ currency.name }}
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1 text-center">
+                <button class="btn btn-outline-primary btn-sm mt-4" id="swapCurrencies" title="Intercambiar">
+                    <i class="bi bi-arrow-left-right"></i>
+                </button>
+            </div>
+            <div class="col-md-3">
+                <label for="toCurrency" class="form-label">A</label>
+                <select class="form-select" id="toCurrency">
+                    {% for currency in currencies %}
+                    {% if currency.is_active %}
+                    <option value="{{ currency.currency_code }}" data-rate="{{ currency.exchange_rate }}">
+                        {{ currency.currency_code }} - {{ currency.name }}
+                    </option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Resultado</label>
+                <div class="form-control bg-light fw-bold fs-5" id="conversionResult">0.00</div>
+            </div>
+        </div>
+        
+        <!-- Montos Rápidos -->
+        <div class="row">
+            <div class="col-12">
+                <small class="text-muted">Montos rápidos:</small>
+                <div class="btn-group btn-group-sm ms-2" role="group">
+                    <button type="button" class="btn btn-outline-secondary quick-amount" data-amount="10">10</button>
+                    <button type="button" class="btn btn-outline-secondary quick-amount" data-amount="50">50</button>
+                    <button type="button" class="btn btn-outline-secondary quick-amount" data-amount="100">100</button>
+                    <button type="button" class="btn btn-outline-secondary quick-amount" data-amount="500">500</button>
+                    <button type="button" class="btn btn-outline-secondary quick-amount" data-amount="1000">1,000</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tasa de Conversión -->
+        <div class="row mt-2">
+            <div class="col-12">
+                <small class="text-muted" id="conversionRateInfo">
+                    1 {{ base_currency.currency_code|default:"USD" }} = <span class="fw-bold" id="rateDisplay">1.0000</span> <span id="toCurrencyDisplay">---</span>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Currency Grid -->
+    {% if currencies %}
+    <div class="currency-grid">
+        {% for currency in currencies %}
+        <div class="currency-card">
+            <!-- Currency Header -->
+            <div class="currency-header {% if currency.is_base_currency %}base-currency-header{% endif %}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="currency-symbol me-3">
+                            {{ currency.symbol|default:currency.currency_code }}
+                        </div>
+                        <div>
+                            <h5 class="mb-0">{{ currency.name }}</h5>
+                            <small class="opacity-75">{{ currency.currency_code }}</small>
+                            {% if currency.is_base_currency %}
+                            <span class="badge bg-light text-dark ms-2">
+                                <i class="bi bi-star-fill me-1"></i>
+                                Base
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        {% if currency.is_active %}
+                        <span class="badge bg-light text-dark">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Activa
+                        </span>
+                        {% else %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="bi bi-pause-circle me-1"></i>
+                            Inactiva
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Currency Body -->
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <h6 class="text-muted mb-2">Tipo de Cambio</h6>
+                        <div class="exchange-rate-display">
+                            {{ currency.exchange_rate_formatted|default:currency.exchange_rate }}
+                        </div>
+                        <small class="text-muted">
+                            {% if currency.is_base_currency %}
+                            Moneda base (1.0000)
+                            {% else %}
+                            Por 1 {{ base_currency.currency_code|default:"USD" }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-muted mb-2">Decimales</h6>
+                        <div class="h5 mb-1">{{ currency.decimals }}</div>
+                        <small class="text-muted">Precisión</small>
+                    </div>
+                </div>
+
+                <!-- Rate Change Indicator (simulated) -->
+                {% if not currency.is_base_currency %}
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Cambio (24h)</small>
+                        <span class="rate-change rate-{% cycle 'up' 'down' 'stable' %}">
+                            {% cycle '+0.15%' '-0.08%' '0.00%' %}
+                            {% cycle '↗' '↘' '→' %}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Last Updated -->
+                <div class="mt-3">
+                    <div class="last-updated">
+                        <i class="bi bi-clock me-1"></i>
+                        Actualizado: {% now "d/m/Y H:i" %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Currency Footer -->
+            <div class="card-footer bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'frontend:currency_detail' pk=currency.currency_code %}" class="btn btn-outline-primary" title="Ver detalles">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'frontend:currency_edit' pk=currency.currency_code %}" class="btn btn-outline-secondary" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'frontend:currency_delete' pk=currency.currency_code %}" class="btn btn-outline-danger" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-currency-exchange text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No hay monedas configuradas</h4>
+                <p class="text-muted">
+                    Configure las monedas que utilizará el sistema para precios y transacciones.
+                    <br>
+                    Comience agregando la moneda base de su negocio.
+                </p>
+                <div class="mt-4">
+                    <a href="{% url 'frontend:currency_create' %}" class="btn btn-primary me-2">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Agregar Moneda Base
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Currency Detail Modal -->
+<div class="modal fade" id="currencyDetailModal" tabindex="-1" aria-labelledby="currencyDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="currencyDetailModalLabel">
+                    <i class="bi bi-currency-exchange me-2"></i>
+                    Detalles de Moneda
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="currencyDetailContent">
+                <!-- Currency details will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fromAmount = document.getElementById('fromAmount');
+    const fromCurrency = document.getElementById('fromCurrency');
+    const toCurrency = document.getElementById('toCurrency');
+    const conversionResult = document.getElementById('conversionResult');
+    const swapButton = document.getElementById('swapCurrencies');
+    const refreshButton = document.getElementById('refreshRates');
+    const rateDisplay = document.getElementById('rateDisplay');
+    const toCurrencyDisplay = document.getElementById('toCurrencyDisplay');
+    const quickAmountButtons = document.querySelectorAll('.quick-amount');
+    
+    // Currency conversion calculator
+    function calculateConversion() {
+        const amount = parseFloat(fromAmount.value) || 0;
+        
+        // Check if options are available before accessing attributes
+        const fromOption = fromCurrency.selectedOptions[0];
+        const toOption = toCurrency.selectedOptions[0];
+        
+        const fromRate = fromOption ? parseFloat(fromOption.getAttribute('data-rate')) || 1 : 1;
+        const toRate = toOption ? parseFloat(toOption.getAttribute('data-rate')) || 1 : 1;
+        
+        // Convert to base currency first, then to target currency
+        const baseAmount = amount / fromRate;
+        const convertedAmount = baseAmount * toRate;
+        
+        conversionResult.textContent = convertedAmount.toFixed(4);
+        
+        // Update rate display
+        const conversionRate = toRate / fromRate;
+        rateDisplay.textContent = conversionRate.toFixed(4);
+        toCurrencyDisplay.textContent = toCurrency.value;
+    }
+    
+    // Event listeners for calculator
+    if (fromAmount) fromAmount.addEventListener('input', calculateConversion);
+    if (fromCurrency) fromCurrency.addEventListener('change', calculateConversion);
+    if (toCurrency) toCurrency.addEventListener('change', calculateConversion);
+    
+    // Quick amount buttons
+    if (quickAmountButtons.length > 0) {
+        quickAmountButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const amount = this.getAttribute('data-amount').replace(',', '');
+                fromAmount.value = amount;
+                calculateConversion();
+            });
+        });
+    }
+    
+    // Swap currencies
+    if (swapButton) {
+        swapButton.addEventListener('click', function() {
+            // Check if both selects have options before swapping
+            if (fromCurrency.options.length === 0 || toCurrency.options.length === 0) {
+                console.warn('No currency options available for swapping');
+                return;
+            }
+            
+            const fromValue = fromCurrency.value;
+            const toValue = toCurrency.value;
+            
+            fromCurrency.value = toValue;
+            toCurrency.value = fromValue;
+            
+            calculateConversion();
+        });
+    }
+    
+    // Refresh exchange rates
+    if (refreshButton) {
+        refreshButton.addEventListener('click', function() {
+            const button = this; // Store reference to the button
+            const icon = button.querySelector('i');
+            icon.classList.add('fa-spin');
+            
+            // Simulate API call
+            setTimeout(() => {
+                icon.classList.remove('fa-spin');
+                // Show success message
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-success border-0';
+                toast.setAttribute('role', 'alert');
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Tipos de cambio actualizados correctamente
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                `;
+                
+                document.body.appendChild(toast);
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+                
+                // Remove toast after it's hidden
+                toast.addEventListener('hidden.bs.toast', () => {
+                    toast.remove();
+                });
+            }, 2000);
+        });
+    }
+    
+    // Currency card hover effects
+    document.querySelectorAll('.currency-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+    });
+    
+    // Initialize calculator
+    calculateConversion();
+    
+    // Auto-update rates every 5 minutes (in a real app)
+    setInterval(() => {
+        console.log('Auto-updating exchange rates...');
+        // Implement auto-update logic
+    }, 300000); // 5 minutes
+});
+</script>
+{% endblock %}

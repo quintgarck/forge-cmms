@@ -1,0 +1,220 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Código - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            {% for crumb in breadcrumbs %}
+                {% if crumb.url %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% else %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+    
+    {% if code %}
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-{{ category_config.color }} text-white">
+                    <h4 class="mb-0">
+                        <i class="{{ category_config.icon }}"></i>
+                        Detalle del Código
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Código y Estado -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="text-muted mb-2">Código</h5>
+                            <h2 class="mb-0">
+                                <span class="badge bg-{{ category_config.color }} fs-4">
+                                    {{ code.code }}
+                                </span>
+                            </h2>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <h5 class="text-muted mb-2">Estado</h5>
+                            {% if code.is_active %}
+                            <span class="badge bg-success fs-5">
+                                <i class="bi bi-check-circle"></i> Activo
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary fs-5">
+                                <i class="bi bi-x-circle"></i> Inactivo
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Información del Código -->
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <h6 class="text-muted">Categoría</h6>
+                            <p class="fs-5">
+                                <i class="{{ category_config.icon }} text-{{ category_config.color }}"></i>
+                                {{ category_config.title }}
+                            </p>
+                        </div>
+                        
+                        <div class="col-md-12 mb-3">
+                            <h6 class="text-muted">Descripción</h6>
+                            <p class="fs-5">{{ code.description }}</p>
+                        </div>
+                        {% if code.name_en %}
+                        <div class="col-md-12 mb-3">
+                            <h6 class="text-muted">Nombre (EN)</h6>
+                            <p class="fs-5">{{ code.name_en }}</p>
+                        </div>
+                        {% endif %}
+                        {% if code.display_order is not None %}
+                        <div class="col-md-12 mb-3">
+                            <h6 class="text-muted">Orden</h6>
+                            <p class="fs-5">{{ code.display_order }}</p>
+                        </div>
+                        {% endif %}
+                        {% if not is_product_catalog_category %}
+                        <div class="col-md-12 mb-3">
+                            <h6 class="text-muted">Uso</h6>
+                            <p class="fs-5">
+                                {% if usage_count > 0 %}
+                                <span class="badge bg-info text-dark">
+                                    <i class="bi bi-check-circle"></i> {{ usage_count }} equipo(s) usando este código
+                                </span>
+                                {% else %}
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-dash-circle"></i> No está siendo usado actualmente
+                                </span>
+                                {% endif %}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Acciones -->
+                    <div class="d-flex gap-2 mt-4">
+                        {% if is_product_catalog_category %}
+                        <a href="{% url product_catalog_edit_url_name code=code.code %}" class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url product_catalog_delete_url_name code=code.code %}" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                        {% else %}
+                        <a href="{% url 'frontend:reference_code_edit' category=category pk=code.pk %}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        {% if can_delete and user.is_staff %}
+                        <a href="{% url 'frontend:reference_code_delete' category=category pk=code.pk %}" 
+                           class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                        {% else %}
+                        <button class="btn btn-outline-danger" disabled 
+                                title="{% if not can_delete %}No se puede eliminar porque está en uso{% else %}Solo personal autorizado puede eliminar{% endif %}">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+                        {% endif %}
+                        {% endif %}
+                        <a href="{% url 'frontend:reference_code_list' %}?category={{ category }}" 
+                           class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a la Lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel lateral con información adicional -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Información
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Sobre este código</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-tag text-{{ category_config.color }}"></i>
+                            <strong>Categoría:</strong> {{ category_config.title }}
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-{% if code.is_active %}check-circle text-success{% else %}x-circle text-secondary{% endif %}"></i>
+                            <strong>Estado:</strong> {% if code.is_active %}Activo{% else %}Inactivo{% endif %}
+                        </li>
+                        {% if not is_product_catalog_category %}
+                        <li class="mb-2">
+                            <i class="bi bi-gear text-info"></i>
+                            <strong>En uso:</strong> {{ usage_count }} equipo(s)
+                        </li>
+                        {% endif %}
+                    </ul>
+                    
+                    {% if not is_product_catalog_category and usage_count > 0 %}
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-info-circle"></i>
+                        <small>
+                            Este código está siendo usado por {{ usage_count }} equipo(s).
+                            No se puede eliminar hasta que se actualicen las referencias.
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-link-45deg"></i> Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'frontend:reference_code_list' %}?category={{ category }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-list"></i> Ver todos los códigos
+                        </a>
+                        {% if is_product_catalog_category %}
+                        <a href="{% url product_catalog_create_url_name %}" 
+                           class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-plus-circle"></i> Crear nuevo
+                        </a>
+                        {% else %}
+                        <a href="{% url 'frontend:reference_code_create' %}?category={{ category }}" 
+                           class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-plus-circle"></i> Crear nuevo código
+                        </a>
+                        {% endif %}
+                        <a href="{% url 'frontend:catalog_index' %}" 
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-house"></i> Ir a Catálogos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i>
+        No se pudo cargar la información del código
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

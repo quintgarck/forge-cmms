@@ -1,0 +1,45 @@
+Quiero que construyas una API REST profesional a partir de una base de datos PostgreSQL ya existente.
+
+### Base de datos:
+- Motor: PostgreSQL
+- Conexión:
+  - host: localhost
+  - puerto: 5432
+  - usuario: postgres
+  - contraseña: ********
+  - base de datos: forge_db
+- Ya contiene tablas, vistas, funciones y procedimientos en los siguientes esquemas:
+  - cat (clientes, técnicos, equipos, ubicaciones…)
+  - inv (inventario, productos, stock…)
+  - svc (órdenes de servicio, facturas, pagos…)
+  - kpi (vistas y métricas agregadas)
+  - doc (documentos, imágenes…)
+  - oem, app (otros módulos auxiliares)
+
+### Requisitos:
+1. Crear un proyecto Django llamado `forge_api`
+2. Crear una app llamada `core`
+3. Conectarse a la base de datos PostgreSQL existente (sin crear nuevas tablas)
+4. Usar `inspectdb` para importar los modelos de todos los esquemas anteriores
+5. Crear:
+   - Serializers DRF para cada modelo importante
+   - ViewSets (o ListAPIView si es read-only)
+   - Rutas registradas en un `DefaultRouter`
+6. Exponer vistas SQL y vistas materializadas como endpoints de solo lectura
+7. Exponer funciones o procedimientos SQL como endpoints con `APIView` usando `connection.cursor()` o `RawSQL`
+8. Usar JWT o Token Authentication
+9. Documentación Swagger/OpenAPI usando `drf-yasg`
+10. Incluir paginación, filtros y permisos básicos
+11. Crear el archivo `docker-compose.yml` para PostgreSQL + Django
+12. Código limpio, bien comentado y siguiendo buenas prácticas
+
+### Entregables esperados:
+- Proyecto Django completo con estructura funcional
+- Endpoints organizados por recurso
+- Documentación Swagger disponible en `/swagger/`
+- Archivos: `requirements.txt`, `manage.py`, `settings.py`, `urls.py`, etc.
+
+### Output deseado:
+- Código fuente completo o repositorio listo para clonar y correr
+- O bien un `.zip` con todo el proyecto generado
+

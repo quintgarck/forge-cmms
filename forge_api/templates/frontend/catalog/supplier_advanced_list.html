@@ -1,0 +1,644 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión Avanzada de Proveedores - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .supplier-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .supplier-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        border-color: #007bff;
+    }
+    .supplier-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.25rem;
+    }
+    .performance-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    .performance-excellent {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    .performance-good {
+        background: linear-gradient(135deg, #ffc107, #fd7e14);
+        color: white;
+    }
+    .performance-poor {
+        background: linear-gradient(135deg, #dc3545, #e83e8c);
+        color: white;
+    }
+    .contact-info {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    .stat-item {
+        text-align: center;
+        padding: 0.75rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        border-left: 4px solid #007bff;
+    }
+    .search-filters {
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .supplier-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    .supplier-tag {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        background: #e9ecef;
+        color: #495057;
+    }
+    .rating-stars {
+        color: #ffc107;
+    }
+    .quick-actions {
+        position: sticky;
+        top: 20px;
+        z-index: 100;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-building text-primary me-2"></i>
+                        Gestión Avanzada de Proveedores
+                    </h1>
+                    <p class="text-muted mb-0">Administración completa de proveedores y rendimiento</p>
+                </div>
+                <div>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-info">
+                            <i class="bi bi-graph-up me-1"></i>
+                            Análisis
+                        </button>
+                        <button class="btn btn-outline-secondary">
+                            <i class="bi bi-download me-1"></i>
+                            Exportar
+                        </button>
+                        <button class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Nuevo Proveedor
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    {% if pagination.count %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="h3 mb-1 text-primary">{{ pagination.count }}</div>
+                                <small class="text-muted">Total Proveedores</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="h3 mb-1 text-success">
+                                    {% for supplier in suppliers %}{% if supplier.status_class == 'success' %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+                                </div>
+                                <small class="text-muted">Activos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="h3 mb-1 text-warning">
+                                    {% for supplier in suppliers %}{% if supplier.performance_class == 'success' %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+                                </div>
+                                <small class="text-muted">Alto Rendimiento</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <div class="h3 mb-1 text-info">{{ category_options|length|add:"-1" }}</div>
+                                <small class="text-muted">Categorías</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Search and Filters -->
+    <div class="search-filters">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="search" class="form-label">
+                    <i class="bi bi-search me-1"></i>
+                    Buscar Proveedor
+                </label>
+                <input type="text" 
+                       class="form-control" 
+                       id="search" 
+                       name="search" 
+                       value="{{ filters.search }}"
+                       placeholder="Nombre, código o contacto...">
+            </div>
+            <div class="col-md-2">
+                <label for="category" class="form-label">
+                    <i class="bi bi-funnel me-1"></i>
+                    Categoría
+                </label>
+                <select class="form-select" id="category" name="category">
+                    {% for option in category_options %}
+                    <option value="{{ option.value }}" 
+                            {% if option.value == filters.category %}selected{% endif %}>
+                        {{ option.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="status" class="form-label">
+                    <i class="bi bi-toggle-on me-1"></i>
+                    Estado
+                </label>
+                <select class="form-select" id="status" name="status">
+                    {% for option in status_options %}
+                    <option value="{{ option.value }}" 
+                            {% if option.value == filters.status %}selected{% endif %}>
+                        {{ option.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="sort" class="form-label">Ordenar por</label>
+                <select class="form-select" id="sort" name="sort">
+                    <option value="name" {% if filters.sort == 'name' %}selected{% endif %}>Nombre</option>
+                    <option value="performance_score" {% if filters.sort == 'performance_score' %}selected{% endif %}>Rendimiento</option>
+                    <option value="category" {% if filters.sort == 'category' %}selected{% endif %}>Categoría</option>
+                    <option value="created_at" {% if filters.sort == 'created_at' %}selected{% endif %}>Fecha</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="order" class="form-label">Orden</label>
+                <select class="form-select" id="order" name="order">
+                    <option value="asc" {% if filters.order == 'asc' %}selected{% endif %}>Ascendente</option>
+                    <option value="desc" {% if filters.order == 'desc' %}selected{% endif %}>Descendente</option>
+                </select>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-funnel"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
+        <!-- Suppliers List -->
+        <div class="col-lg-9">
+            {% if suppliers %}
+            <div class="row">
+                {% for supplier in suppliers %}
+                <div class="col-xl-6 mb-4">
+                    <div class="supplier-card h-100">
+                        <!-- Supplier Header -->
+                        <div class="supplier-header">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="{{ supplier.category_icon }} me-2 fs-4"></i>
+                                        <div>
+                                            <h5 class="mb-0">{{ supplier.name }}</h5>
+                                            <small class="opacity-75">{{ supplier.supplier_code }}</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-{{ supplier.category_class }} me-2">
+                                            {{ supplier.category|title }}
+                                        </span>
+                                        <span class="badge bg-light text-dark">
+                                            {% if supplier.status_class == 'success' %}
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            {% else %}
+                                            <i class="bi bi-x-circle me-1"></i>
+                                            {% endif %}
+                                            {{ supplier.status_label }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <div class="performance-badge performance-{% if supplier.performance_score >= 90 %}excellent{% elif supplier.performance_score >= 70 %}good{% else %}poor{% endif %}">
+                                        {{ supplier.performance_score }}%
+                                    </div>
+                                    <div class="rating-stars mt-1">
+                                        {% for i in "12345" %}
+                                        {% widthratio supplier.performance_score 20 1 as stars %}
+                                        <i class="bi bi-star{% if forloop.counter <= stars %}-fill{% endif %}"></i>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Supplier Body -->
+                        <div class="card-body">
+                            <!-- Contact Information -->
+                            <div class="contact-info">
+                                <div class="row g-2">
+                                    {% if supplier.contact_person %}
+                                    <div class="col-12">
+                                        <small class="text-muted d-block">Contacto</small>
+                                        <strong>{{ supplier.contact_person }}</strong>
+                                    </div>
+                                    {% endif %}
+                                    {% if supplier.contact_email %}
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block">Email</small>
+                                        <a href="mailto:{{ supplier.contact_email }}" class="text-decoration-none">
+                                            <i class="bi bi-envelope me-1"></i>
+                                            {{ supplier.contact_email|truncatechars:20 }}
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                    {% if supplier.contact_phone %}
+                                    <div class="col-md-6">
+                                        <small class="text-muted d-block">Teléfono</small>
+                                        <a href="tel:{{ supplier.contact_phone }}" class="text-decoration-none">
+                                            <i class="bi bi-telephone me-1"></i>
+                                            {{ supplier.contact_phone }}
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                    {% if supplier.website %}
+                                    <div class="col-12">
+                                        <small class="text-muted d-block">Sitio Web</small>
+                                        <a href="{{ supplier.website }}" target="_blank" class="text-decoration-none">
+                                            <i class="bi bi-globe me-1"></i>
+                                            {{ supplier.website|truncatechars:30 }}
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Location -->
+                            {% if supplier.city or supplier.country %}
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-1">
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    Ubicación
+                                </small>
+                                <span class="text-dark">
+                                    {% if supplier.city %}{{ supplier.city }}{% endif %}
+                                    {% if supplier.city and supplier.country %}, {% endif %}
+                                    {% if supplier.country %}{{ supplier.country }}{% endif %}
+                                </span>
+                            </div>
+                            {% endif %}
+
+                            <!-- Performance Metrics -->
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <div class="h6 mb-0 text-primary">{{ supplier.orders_count|default:0 }}</div>
+                                    <small class="text-muted">Órdenes</small>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="h6 mb-0 text-success">${{ supplier.total_amount|default:0|floatformat:0 }}</div>
+                                    <small class="text-muted">Total</small>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="h6 mb-0 text-info">{{ supplier.delivery_time|default:0 }}d</div>
+                                    <small class="text-muted">Entrega</small>
+                                </div>
+                            </div>
+
+                            <!-- Tags -->
+                            {% if supplier.tags %}
+                            <div class="supplier-tags">
+                                {% for tag in supplier.tags %}
+                                <span class="supplier-tag">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Supplier Footer -->
+                        <div class="card-footer bg-light">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar me-1"></i>
+                                    Desde {{ supplier.created_at|date:"M Y"|default:"N/A" }}
+                                </small>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary" title="Ver detalles">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success" title="Nueva orden">
+                                        <i class="bi bi-plus"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" title="Historial">
+                                        <i class="bi bi-clock-history"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.total_pages > 1 %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <nav aria-label="Paginación de proveedores">
+                        <ul class="pagination justify-content-center">
+                            {% if pagination.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'-1' }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in pagination.page_range %}
+                            <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'1' }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.total_pages }}">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="bi bi-building text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No se encontraron proveedores</h4>
+                <p class="text-muted">
+                    {% if filters.search or filters.category or filters.status %}
+                    No hay proveedores que coincidan con los filtros aplicados.
+                    <br>
+                    <a href="{% url 'frontend:supplier_advanced_list' %}" class="btn btn-outline-primary mt-2">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Limpiar Filtros
+                    </a>
+                    {% else %}
+                    Comience agregando proveedores al sistema para gestionar sus compras.
+                    <br>
+                    <button class="btn btn-primary mt-2">
+                        <i class="bi bi-plus-lg me-1"></i>
+                        Agregar Primer Proveedor
+                    </button>
+                    {% endif %}
+                </p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <div class="quick-actions">
+                <!-- Quick Actions -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-lightning me-2"></i>
+                            Acciones Rápidas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-sm">
+                                <i class="bi bi-plus me-1"></i>
+                                Nuevo Proveedor
+                            </button>
+                            <button class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-cart-plus me-1"></i>
+                                Nueva Orden
+                            </button>
+                            <button class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-graph-up me-1"></i>
+                                Análisis de Rendimiento
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-download me-1"></i>
+                                Exportar Lista
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Summary -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-speedometer2 me-2"></i>
+                            Resumen de Rendimiento
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <small class="text-muted d-block">Rendimiento Promedio</small>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: 78%"></div>
+                            </div>
+                            <small class="text-success">78%</small>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted d-block">Tiempo de Entrega Promedio</small>
+                            <div class="h5 mb-0 text-primary">5.2 días</div>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">Satisfacción General</small>
+                            <div class="rating-stars">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-half"></i>
+                                <small class="text-muted ms-1">4.2/5</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="bi bi-clock-history me-2"></i>
+                            Actividad Reciente
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div class="timeline-item mb-3">
+                                <small class="text-muted">Hace 2 horas</small>
+                                <div class="small">Nueva orden creada para AutoParts Inc.</div>
+                            </div>
+                            <div class="timeline-item mb-3">
+                                <small class="text-muted">Ayer</small>
+                                <div class="small">Proveedor TechSupply actualizado</div>
+                            </div>
+                            <div class="timeline-item">
+                                <small class="text-muted">Hace 3 días</small>
+                                <div class="small">Evaluación de rendimiento completada</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form on filter change
+    const filterSelects = document.querySelectorAll('#category, #status, #sort, #order');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Search input debounce
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            this.form.submit();
+        }, 500);
+    });
+    
+    // Supplier card hover effects
+    document.querySelectorAll('.supplier-card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.borderColor = '#007bff';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.borderColor = '#e0e0e0';
+        });
+    });
+    
+    // Action button handlers
+    document.querySelectorAll('.supplier-card .btn').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const action = this.getAttribute('title');
+            const supplierCard = this.closest('.supplier-card');
+            const supplierName = supplierCard.querySelector('h5').textContent;
+            
+            console.log(`Action: ${action} for supplier: ${supplierName}`);
+            
+            // Implement specific actions
+            switch(action) {
+                case 'Ver detalles':
+                    // Navigate to supplier detail view
+                    break;
+                case 'Nueva orden':
+                    // Open new order modal
+                    break;
+                case 'Historial':
+                    // Show supplier history
+                    break;
+                case 'Editar':
+                    // Open edit modal
+                    break;
+            }
+        });
+    });
+    
+    // Performance badge animations
+    document.querySelectorAll('.performance-badge').forEach(badge => {
+        badge.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.1)';
+        });
+        
+        badge.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // Contact link interactions
+    document.querySelectorAll('a[href^="mailto:"], a[href^="tel:"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            // Track contact interactions
+            console.log('Contact interaction:', this.href);
+        });
+    });
+});
+</script>
+{% endblock %}

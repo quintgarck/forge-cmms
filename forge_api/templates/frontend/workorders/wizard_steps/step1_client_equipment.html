@@ -1,0 +1,182 @@
+<!-- Step 1: Client and Equipment Selection -->
+<div class="wizard-step-content">
+    <h4 class="mb-4">
+        <i class="bi bi-person-gear me-2"></i>
+        Paso 1: Selección de Cliente y Equipo
+    </h4>
+    
+    <div class="row">
+        <!-- Client Selection -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-person me-2"></i>
+                        Seleccionar Cliente
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="clientSelect" class="form-label">Cliente <span class="text-danger">*</span></label>
+                        <select class="form-select" name="client_id" id="clientSelect" required>
+                            <option value="">Seleccione un cliente...</option>
+                            {% for client in clients %}
+                                <option value="{{ client.id }}" 
+                                        {% if wizard_data.client_id == client.id|stringformat:"s" %}selected{% endif %}
+                                        data-client-code="{{ client.client_code }}"
+                                        data-client-type="{{ client.type }}"
+                                        data-client-email="{{ client.email }}">
+                                    {{ client.name }} ({{ client.client_code }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Seleccione el cliente para quien se realizará el trabajo</div>
+                    </div>
+                    
+                    <!-- Client Details -->
+                    {% if selected_client %}
+                        <div class="client-details mt-3">
+                            <h6>Detalles del Cliente:</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Código:</strong> {{ selected_client.client_code }}</li>
+                                <li><strong>Tipo:</strong> {{ selected_client.type|capfirst }}</li>
+                                <li><strong>Email:</strong> {{ selected_client.email }}</li>
+                                <li><strong>Teléfono:</strong> {{ selected_client.phone }}</li>
+                                {% if selected_client.credit_limit %}
+                                    <li><strong>Límite de Crédito:</strong> ${{ selected_client.credit_limit }}</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Equipment Selection -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        Seleccionar Equipo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="equipmentSelect" class="form-label">Equipo <span class="text-danger">*</span></label>
+                        <select class="form-select" name="equipment_id" id="equipmentSelect" required>
+                            <option value="">Primero seleccione un cliente...</option>
+                            {% for equipment in equipment_list %}
+                                <option value="{{ equipment.id }}" 
+                                        {% if wizard_data.equipment_id == equipment.id|stringformat:"s" %}selected{% endif %}
+                                        data-equipment-code="{{ equipment.equipment_code }}"
+                                        data-vin="{{ equipment.vin }}"
+                                        data-year="{{ equipment.year }}"
+                                        data-make="{{ equipment.make }}"
+                                        data-model="{{ equipment.model }}">
+                                    {{ equipment.year }} {{ equipment.make }} {{ equipment.model }}
+                                    {% if equipment.license_plate %} - {{ equipment.license_plate }}{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Seleccione el equipo que requiere servicio</div>
+                    </div>
+                    
+                    <!-- Equipment Details -->
+                    <div id="equipmentDetails" class="equipment-details mt-3" style="display: none;">
+                        <h6>Detalles del Equipo:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Código:</strong> <span id="equipmentCode"></span></li>
+                            <li><strong>VIN:</strong> <span id="equipmentVin"></span></li>
+                            <li><strong>Año:</strong> <span id="equipmentYear"></span></li>
+                            <li><strong>Marca:</strong> <span id="equipmentMake"></span></li>
+                            <li><strong>Modelo:</strong> <span id="equipmentModel"></span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation Buttons -->
+    <div class="wizard-navigation mt-4">
+        <div class="d-flex justify-content-between">
+            <button type="submit" name="action" value="cancel" class="btn btn-outline-danger">
+                <i class="bi bi-x-lg me-1"></i>
+                Cancelar
+            </button>
+            <button type="submit" name="action" value="next" class="btn btn-primary" id="nextButton" disabled>
+                Siguiente
+                <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clientSelect = document.getElementById('clientSelect');
+    const equipmentSelect = document.getElementById('equipmentSelect');
+    const nextButton = document.getElementById('nextButton');
+    const equipmentDetails = document.getElementById('equipmentDetails');
+    
+    // Handle client selection
+    clientSelect.addEventListener('change', function() {
+        const clientId = this.value;
+        
+        if (clientId) {
+            // Load equipment for selected client
+            loadEquipmentForClient(clientId);
+        } else {
+            equipmentSelect.innerHTML = '<option value="">Primero seleccione un cliente...</option>';
+            equipmentSelect.disabled = true;
+            equipmentDetails.style.display = 'none';
+        }
+        
+        validateStep();
+    });
+    
+    // Handle equipment selection
+    equipmentSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        
+        if (this.value) {
+            // Show equipment details
+            document.getElementById('equipmentCode').textContent = selectedOption.dataset.equipmentCode || 'N/A';
+            document.getElementById('equipmentVin').textContent = selectedOption.dataset.vin || 'N/A';
+            document.getElementById('equipmentYear').textContent = selectedOption.dataset.year || 'N/A';
+            document.getElementById('equipmentMake').textContent = selectedOption.dataset.make || 'N/A';
+            document.getElementById('equipmentModel').textContent = selectedOption.dataset.model || 'N/A';
+            
+            equipmentDetails.style.display = 'block';
+        } else {
+            equipmentDetails.style.display = 'none';
+        }
+        
+        validateStep();
+    });
+    
+    function loadEquipmentForClient(clientId) {
+        // In a real implementation, this would make an AJAX call
+        // For now, we'll enable the equipment select and show available options
+        equipmentSelect.disabled = false;
+        
+        // This would be replaced with an actual AJAX call to load equipment
+        // fetch(`/api/clients/${clientId}/equipment/`)
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         // Populate equipment options
+        //     });
+    }
+    
+    function validateStep() {
+        const clientSelected = clientSelect.value !== '';
+        const equipmentSelected = equipmentSelect.value !== '';
+        
+        nextButton.disabled = !(clientSelected && equipmentSelected);
+    }
+    
+    // Initial validation
+    validateStep();
+});
+</script>

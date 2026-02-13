@@ -1,0 +1,298 @@
+﻿{% extends "frontend/base/base.html" %}
+
+{% block title %}Detalle del Técnico - MovIAx{% endblock %}
+
+{% block body_class %}technician-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">MovIAx</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'frontend:technician_list' %}">Técnicos</a></li>
+                        <li class="breadcrumb-item active">Detalle</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Detalle del Técnico</h4>
+            </div>
+        </div>
+    </div>
+
+    {% if technician %}
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="dropdown float-end">
+                        <a href="#" class="dropdown-toggle arrow-none text-muted" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="{% url 'frontend:technician_update' technician.technician_id %}">
+                                <i class="fas fa-edit me-1"></i> Editar
+                            </a>
+                            <a class="dropdown-item text-danger" href="{% url 'frontend:technician_delete' technician.technician_id %}">
+                                <i class="fas fa-trash-alt me-1"></i> Eliminar
+                            </a>
+                        </div>
+                    </div>
+
+                    <img src="https://ui-avatars.com/api/?name={{ technician.first_name|urlencode }}+{{ technician.last_name|urlencode }}&background=0D8ABC&color=fff" alt="Profile Image" class="rounded-circle avatar-lg img-thumbnail mb-3">
+
+                    <h4 class="mb-0">{{ technician.first_name }} {{ technician.last_name }}</h4>
+                    <p class="text-muted mb-2">{{ technician.employee_code }}</p>
+
+                    <div class="mt-3">
+                        <span class="badge 
+                            {% if technician.status == 'active' %}bg-success
+                            {% elif technician.status == 'inactive' %}bg-secondary
+                            {% elif technician.status == 'suspended' %}bg-danger
+                            {% else %}bg-warning{% endif %}">
+                            {{ technician.get_status_display|default:technician.status }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body pt-2">
+                    <h5 class="mb-3">Información de Contacto</h5>
+                    <div class="table-responsive">
+                        <table class="table table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="ps-0">Email:</td>
+                                    <td class="text-end">{{ technician.email|default:'-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-0">Teléfono:</td>
+                                    <td class="text-end">{{ technician.phone|default:'-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-0">Fecha de Nacimiento:</td>
+                                    <td class="text-end">{{ technician.birth_date|date:"d/m/Y"|default:'-' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card-body pt-0">
+                    <h5 class="mb-3">Información Laboral</h5>
+                    <div class="table-responsive">
+                        <table class="table table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="ps-0">Fecha de Contratación:</td>
+                                    <td class="text-end">{{ technician.hire_date|date:"d/m/Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-0">Nivel de Certificación:</td>
+                                    <td class="text-end">{{ technician.certification_level|default:'-' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-0">Tarifa por Hora:</td>
+                                    <td class="text-end">${{ technician.hourly_rate|floatformat:2|default:'0.00' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-0">Tarifa Diaria:</td>
+                                    <td class="text-end">${{ technician.daily_rate|floatformat:2|default:'0.00' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="ps-0">Multiplicador H. Extra:</td>
+                                    <td class="text-end">{{ technician.overtime_multiplier|floatformat:2|default:'1.50' }}x</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% if technician.specialization or technician.certifications %}
+                <div class="card-body pt-0">
+                    <h5 class="mb-3">Especializaciones y Certificaciones</h5>
+                    {% if technician.specialization %}
+                    <div class="mb-2">
+                        <label class="form-label">Especializaciones:</label>
+                        <div>
+                            {% for spec in technician.specialization %}
+                                <span class="badge bg-primary me-1">{{ spec }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if technician.certifications %}
+                    <div>
+                        <label class="form-label">Certificaciones:</label>
+                        <div>
+                            {% for cert in technician.certifications %}
+                                <span class="badge bg-info me-1">{{ cert }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="card-body pt-0">
+                    <h5 class="mb-3">Métricas de Desempeño</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted">Eficiencia Promedio</h6>
+                                <h3 class="text-success">{{ technician.efficiency_avg|floatformat:1|default:'100.0' }}%</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted">Calidad</h6>
+                                <h3 class="text-primary">{{ technician.quality_score|floatformat:1|default:'100.0' }}%</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted">Trabajos Completados</h6>
+                                <h3 class="text-info">{{ technician.jobs_completed|default:'0' }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <span class="badge {% if technician.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                            {% if technician.is_active %}Técnico Activo{% else %}Técnico Inactivo{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Órdenes de Trabajo Asignadas</h5>
+                    <a href="{% url 'frontend:workorder_create' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Nueva OT
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if workorders %}
+                    <div class="table-responsive">
+                        <table class="table table-centered table-nowrap table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Cliente</th>
+                                    <th>Equipo</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for workorder in workorders %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'frontend:workorder_detail' workorder.id %}" class="text-body fw-bold">#{{ workorder.wo_number }}</a>
+                                    </td>
+                                    <td>
+                                        {% if workorder.client %}
+                                            {{ workorder.client.name }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if workorder.equipment %}
+                                            {{ workorder.equipment.make }} {{ workorder.equipment.model }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ workorder.status_class|default:'secondary' }}">
+                                            {{ workorder.status_label|default:workorder.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ workorder.created_at|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'frontend:workorder_detail' workorder.id %}" class="btn btn-outline-info btn-sm" title="Ver">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'frontend:workorder_update' workorder.id %}" class="btn btn-outline-primary btn-sm" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-list h1 text-muted"></i>
+                        <h4 class="mt-2">No hay órdenes de trabajo asignadas</h4>
+                        <p class="text-muted">Este técnico no tiene órdenes de trabajo asignadas actualmente.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Estadísticas del técnico -->
+            {% if workorder_stats %}
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="text-muted text-uppercase mt-0">Total OT</h5>
+                            <h3 class="mb-3">{{ workorder_stats.total }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="text-muted text-uppercase mt-0">Completadas</h5>
+                            <h3 class="mb-3">{{ workorder_stats.completed }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="text-muted text-uppercase mt-0">Pendientes</h5>
+                            <h3 class="mb-3">{{ workorder_stats.pending }}</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="text-muted text-uppercase mt-0">Tasa Completación</h5>
+                            <h3 class="mb-3">{{ workorder_stats.completion_rate|floatformat:1 }}%</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-exclamation-triangle text-warning h1"></i>
+                    <h4 class="mt-3">Técnico no encontrado</h4>
+                    <p class="text-muted">El técnico que está buscando no existe o ha sido eliminado.</p>
+                    <a href="{% url 'frontend:technician_list' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> Volver a la lista de técnicos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

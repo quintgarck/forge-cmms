@@ -1,0 +1,523 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if equipment %}
+        {{ equipment.equipment_code }} - {{ equipment.make }} {{ equipment.model }} - MovIAx
+    {% else %}
+        Equipo no encontrado - MovIAx
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/equipment-detail.css' %}">
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'frontend:equipment_list' %}">Equipos</a>
+    </li>
+    <li class="breadcrumb-item active">
+        {% if equipment %}
+            {{ equipment.equipment_code }}
+        {% else %}
+            Equipo no encontrado
+        {% endif %}
+    </li>
+{% endblock %}
+
+{% block content %}
+{% if equipment %}
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-tools me-3 text-primary" style="font-size: 2rem;"></i>
+                <div>
+                    <h1 class="h3 mb-1">{{ equipment.make }} {{ equipment.model }}</h1>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="badge bg-primary fs-6">{{ equipment.equipment_code }}</span>
+                        <span class="badge bg-{{ equipment.status_class }} fs-6">{{ equipment.status_label }}</span>
+                        {% if equipment.year %}
+                            <span class="text-muted">Año {{ equipment.year }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group" role="group">
+                <a href="{% url 'frontend:equipment_update' equipment.id %}" class="btn btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i>
+                    Editar
+                </a>
+                <button type="button" class="btn btn-outline-danger" 
+                        onclick="confirmDelete('{{ equipment.equipment_code }}', '{% url 'frontend:equipment_delete' equipment.id %}')">
+                    <i class="bi bi-trash me-1"></i>
+                    Eliminar
+                </button>
+            </div>
+        </div>
+    </div>    <
+!-- Main Content -->
+    <div class="row">
+        <!-- Equipment Information -->
+        <div class="col-lg-8">
+            <!-- Basic Information Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Información Básica
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <dl class="row">
+                                <dt class="col-sm-4">Código:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-primary">{{ equipment.equipment_code }}</span>
+                                </dd>
+                                
+                                <dt class="col-sm-4">Marca:</dt>
+                                <dd class="col-sm-8">{{ equipment.make }}</dd>
+                                
+                                <dt class="col-sm-4">Modelo:</dt>
+                                <dd class="col-sm-8">{{ equipment.model }}</dd>
+                                
+                                <dt class="col-sm-4">Año:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-light text-dark">{{ equipment.year }}</span>
+                                </dd>
+                                
+                                {% if equipment.color %}
+                                <dt class="col-sm-4">Color:</dt>
+                                <dd class="col-sm-8">{{ equipment.color }}</dd>
+                                {% endif %}
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <dl class="row">
+                                {% if equipment.vin %}
+                                <dt class="col-sm-4">VIN:</dt>
+                                <dd class="col-sm-8">
+                                    <code>{{ equipment.vin }}</code>
+                                </dd>
+                                {% endif %}
+                                
+                                {% if equipment.license_plate %}
+                                <dt class="col-sm-4">Placa:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-secondary">{{ equipment.license_plate }}</span>
+                                </dd>
+                                {% endif %}
+                                
+                                {% if equipment.mileage %}
+                                <dt class="col-sm-4">Kilometraje:</dt>
+                                <dd class="col-sm-8">{{ equipment.mileage|floatformat:0 }} km</dd>
+                                {% endif %}
+                                
+                                {% if equipment.fuel_type %}
+                                <dt class="col-sm-4">Combustible:</dt>
+                                <dd class="col-sm-8">{{ equipment.fuel_type_label }}</dd>
+                                {% endif %}
+                                
+                                <dt class="col-sm-4">Estado:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-{{ equipment.status_class }}">{{ equipment.status_label }}</span>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Specifications Card -->
+            {% if equipment.engine or equipment.transmission %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        Especificaciones Técnicas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if equipment.engine %}
+                        <div class="col-md-6">
+                            <dt>Motor:</dt>
+                            <dd>{{ equipment.engine }}</dd>
+                        </div>
+                        {% endif %}
+                        
+                        {% if equipment.transmission %}
+                        <div class="col-md-6">
+                            <dt>Transmisión:</dt>
+                            <dd>{{ equipment.transmission }}</dd>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Dates and Warranty Card -->
+            {% if equipment.purchase_date or equipment.warranty_expiry %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar me-2"></i>
+                        Fechas Importantes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if equipment.purchase_date %}
+                        <div class="col-md-6">
+                            <dt>Fecha de Compra:</dt>
+                            <dd>{{ equipment.purchase_date|date:"d/m/Y" }}</dd>
+                        </div>
+                        {% endif %}
+                        
+                        {% if equipment.warranty_expiry %}
+                        <div class="col-md-6">
+                            <dt>Vencimiento de Garantía:</dt>
+                            <dd>
+                                {{ equipment.warranty_expiry|date:"d/m/Y" }}
+                                {% now "Y-m-d" as today %}
+                                {% if equipment.warranty_expiry < today %}
+                                    <span class="badge bg-danger ms-2">Vencida</span>
+                                {% else %}
+                                    <span class="badge bg-success ms-2">Vigente</span>
+                                {% endif %}
+                            </dd>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Notes Card -->
+            {% if equipment.notes %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-sticky me-2"></i>
+                        Notas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ equipment.notes|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Client Information Card -->
+            {% if equipment.client %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person me-2"></i>
+                        Propietario
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar-circle bg-primary text-white me-3">
+                            {{ equipment.client.name|first|upper }}
+                        </div>
+                        <div>
+                            <h6 class="mb-1">
+                                <a href="{% url 'frontend:client_detail' equipment.client.id %}" 
+                                   class="text-decoration-none">
+                                    {{ equipment.client.name }}
+                                </a>
+                            </h6>
+                            {% if equipment.client.email %}
+                                <small class="text-muted">{{ equipment.client.email }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    {% if equipment.client.phone %}
+                    <div class="mb-2">
+                        <i class="bi bi-telephone me-2 text-muted"></i>
+                        <span>{{ equipment.client.phone }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid">
+                        <a href="{% url 'frontend:client_detail' equipment.client.id %}" 
+                           class="btn btn-outline-primary btn-sm">
+                            Ver Perfil del Cliente
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Work Orders Statistics Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clipboard-data me-2"></i>
+                        Estadísticas de Órdenes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <div class="stat-number text-primary">{{ workorder_stats.total }}</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <div class="stat-number text-success">{{ workorder_stats.completed }}</div>
+                                <div class="stat-label">Completadas</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <div class="stat-number text-warning">{{ workorder_stats.in_progress }}</div>
+                                <div class="stat-label">En Progreso</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-item">
+                                <div class="stat-number text-info">{{ workorder_stats.pending }}</div>
+                                <div class="stat-label">Pendientes</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if workorder_stats.total > 0 %}
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">Tasa de Completación</small>
+                            <small class="text-muted">{{ workorder_stats.completion_rate|floatformat:1 }}%</small>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" 
+                                 style="width: {{ workorder_stats.completion_rate }}%"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning me-2"></i>
+                        Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'frontend:workorder_create' %}?equipment={{ equipment.id }}" 
+                           class="btn btn-primary btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Nueva Orden de Trabajo
+                        </a>
+                        
+                        <a href="{% url 'frontend:equipment_update' equipment.id %}" 
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-pencil me-1"></i>
+                            Editar Información
+                        </a>
+                        
+                        {% if workorder_stats.total > 0 %}
+                        <a href="{% url 'frontend:workorder_list' %}?equipment={{ equipment.id }}" 
+                           class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-list-ul me-1"></i>
+                            Ver Todas las Órdenes
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+   <!-- Work Orders Section -->
+    {% if workorders %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clipboard-check me-2"></i>
+                        Órdenes de Trabajo Recientes
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th>Técnico</th>
+                                    <th>Fecha</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for workorder in workorders %}
+                                <tr>
+                                    <td>
+                                        <strong class="text-primary">{{ workorder.wo_number }}</strong>
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 200px;" title="{{ workorder.description }}">
+                                            {{ workorder.description }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ workorder.status_class }}">
+                                            {{ workorder.status_label }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if workorder.assigned_technician %}
+                                            {{ workorder.assigned_technician.first_name }} {{ workorder.assigned_technician.last_name }}
+                                        {% else %}
+                                            <span class="text-muted">Sin asignar</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ workorder.created_at|date:"d/m/Y" }}
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'frontend:workorder_detail' workorder.id %}" 
+                                           class="btn btn-outline-primary btn-sm" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if workorder_stats.total > 5 %}
+                    <div class="card-footer text-center">
+                        <a href="{% url 'frontend:workorder_list' %}?equipment={{ equipment.id }}" 
+                           class="btn btn-outline-primary btn-sm">
+                            Ver todas las órdenes ({{ workorder_stats.total }})
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Maintenance History Section -->
+    {% if maintenance_history %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-wrench me-2"></i>
+                        Historial de Mantenimiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% for maintenance in maintenance_history %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ maintenance.description }}</h6>
+                                        {% if maintenance.technician %}
+                                        <small class="text-muted">
+                                            Técnico: {{ maintenance.technician.first_name }} {{ maintenance.technician.last_name }}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted">{{ maintenance.date|date:"d/m/Y" }}</small>
+                                        {% if maintenance.total_cost %}
+                                        <div class="text-success fw-bold">${{ maintenance.total_cost|floatformat:2 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+{% else %}
+    <!-- Equipment Not Found -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-exclamation-triangle display-1 text-warning"></i>
+                    <h4 class="mt-3">Equipo no encontrado</h4>
+                    <p class="text-muted">El equipo solicitado no existe o no tienes permisos para verlo.</p>
+                    <a href="{% url 'frontend:equipment_list' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver a la Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar el equipo <strong id="equipmentName"></strong>?</p>
+                <p class="text-muted small">Esta acción eliminará también todo el historial asociado y no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(equipmentCode, deleteUrl) {
+    document.getElementById('equipmentName').textContent = equipmentCode;
+    document.getElementById('deleteForm').action = deleteUrl;
+    
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
+{% endblock %}

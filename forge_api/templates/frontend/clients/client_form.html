@@ -1,0 +1,804 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ form_title }} - MovIAx{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/client-form.css' %}">
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item"><a href="{% url 'frontend:client_list' %}">Clientes</a></li>
+    {% if form_action == 'update' and client %}
+        <li class="breadcrumb-item"><a href="{% url 'frontend:client_detail' client.client_id %}">{{ client.name }}</a></li>
+        <li class="breadcrumb-item active">Editar</li>
+    {% else %}
+        <li class="breadcrumb-item active">Nuevo Cliente</li>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-person{% if form_action == 'update' %}-gear{% else %}-plus{% endif %} me-2"></i>
+                    {{ form_title }}
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" id="clientForm" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Display form errors -->
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Error:</strong>
+                            <ul class="mb-0 mt-2">
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <!-- Basic Information -->
+                        <div class="col-md-6">
+                            <h5 class="mb-3">
+                                <i class="bi bi-info-circle me-2 text-primary"></i>
+                                Información Básica
+                            </h5>
+                            
+                            <!-- Client Code Field -->
+                            <div class="mb-3">
+                                <label for="{{ form.client_code.id_for_label }}" class="form-label">
+                                    {{ form.client_code.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.client_code }}
+                                {% if form.client_code.help_text %}
+                                    <div class="form-text">{{ form.client_code.help_text }}</div>
+                                {% endif %}
+                                {% if form.client_code.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.client_code.errors %}
+                                            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Type Field -->
+                            <div class="mb-3">
+                                <label for="{{ form.type.id_for_label }}" class="form-label">
+                                    {{ form.type.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.type }}
+                                {% if form.type.help_text %}
+                                    <div class="form-text">{{ form.type.help_text }}</div>
+                                {% endif %}
+                                {% if form.type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.type.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Name Field -->
+                            <div class="mb-3">
+                                <label for="{{ form.name.id_for_label }}" class="form-label">
+                                    {{ form.name.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.name }}
+                                {% if form.name.help_text %}
+                                    <div class="form-text">{{ form.name.help_text }}</div>
+                                {% endif %}
+                                {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.name.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Email Field -->
+                            <div class="mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">
+                                    {{ form.email.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.email }}
+                                {% if form.email.help_text %}
+                                    <div class="form-text">{{ form.email.help_text }}</div>
+                                {% endif %}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.email.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Phone Field -->
+                            <div class="mb-3">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                    {{ form.phone.label }} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.phone }}
+                                {% if form.phone.help_text %}
+                                    <div class="form-text">{{ form.phone.help_text }}</div>
+                                {% endif %}
+                                {% if form.phone.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.phone.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Information -->
+                        <div class="col-md-6">
+                            <h5 class="mb-3">
+                                <i class="bi bi-geo-alt me-2 text-primary"></i>
+                                Información Adicional
+                            </h5>
+                            
+                            <!-- Address Field -->
+                            <div class="mb-3">
+                                <label for="{{ form.address.id_for_label }}" class="form-label">
+                                    {{ form.address.label }}
+                                </label>
+                                {{ form.address }}
+                                {% if form.address.help_text %}
+                                    <div class="form-text">{{ form.address.help_text }}</div>
+                                {% endif %}
+                                {% if form.address.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.address.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Credit Limit Field -->
+                            <div class="mb-3">
+                                <label for="{{ form.credit_limit.id_for_label }}" class="form-label">
+                                    {{ form.credit_limit.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.credit_limit }}
+                                </div>
+                                {% if form.credit_limit.help_text %}
+                                    <div class="form-text">{{ form.credit_limit.help_text }}</div>
+                                {% endif %}
+                                {% if form.credit_limit.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.credit_limit.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if form_action == 'update' and client %}
+                                <div class="mb-3">
+                                    <label class="form-label">Balance Actual</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               value="{{ client.credit_used|default:'0.00'|floatformat:2 }}"
+                                               readonly>
+                                    </div>
+                                    <div class="form-text">
+                                        Balance actual del cliente (solo lectura).
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Form Actions -->
+                    <hr class="my-4">
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <a href="{% if form_action == 'update' and client %}{% url 'frontend:client_detail' client.client_id %}{% else %}{% url 'frontend:client_list' %}{% endif %}" 
+                                       class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-left me-1"></i>
+                                        Cancelar
+                                    </a>
+                                </div>
+                                
+                                <div>
+                                    {% if form_action == 'update' and client %}
+                                        <button type="button" 
+                                                class="btn btn-outline-danger me-2"
+                                                onclick="confirmDelete()">
+                                            <i class="bi bi-trash me-1"></i>
+                                            Eliminar
+                                        </button>
+                                    {% endif %}
+                                    
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-lg me-1"></i>
+                                        {% if form_action == 'update' %}Actualizar{% else %}Crear{% endif %} Cliente
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Additional Information Card for Updates -->
+        {% if form_action == 'update' and client %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Información del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>ID del Cliente:</strong> #{{ client.client_id }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Fecha de Registro:</strong> 
+                            {% if client.created_date %}
+                                {{ client.created_date|date:"d/m/Y H:i" }}
+                            {% else %}
+                                No disponible
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+{% if form_action == 'update' and client %}
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>¡Atención!</strong> Esta acción no se puede deshacer.
+                </div>
+                <p>¿Estás seguro de que deseas eliminar al cliente <strong>{{ client.name }}</strong>?</p>
+                <p class="text-muted">
+                    Se eliminarán todos los datos asociados incluyendo historial de servicios y órdenes de trabajo.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{% url 'frontend:client_delete' client.client_id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>
+                        Eliminar Cliente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'frontend/js/form-handler.js' %}"></script>
+<script>
+// Enhanced client form with FormHandler
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('clientForm');
+    if (form) {
+        // Initialize enhanced form handler
+        const formHandler = new FormHandler('#clientForm', {
+            validateOnSubmit: true,
+            validateOnBlur: true,
+            showLoadingSpinner: true,
+            scrollToErrors: true
+        });
+        
+        // Add custom client code validator
+        formHandler.addValidator('client_code', (field) => {
+            const code = field.value.trim().toUpperCase();
+            if (!code) return { valid: true }; // Let server-side handle required validation
+            
+            // Format validation
+            if (!/^[A-Za-z0-9_-]+$/.test(code)) {
+                return { 
+                    valid: false, 
+                    message: 'Solo se permiten letras, números, guiones y guiones bajos' 
+                };
+            }
+            
+            // Length validation
+            if (code.length < 3) {
+                return { 
+                    valid: false, 
+                    message: 'Debe tener al menos 3 caracteres' 
+                };
+            }
+            
+            if (code.length > 20) {
+                return { 
+                    valid: false, 
+                    message: 'No puede exceder 20 caracteres' 
+                };
+            }
+            
+            return { valid: true };
+        });
+        
+        // Add email validator
+        formHandler.addValidator('email', (field) => {
+            const email = field.value.trim().toLowerCase();
+            if (!email) return { valid: true }; // Let server-side handle required validation
+            
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return { 
+                    valid: false, 
+                    message: 'Ingrese un correo electrónico válido' 
+                };
+            }
+            
+            return { valid: true };
+        });
+        
+        // Add phone validator
+        formHandler.addValidator('phone', (field) => {
+            const phone = field.value.trim();
+            if (!phone) return { valid: true }; // Let server-side handle required validation
+            
+            // Remove all non-digit characters for validation
+            const digitsOnly = phone.replace(/\D/g, '');
+            
+            if (digitsOnly.length < 8) {
+                return { 
+                    valid: false, 
+                    message: 'El número debe tener al menos 8 dígitos' 
+                };
+            }
+            
+            if (digitsOnly.length > 15) {
+                return { 
+                    valid: false, 
+                    message: 'El número no puede tener más de 15 dígitos' 
+                };
+            }
+            
+            return { valid: true };
+        });
+        
+        // Add name validator
+        formHandler.addValidator('name', (field) => {
+            const name = field.value.trim();
+            if (!name) return { valid: true }; // Let server-side handle required validation
+            
+            if (name.length < 2) {
+                return { 
+                    valid: false, 
+                    message: 'El nombre debe tener al menos 2 caracteres' 
+                };
+            }
+            
+            if (name.length > 100) {
+                return { 
+                    valid: false, 
+                    message: 'El nombre no puede exceder 100 caracteres' 
+                };
+            }
+            
+            // Check for valid characters (letters, spaces, hyphens, apostrophes)
+            const nameRegex = /^[a-zA-ZÀ-ÿ\u00f1\u00d1\s\-'\.]+$/;
+            if (!nameRegex.test(name)) {
+                return { 
+                    valid: false, 
+                    message: 'Solo se permiten letras, espacios, guiones y apostrofes' 
+                };
+            }
+            
+            // Check for consecutive spaces
+            if (name.includes('  ')) {
+                return { 
+                    valid: false, 
+                    message: 'No se permiten espacios consecutivos' 
+                };
+            }
+            
+            return { valid: true };
+        });
+        
+        // Add credit limit validator
+        formHandler.addValidator('credit_limit', (field) => {
+            const value = field.value.trim();
+            if (!value) return { valid: true }; // Optional field
+            
+            const amount = parseFloat(value);
+            
+            if (isNaN(amount)) {
+                return { 
+                    valid: false, 
+                    message: 'Ingrese un número válido' 
+                };
+            }
+            
+            if (amount < 0) {
+                return { 
+                    valid: false, 
+                    message: 'El límite de crédito no puede ser negativo' 
+                };
+            }
+            
+            if (amount > 999999.99) {
+                return { 
+                    valid: false, 
+                    message: 'El límite no puede exceder $999,999.99' 
+                };
+            }
+            
+            return { valid: true };
+        });
+        
+        // Client code field specific handling
+        const clientCodeField = form.querySelector('[name="client_code"]');
+        if (clientCodeField) {
+            // Auto-uppercase and format
+            clientCodeField.addEventListener('input', function() {
+                let value = this.value.toUpperCase();
+                // Remove invalid characters
+                value = value.replace(/[^A-Z0-9_-]/g, '');
+                this.value = value;
+            });
+            
+            clientCodeField.addEventListener('blur', async function() {
+                const code = this.value.trim();
+                if (code && code.length >= 3) {
+                    await checkClientCodeUniqueness(code, formHandler);
+                }
+            });
+        }
+        
+        // Email field formatting
+        const emailField = form.querySelector('[name="email"]');
+        if (emailField) {
+            emailField.addEventListener('blur', function() {
+                this.value = this.value.trim().toLowerCase();
+            });
+        }
+        
+        // Phone field formatting
+        const phoneField = form.querySelector('[name="phone"]');
+        if (phoneField) {
+            phoneField.addEventListener('input', function() {
+                // Allow only digits, spaces, hyphens, parentheses, and plus
+                let value = this.value.replace(/[^\d\s\-\(\)\+\.]/g, '');
+                this.value = value;
+            });
+        }
+        
+        // Name field formatting
+        const nameField = form.querySelector('[name="name"]');
+        if (nameField) {
+            nameField.addEventListener('blur', function() {
+                // Capitalize each word and clean up spaces
+                let value = this.value.trim();
+                value = value.replace(/\s+/g, ' '); // Replace multiple spaces with single space
+                value = value.split(' ').map(word => 
+                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                ).join(' ');
+                this.value = value;
+            });
+        }
+        
+        // Credit limit field formatting
+        const creditLimitField = form.querySelector('[name="credit_limit"]');
+        if (creditLimitField) {
+            creditLimitField.addEventListener('input', function() {
+                // Allow only numbers and decimal point
+                let value = this.value.replace(/[^\d\.]/g, '');
+                
+                // Ensure only one decimal point
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+                
+                // Limit to 2 decimal places
+                if (parts[1] && parts[1].length > 2) {
+                    value = parts[0] + '.' + parts[1].substring(0, 2);
+                }
+                
+                this.value = value;
+            });
+        }
+        
+        // Dynamic form behavior based on client type
+        const typeField = form.querySelector('[name="type"]');
+        if (typeField) {
+            typeField.addEventListener('change', function() {
+                adjustFormForClientType(this.value);
+            });
+            
+            // Initialize on page load
+            adjustFormForClientType(typeField.value);
+        }
+        
+        // Auto-save draft functionality
+        setupAutoSave(form);
+        
+        // Keyboard shortcuts
+        setupKeyboardShortcuts(form);
+        
+        // Warn about unsaved changes
+        setupUnsavedChangesWarning(form);
+    }
+});
+
+async function checkClientCodeUniqueness(code, formHandler) {
+    try {
+        const response = await fetch(`/api/v1/clients/check-code/?code=${encodeURIComponent(code)}`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            const field = document.querySelector('[name="client_code"]');
+            
+            if (data.exists) {
+                formHandler.showFieldError(field, 'Este código de cliente ya existe');
+                formHandler.setFieldState(field, 'invalid');
+            } else {
+                formHandler.clearFieldError(field);
+                formHandler.setFieldState(field, 'valid');
+            }
+        }
+    } catch (error) {
+        console.log('Could not check client code uniqueness:', error);
+        // Don't show error to user, just log it
+    }
+}
+
+function adjustFormForClientType(type) {
+    const nameField = document.querySelector('[name="name"]');
+    const nameLabel = document.querySelector('label[for*="name"]');
+    
+    if (type === 'company') {
+        if (nameLabel) {
+            nameLabel.innerHTML = 'Razón Social <span class="text-danger">*</span>';
+        }
+        if (nameField) {
+            nameField.placeholder = 'Nombre de la empresa';
+        }
+    } else {
+        if (nameLabel) {
+            nameLabel.innerHTML = 'Nombre Completo <span class="text-danger">*</span>';
+        }
+        if (nameField) {
+            nameField.placeholder = 'Nombre completo de la persona';
+        }
+    }
+}
+
+function setupAutoSave(form) {
+    let draftTimer;
+    const draftKey = `client_form_draft_${window.location.pathname}`;
+    
+    function saveDraft() {
+        const formData = new FormData(form);
+        const draftData = {};
+        
+        for (let [key, value] of formData.entries()) {
+            if (key !== 'csrfmiddlewaretoken') {
+                draftData[key] = value;
+            }
+        }
+        
+        localStorage.setItem(draftKey, JSON.stringify(draftData));
+        showToast('Borrador guardado automáticamente', 'info', 2000);
+    }
+    
+    function loadDraft() {
+        const draft = localStorage.getItem(draftKey);
+        const isUpdate = form.querySelector('[name="client_code"]')?.value;
+        
+        if (draft && !isUpdate) { // Only for new clients
+            try {
+                const draftData = JSON.parse(draft);
+                let hasData = false;
+                
+                for (let [key, value] of Object.entries(draftData)) {
+                    const input = form.querySelector(`[name="${key}"]`);
+                    if (input && !input.value && value) {
+                        input.value = value;
+                        hasData = true;
+                    }
+                }
+                
+                if (hasData) {
+                    showToast('Se ha restaurado un borrador guardado', 'success', 5000);
+                }
+            } catch (e) {
+                console.warn('Error loading draft:', e);
+            }
+        }
+    }
+    
+    // Auto-save every 30 seconds
+    const formFields = form.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        field.addEventListener('input', function() {
+            clearTimeout(draftTimer);
+            draftTimer = setTimeout(saveDraft, 30000);
+        });
+    });
+    
+    // Clear draft on successful submission
+    form.addEventListener('submit', function() {
+        localStorage.removeItem(draftKey);
+    });
+    
+    // Load draft on page load
+    loadDraft();
+}
+
+function setupKeyboardShortcuts(form) {
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + S to save
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            form.dispatchEvent(new Event('submit'));
+        }
+        
+        // Escape to cancel
+        if (e.key === 'Escape') {
+            const cancelButton = form.querySelector('a[href*="client"]');
+            if (cancelButton) {
+                window.location.href = cancelButton.href;
+            }
+        }
+    });
+}
+
+function setupUnsavedChangesWarning(form) {
+    let formChanged = false;
+    const formFields = form.querySelectorAll('input, select, textarea');
+    
+    formFields.forEach(field => {
+        field.addEventListener('input', () => {
+            formChanged = true;
+        });
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged && !form.classList.contains('submitted')) {
+            e.preventDefault();
+            e.returnValue = '¿Estás seguro de que quieres salir? Los cambios no guardados se perderán.';
+            return e.returnValue;
+        }
+    });
+    
+    // Mark form as submitted to avoid warning
+    form.addEventListener('submit', function() {
+        form.classList.add('submitted');
+        formChanged = false;
+    });
+}
+
+function showToast(message, type = 'info', duration = 3000) {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast align-items-center text-white bg-${type === 'info' ? 'primary' : type} border-0`;
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+    
+    // Add to toast container or create one
+    let toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+        document.body.appendChild(toastContainer);
+    }
+    
+    toastContainer.appendChild(toast);
+    
+    // Show toast
+    const bsToast = new bootstrap.Toast(toast, { delay: duration });
+    bsToast.show();
+    
+    // Remove from DOM after hiding
+    toast.addEventListener('hidden.bs.toast', () => {
+        toast.remove();
+    });
+}
+
+function confirmDelete() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Enhanced form validation patterns
+const validationPatterns = {
+    name: /^[a-zA-ZÀ-ÿ\u00f1\u00d1\s\-'\.]{2,100}$/,
+    email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    phone: /^[\+]?[1-9][\d]{9,14}$/,
+    creditLimit: /^\d+(\.\d{1,2})?$/
+};
+
+// Custom validation functions
+function validateName(value) {
+    return validationPatterns.name.test(value.trim());
+}
+
+function validateEmail(value) {
+    return validationPatterns.email.test(value.trim());
+}
+
+function validatePhone(value) {
+    const digitsOnly = value.replace(/\D/g, '');
+    return digitsOnly.length >= 10 && digitsOnly.length <= 15;
+}
+
+function validateCreditLimit(value) {
+    const num = parseFloat(value);
+    return !isNaN(num) && num >= 0 && num <= 999999.99;
+}
+
+// Show loading when form is submitted
+document.addEventListener('DOMContentLoaded', function() {
+    const clientForm = document.getElementById('clientForm');
+    if (clientForm) {
+        clientForm.addEventListener('submit', function(e) {
+            if (clientForm.checkValidity()) {
+                const action = '{{ form_action }}';
+                const message = action === 'update' ? 
+                    'Actualizando información del cliente...' : 
+                    'Registrando nuevo cliente...';
+                
+                if (typeof showLoadingOverlay === 'function') {
+                    showLoadingOverlay(message);
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,169 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Código - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            {% for crumb in breadcrumbs %}
+                {% if crumb.url %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url }}">{{ crumb.name }}</a>
+                    </li>
+                {% else %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ crumb.name }}</li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+    
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            {% if code %}
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Confirmar Eliminación
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    {% if can_delete %}
+                    <!-- Puede eliminar -->
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            ¿Está seguro que desea eliminar este código?
+                        </h5>
+                        <p class="mb-0">Esta acción no se puede deshacer.</p>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5>Código a eliminar:</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Código:</strong></p>
+                                    <h3>
+                                        <span class="badge bg-{{ category_config.color }}">
+                                            {{ code.code }}
+                                        </span>
+                                    </h3>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Categoría:</strong></p>
+                                    <p class="fs-5">
+                                        <i class="{{ category_config.icon }} text-{{ category_config.color }}"></i>
+                                        {{ category_config.title }}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <p><strong>Descripción:</strong></p>
+                                    <p class="fs-5">{{ code.description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'frontend:reference_code_detail' category=category pk=code.id %}" 
+                               class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Sí, Eliminar Código
+                            </button>
+                        </div>
+                    </form>
+                    
+                    {% else %}
+                    <!-- No puede eliminar -->
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">
+                            <i class="bi bi-x-circle"></i>
+                            No se puede eliminar este código
+                        </h5>
+                        <p>{{ warning_message }}</p>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5>Información del código:</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Código:</strong></p>
+                                    <h3>
+                                        <span class="badge bg-{{ category_config.color }}">
+                                            {{ code.code }}
+                                        </span>
+                                    </h3>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Uso actual:</strong></p>
+                                    <h3>
+                                        <span class="badge bg-info">
+                                            {{ usage_count }} equipo(s)
+                                        </span>
+                                    </h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-lightbulb"></i> Sugerencias:</h6>
+                        <ul class="mb-0">
+                            <li>Actualice los equipos que usan este código a otro código válido</li>
+                            <li>O desactive el código en lugar de eliminarlo</li>
+                            <li>Los códigos inactivos no estarán disponibles para nuevos registros</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:reference_code_detail' category=category pk=code.id %}" 
+                           class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        <a href="{% url 'frontend:reference_code_edit' category=category pk=code.id %}" 
+                           class="btn btn-primary">
+                            <i class="bi bi-pencil"></i> Editar Código
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Información adicional -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-info-circle"></i> Información sobre eliminación
+                    </h6>
+                    <ul class="mb-0">
+                        <li>Los códigos solo pueden eliminarse si no están siendo usados</li>
+                        <li>La eliminación es permanente y no se puede deshacer</li>
+                        <li>Como alternativa, puede desactivar el código para que no esté disponible</li>
+                        <li>Los códigos desactivados se mantienen en el sistema para referencia histórica</li>
+                    </ul>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i>
+                No se pudo cargar la información del código
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,527 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Alerta - MovIAx{% endblock %}
+
+{% block body_class %}alert-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .alert-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem 0.5rem 0 0;
+        padding: 2rem;
+    }
+    
+    .severity-indicator {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+    
+    .severity-critical { background-color: #dc3545; }
+    .severity-high { background-color: #fd7e14; }
+    .severity-medium { background-color: #0dcaf0; }
+    .severity-low { background-color: #6c757d; }
+    
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.75rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -0.5rem;
+        top: 0.5rem;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #0d6efd;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #dee2e6;
+    }
+    
+    .timeline-item.completed::before {
+        background: #198754;
+    }
+    
+    .alert-actions {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .detail-card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    
+    .json-viewer {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        font-family: 'Courier New', monospace;
+        font-size: 0.875rem;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
+    .status-badge {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if alert %}
+    <!-- Alert Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card detail-card">
+                <div class="alert-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="{{ alert.severity_icon }} fs-2 me-3"></i>
+                                <div>
+                                    <h2 class="mb-1">{{ alert.title }}</h2>
+                                    <div class="d-flex align-items-center">
+                                        <span class="severity-indicator severity-{{ alert.severity }}"></span>
+                                        <span class="me-3">Severidad: {{ alert.severity|title }}</span>
+                                        <span class="badge bg-light text-dark status-badge">
+                                            {{ alert.status|title }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="text-white-50">
+                                <div><strong>ID:</strong> {{ alert.alert_id }}</div>
+                                <div><strong>Tipo:</strong> {{ alert.alert_type|title }}</div>
+                                <div><strong>Creada:</strong> {{ alert.created_at|date:"d/m/Y H:i" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Alert Actions -->
+                <div class="alert-actions">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="mb-2">
+                                <i class="bi bi-lightning me-1"></i>
+                                Acciones Disponibles
+                            </h6>
+                            <p class="text-muted small mb-0">
+                                Gestione el estado de esta alerta y tome las acciones necesarias.
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex gap-2 justify-content-end">
+                                {% if alert.status == 'new' %}
+                                <form method="POST" action="{% url 'frontend:alert_action' alert.alert_id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="mark_read">
+                                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye me-1"></i>
+                                        Marcar Leída
+                                    </button>
+                                </form>
+                                <form method="POST" action="{% url 'frontend:alert_action' alert.alert_id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="acknowledge">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="bi bi-check me-1"></i>
+                                        Reconocer
+                                    </button>
+                                </form>
+                                {% elif alert.status == 'read' or alert.status == 'acknowledged' %}
+                                <form method="POST" action="{% url 'frontend:alert_action' alert.alert_id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="resolve">
+                                    <button type="submit" class="btn btn-warning btn-sm">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Resolver
+                                    </button>
+                                </form>
+                                {% endif %}
+                                
+                                {% if alert.status != 'resolved' %}
+                                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#assignModal">
+                                    <i class="bi bi-person-plus me-1"></i>
+                                    Asignar
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <!-- Alert Message -->
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-text me-2"></i>
+                        Mensaje de la Alerta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ alert.message }}</p>
+                </div>
+            </div>
+
+            <!-- Alert Details -->
+            {% if alert.details %}
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Detalles Adicionales
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="json-viewer">
+                        {{ alert.details }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Reference Information -->
+            {% if alert.ref_entity or alert.ref_id or alert.ref_code %}
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-link me-2"></i>
+                        Información de Referencia
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if alert.ref_entity %}
+                        <div class="col-md-4">
+                            <strong>Entidad:</strong>
+                            <p class="text-muted">{{ alert.ref_entity }}</p>
+                        </div>
+                        {% endif %}
+                        {% if alert.ref_id %}
+                        <div class="col-md-4">
+                            <strong>ID de Referencia:</strong>
+                            <p class="text-muted">{{ alert.ref_id }}</p>
+                        </div>
+                        {% endif %}
+                        {% if alert.ref_code %}
+                        <div class="col-md-4">
+                            <strong>Código de Referencia:</strong>
+                            <p class="text-muted">{{ alert.ref_code }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Related Actions -->
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-arrow-right-circle me-2"></i>
+                        Acciones Relacionadas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-grid gap-2">
+                                {% if alert.ref_entity == 'work_order' and alert.ref_id %}
+                                <a href="/frontend/workorders/{{ alert.ref_id }}/" class="btn btn-outline-primary">
+                                    <i class="bi bi-wrench me-1"></i>
+                                    Ver Orden de Trabajo
+                                </a>
+                                {% endif %}
+                                {% if alert.ref_entity == 'product' and alert.ref_id %}
+                                <a href="/frontend/inventory/products/{{ alert.ref_id }}/" class="btn btn-outline-info">
+                                    <i class="bi bi-box me-1"></i>
+                                    Ver Producto
+                                </a>
+                                {% endif %}
+                                {% if alert.ref_entity == 'client' and alert.ref_id %}
+                                <a href="/frontend/clients/{{ alert.ref_id }}/" class="btn btn-outline-success">
+                                    <i class="bi bi-person me-1"></i>
+                                    Ver Cliente
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-secondary" onclick="createFollowUpTask()">
+                                    <i class="bi bi-plus-circle me-1"></i>
+                                    Crear Tarea de Seguimiento
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="escalateAlert()">
+                                    <i class="bi bi-arrow-up-circle me-1"></i>
+                                    Escalar Alerta
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-md-4">
+            <!-- Status Timeline -->
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Cronología de Estados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item completed">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Alerta Creada</h6>
+                                    <p class="text-muted small mb-0">
+                                        {{ alert.created_at|date:"d/m/Y H:i" }}
+                                    </p>
+                                </div>
+                                <span class="badge bg-primary">Nuevo</span>
+                            </div>
+                        </div>
+                        
+                        {% if alert.read_at %}
+                        <div class="timeline-item completed">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Marcada como Leída</h6>
+                                    <p class="text-muted small mb-0">
+                                        {{ alert.read_at|date:"d/m/Y H:i" }}
+                                    </p>
+                                </div>
+                                <span class="badge bg-info">Leída</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if alert.acknowledged_at %}
+                        <div class="timeline-item completed">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Reconocida</h6>
+                                    <p class="text-muted small mb-0">
+                                        {{ alert.acknowledged_at|date:"d/m/Y H:i" }}
+                                    </p>
+                                </div>
+                                <span class="badge bg-warning">Reconocida</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if alert.resolved_at %}
+                        <div class="timeline-item completed">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">Resuelta</h6>
+                                    <p class="text-muted small mb-0">
+                                        {{ alert.resolved_at|date:"d/m/Y H:i" }}
+                                    </p>
+                                </div>
+                                <span class="badge bg-success">Resuelta</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="timeline-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1 text-muted">Pendiente de Resolución</h6>
+                                    <p class="text-muted small mb-0">
+                                        Esperando acción
+                                    </p>
+                                </div>
+                                <span class="badge bg-secondary">Pendiente</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assignment Information -->
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-gear me-2"></i>
+                        Información de Asignación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Creada para:</strong>
+                        <p class="text-muted mb-0">
+                            {% if alert.created_for %}
+                                Usuario ID: {{ alert.created_for }}
+                            {% else %}
+                                Sistema general
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Asignada a:</strong>
+                        <p class="text-muted mb-0">
+                            {% if alert.assigned_to %}
+                                Usuario ID: {{ alert.assigned_to }}
+                            {% else %}
+                                Sin asignar
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% if alert.status != 'resolved' %}
+                    <button class="btn btn-outline-primary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#assignModal">
+                        <i class="bi bi-person-plus me-1"></i>
+                        {% if alert.assigned_to %}Reasignar{% else %}Asignar{% endif %}
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card detail-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up me-2"></i>
+                        Estadísticas Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary mb-1">{{ alert.alert_type|title }}</h4>
+                                <small class="text-muted">Tipo</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-{{ alert.severity_class }} mb-1">{{ alert.severity|title }}</h4>
+                            <small class="text-muted">Severidad</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Modal -->
+    <div class="modal fade" id="assignModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Asignar Alerta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{% url 'frontend:alert_action' alert.alert_id %}">
+                    <div class="modal-body">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="assign">
+                        <div class="mb-3">
+                            <label class="form-label">Asignar a Usuario</label>
+                            <select class="form-select" name="assigned_to" required>
+                                <option value="">Seleccionar usuario...</option>
+                                <option value="1">Administrador</option>
+                                <option value="2">Técnico Principal</option>
+                                <option value="3">Supervisor</option>
+                            </select>
+                            <div class="form-text">
+                                Seleccione el usuario responsable de resolver esta alerta.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check me-1"></i>
+                            Asignar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Alert Not Found -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-exclamation-triangle fs-1 text-warning mb-3"></i>
+                    <h4 class="text-muted">Alerta No Encontrada</h4>
+                    <p class="text-muted">La alerta solicitada no existe o no tiene permisos para verla.</p>
+                    <a href="{% url 'frontend:alert_dashboard' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver al Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function createFollowUpTask() {
+    // In a real implementation, this would create a follow-up task
+    alert('Creando tarea de seguimiento. Esta funcionalidad se implementará próximamente.');
+}
+
+function escalateAlert() {
+    // In a real implementation, this would escalate the alert
+    if (confirm('¿Está seguro de que desea escalar esta alerta?')) {
+        alert('Alerta escalada. Esta funcionalidad se implementará próximamente.');
+    }
+}
+
+// Auto-refresh for real-time updates
+setInterval(function() {
+    // In a real implementation, this would check for updates
+    // and refresh the timeline if needed
+}, 30000); // Check every 30 seconds
+</script>
+{% endblock %}

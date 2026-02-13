@@ -1,0 +1,354 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/stock-movement-form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">{{ title }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:stock_dashboard' %}">Stock</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:stock_movements' %}">Movimientos</a></li>
+                    <li class="breadcrumb-item active">{{ action|capfirst }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'frontend:stock_movements' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver a Movimientos
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Main Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exchange-alt me-2"></i>Información del Movimiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="movementForm">
+                        {% csrf_token %}
+                        
+                        <!-- Product and Warehouse Selection -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.product_id.id_for_label }}" class="form-label required">
+                                    {{ form.product_id.label }}
+                                </label>
+                                {{ form.product_id }}
+                                {% if form.product_id.help_text %}
+                                    <div class="form-text">{{ form.product_id.help_text }}</div>
+                                {% endif %}
+                                {% if form.product_id.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.product_id.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.warehouse_id.id_for_label }}" class="form-label required">
+                                    {{ form.warehouse_id.label }}
+                                </label>
+                                {{ form.warehouse_id }}
+                                {% if form.warehouse_id.help_text %}
+                                    <div class="form-text">{{ form.warehouse_id.help_text }}</div>
+                                {% endif %}
+                                {% if form.warehouse_id.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.warehouse_id.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Movement Type and Quantity -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.movement_type.id_for_label }}" class="form-label required">
+                                    {{ form.movement_type.label }}
+                                </label>
+                                {{ form.movement_type }}
+                                {% if form.movement_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.movement_type.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.quantity.id_for_label }}" class="form-label required">
+                                    {{ form.quantity.label }}
+                                </label>
+                                {{ form.quantity }}
+                                {% if form.quantity.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.quantity.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.unit_cost.id_for_label }}" class="form-label">
+                                    {{ form.unit_cost.label }}
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ form.unit_cost }}
+                                </div>
+                                {% if form.unit_cost.help_text %}
+                                    <div class="form-text">{{ form.unit_cost.help_text }}</div>
+                                {% endif %}
+                                {% if form.unit_cost.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.unit_cost.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Reference Number -->
+                        <div class="mb-3">
+                            <label for="{{ form.reference_number.id_for_label }}" class="form-label">
+                                {{ form.reference_number.label }}
+                            </label>
+                            {{ form.reference_number }}
+                            {% if form.reference_number.help_text %}
+                                <div class="form-text">{{ form.reference_number.help_text }}</div>
+                            {% endif %}
+                            {% if form.reference_number.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.reference_number.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-4">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                {{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.notes.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'frontend:stock_movements' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Registrar Movimiento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Help Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Tipos de Movimiento
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="movement-types">
+                        <div class="movement-type mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-success me-2">Entrada</span>
+                                <strong>Entrada de Stock</strong>
+                            </div>
+                            <small class="text-muted">Aumenta el stock disponible. Usado para compras, devoluciones de clientes, etc.</small>
+                        </div>
+                        
+                        <div class="movement-type mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-danger me-2">Salida</span>
+                                <strong>Salida de Stock</strong>
+                            </div>
+                            <small class="text-muted">Reduce el stock disponible. Usado para ventas, consumo interno, etc.</small>
+                        </div>
+                        
+                        <div class="movement-type mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-warning me-2">Ajuste</span>
+                                <strong>Ajuste de Inventario</strong>
+                            </div>
+                            <small class="text-muted">Corrección de diferencias encontradas en inventarios físicos.</small>
+                        </div>
+                        
+                        <div class="movement-type">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-info me-2">Transferencia</span>
+                                <strong>Transferencia</strong>
+                            </div>
+                            <small class="text-muted">Movimiento entre almacenes o ubicaciones.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Stock Card -->
+            <div class="card mt-3" id="currentStockCard" style="display: none;">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-boxes me-2"></i>Stock Actual
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="stockInfo">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('movementForm');
+    const productSelect = document.getElementById('id_product_id');
+    const warehouseSelect = document.getElementById('id_warehouse_id');
+    const movementTypeSelect = document.getElementById('id_movement_type');
+    const quantityInput = document.getElementById('id_quantity');
+    const currentStockCard = document.getElementById('currentStockCard');
+    const stockInfo = document.getElementById('stockInfo');
+
+    // Form validation
+    const requiredFields = form.querySelectorAll('[required]');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        // Validate quantity
+        const quantity = parseFloat(quantityInput.value);
+        if (isNaN(quantity) || quantity <= 0) {
+            isValid = false;
+            quantityInput.classList.add('is-invalid');
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, complete todos los campos requeridos correctamente.');
+        }
+    });
+    
+    // Real-time validation
+    requiredFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            if (!this.value.trim()) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+
+    // Load current stock when product and warehouse are selected
+    function loadCurrentStock() {
+        const productId = productSelect.value;
+        const warehouseId = warehouseSelect.value;
+        
+        if (productId && warehouseId) {
+            currentStockCard.style.display = 'block';
+            stockInfo.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            `;
+            
+            // Simulate API call (replace with actual API call)
+            setTimeout(() => {
+                stockInfo.innerHTML = `
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="text-muted">Stock Actual:</div>
+                            <div class="h5 mb-0">150.00</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted">Stock Mínimo:</div>
+                            <div class="h5 mb-0">50.00</div>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-success">En Stock</span>
+                    </div>
+                `;
+            }, 1000);
+        } else {
+            currentStockCard.style.display = 'none';
+        }
+    }
+
+    productSelect.addEventListener('change', loadCurrentStock);
+    warehouseSelect.addEventListener('change', loadCurrentStock);
+
+    // Movement type color coding
+    movementTypeSelect.addEventListener('change', function() {
+        const value = this.value;
+        this.className = 'form-select';
+        
+        if (value === 'in') {
+            this.classList.add('border-success');
+        } else if (value === 'out') {
+            this.classList.add('border-danger');
+        } else if (value === 'adjustment') {
+            this.classList.add('border-warning');
+        } else if (value === 'transfer') {
+            this.classList.add('border-info');
+        }
+    });
+
+    // Pre-fill form if URL parameters are present
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('product_id')) {
+        productSelect.value = urlParams.get('product_id');
+    }
+    if (urlParams.get('warehouse_id')) {
+        warehouseSelect.value = urlParams.get('warehouse_id');
+    }
+    
+    // Load stock if both are pre-filled
+    if (productSelect.value && warehouseSelect.value) {
+        loadCurrentStock();
+    }
+});
+</script>
+{% endblock %}

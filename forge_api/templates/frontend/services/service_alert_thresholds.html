@@ -1,0 +1,170 @@
+{% extends "frontend/base/base.html" %}
+
+{% block title %}Configuración de Umbrales - MovIAx{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-gear text-info me-2"></i>Configuración de Umbrales de Alertas</h2>
+                <div>
+                    <a href="{% url 'frontend:service_alerts_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Volver a Alertas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Umbrales de Detección de Alertas</h5>
+                    <small class="text-muted">Configure los umbrales para la detección automática de alertas en el sistema.</small>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-clock-history me-2"></i>Órdenes de Trabajo
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label for="delayed_order_hours" class="form-label">
+                                    Retraso Mínimo para Alerta (horas)
+                                    <small class="text-muted">Tiempo mínimo de retraso para generar una alerta</small>
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="delayed_order_hours" 
+                                       name="delayed_order_hours" 
+                                       value="{{ thresholds.delayed_order_hours|default:2 }}" 
+                                       min="0.5" 
+                                       step="0.5" 
+                                       required>
+                                <div class="form-text">Valor actual: {{ thresholds.delayed_order_hours|default:2 }} horas</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="max_delay_percentage" class="form-label">
+                                    Porcentaje Máximo de Retraso (%)
+                                    <small class="text-muted">Porcentaje sobre tiempo estimado para considerar retraso significativo</small>
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="max_delay_percentage" 
+                                       name="max_delay_percentage" 
+                                       value="{{ thresholds.max_delay_percentage|default:20 }}" 
+                                       min="1" 
+                                       max="100" 
+                                       required>
+                                <div class="form-text">Valor actual: {{ thresholds.max_delay_percentage|default:20 }}%</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="time_overrun_multiplier" class="form-label">
+                                    Multiplicador de Tiempo para Servicios Anómalos
+                                    <small class="text-muted">Factor para considerar un servicio como anómalo (tiempo real vs estimado)</small>
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="time_overrun_multiplier" 
+                                       name="time_overrun_multiplier" 
+                                       value="{{ thresholds.time_overrun_multiplier|default:2.0 }}" 
+                                       min="1.0" 
+                                       max="10.0" 
+                                       step="0.1" 
+                                       required>
+                                <div class="form-text">Valor actual: {{ thresholds.time_overrun_multiplier|default:2.0 }}x (ej: 2.0 = tiempo real > 2x tiempo estimado)</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-people me-2"></i>Técnicos
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label for="max_orders_per_technician" class="form-label">
+                                    Máximo de Órdenes por Técnico
+                                    <small class="text-muted">Número máximo de órdenes activas por técnico antes de generar alerta</small>
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="max_orders_per_technician" 
+                                       name="max_orders_per_technician" 
+                                       value="{{ thresholds.max_orders_per_technician|default:5 }}" 
+                                       min="1" 
+                                       max="20" 
+                                       required>
+                                <div class="form-text">Valor actual: {{ thresholds.max_orders_per_technician|default:5 }} órdenes</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="high_productivity_orders" class="form-label">
+                                    Órdenes para Alta Productividad
+                                    <small class="text-muted">Número mínimo de órdenes completadas en un día para reconocimiento</small>
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="high_productivity_orders" 
+                                       name="high_productivity_orders" 
+                                       value="{{ thresholds.high_productivity_orders|default:3 }}" 
+                                       min="1" 
+                                       max="20" 
+                                       required>
+                                <div class="form-text">Valor actual: {{ thresholds.high_productivity_orders|default:3 }} órdenes/día</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-box-seam me-2"></i>Inventario
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label for="low_stock_percentage" class="form-label">
+                                    Porcentaje de Stock Bajo (%)
+                                    <small class="text-muted">Porcentaje del stock mínimo para considerar como "stock bajo"</small>
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="low_stock_percentage" 
+                                       name="low_stock_percentage" 
+                                       value="{{ thresholds.low_stock_percentage|default:20 }}" 
+                                       min="1" 
+                                       max="100" 
+                                       required>
+                                <div class="form-text">Valor actual: {{ thresholds.low_stock_percentage|default:20 }}% del stock mínimo</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'frontend:service_alerts_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Información</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2"><strong>Nota:</strong> Los cambios en los umbrales afectan inmediatamente la detección de nuevas alertas.</p>
+                    <p class="mb-0 text-muted"><small>Los umbrales actuales se aplican solo en esta sesión. Para una implementación completa, estos valores deberían guardarse en la base de datos y cargarse automáticamente al iniciar el servicio.</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

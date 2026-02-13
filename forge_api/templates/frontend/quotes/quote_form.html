@@ -1,0 +1,198 @@
+{% extends "frontend/base/base.html" %}
+{% load static %}
+
+{% block title %}Crear Cotización - MovIAx{% endblock %}
+
+{% block body_class %}quote-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">MovIAx</a></li>
+                        <li class="breadcrumb-item"><a href="{% url 'frontend:quote_list' %}">Cotizaciones</a></li>
+                        <li class="breadcrumb-item active">Crear</li>
+                    </ol>
+                </div>
+                <h4 class="page-title">Crear Nueva Cotización</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Información Básica</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="quoteForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="client_id" class="form-label">Cliente <span class="text-danger">*</span></label>
+                                    <select name="client_id" id="client_id" class="form-select" required>
+                                        <option value="">Seleccione un cliente</option>
+                                        {% for client in clients %}
+                                        <option value="{{ client.client_id }}" {% if form.client_id.value == client.client_id %}selected{% endif %}>
+                                            {{ client.name }} ({{ client.client_code }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="equipment_id" class="form-label">Equipo</label>
+                                    <select name="equipment_id" id="equipment_id" class="form-select">
+                                        <option value="">Sin equipo específico</option>
+                                        {% for eq in equipment %}
+                                        <option value="{{ eq.equipment_id }}">{{ eq.equipment_code }} - {{ eq.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="quote_date" class="form-label">Fecha de Cotización</label>
+                                    <input type="date" name="quote_date" id="quote_date" class="form-control" value="{{ form.quote_date.value|default:'' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="valid_until" class="form-label">Válida Hasta</label>
+                                    <input type="date" name="valid_until" id="valid_until" class="form-control" value="{{ form.valid_until.value|default:'' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="currency_code" class="form-label">Moneda</label>
+                                    <input type="text" name="currency_code" id="currency_code" class="form-control" value="{{ form.currency_code.value|default:'MXN' }}" maxlength="3" style="text-transform: uppercase;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Items de cotización (se llenarán con JavaScript) -->
+                        <div class="mb-3">
+                            <label class="form-label">Items de Servicio</label>
+                            <div id="quote-items-container">
+                                <!-- Los items se agregarán dinámicamente aquí -->
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="add-item-btn">
+                                <i class="bi bi-plus-lg"></i> Agregar Item
+                            </button>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="discount_percent" class="form-label">Descuento (%)</label>
+                                    <input type="number" name="discount_percent" id="discount_percent" class="form-control" value="{{ form.discount_percent.value|default:'0' }}" min="0" max="100" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="tax_percent" class="form-label">Impuesto (%)</label>
+                                    <input type="number" name="tax_percent" id="tax_percent" class="form-control" value="{{ form.tax_percent.value|default:'16' }}" min="0" max="100" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notas</label>
+                            <textarea name="notes" id="notes" class="form-control" rows="3" placeholder="Notas adicionales sobre la cotización...">{{ form.notes.value|default:'' }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="terms_and_conditions" class="form-label">Términos y Condiciones</label>
+                            <textarea name="terms_and_conditions" id="terms_and_conditions" class="form-control" rows="5" placeholder="Términos y condiciones de la cotización...">{{ form.terms_and_conditions.value|default:'' }}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'frontend:quote_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver a la lista
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar Cotización
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title">Resumen de Totales</h4>
+                    <div class="table-responsive">
+                        <table class="table table-borderless mb-0">
+                            <tbody>
+                                <tr>
+                                    <td>Subtotal:</td>
+                                    <td class="text-end" id="summary-subtotal">$0.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Descuento:</td>
+                                    <td class="text-end text-danger" id="summary-discount">-$0.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Después de descuento:</td>
+                                    <td class="text-end" id="summary-after-discount">$0.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Impuestos:</td>
+                                    <td class="text-end" id="summary-tax">$0.00</td>
+                                </tr>
+                                <tr class="border-top">
+                                    <td><strong>Total:</strong></td>
+                                    <td class="text-end"><strong id="summary-total">$0.00</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Total Horas:</td>
+                                    <td class="text-end" id="summary-hours">0.00 hrs</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Motor de cálculo de cotización (simplificado - se integrará con el backend)
+    document.addEventListener('DOMContentLoaded', function() {
+        // Calcular totales cuando cambien los items, descuentos o impuestos
+        function calculateTotals() {
+            // Esta función se implementará para calcular automáticamente los totales
+            // basándose en los items agregados dinámicamente
+        }
+        
+        // Agregar item dinámicamente
+        document.getElementById('add-item-btn')?.addEventListener('click', function() {
+            // Implementar agregado dinámico de items
+            alert('Funcionalidad de agregar items próximamente');
+        });
+    });
+</script>
+{% endblock %}

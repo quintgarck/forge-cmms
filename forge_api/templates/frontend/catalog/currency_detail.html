@@ -1,0 +1,170 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .currency-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .currency-code-display {
+        font-family: 'Courier New', monospace;
+        font-size: 3rem;
+        font-weight: bold;
+        color: white;
+    }
+    .info-card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .info-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .info-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0F172A;
+    }
+    .exchange-rate-display {
+        font-family: 'Courier New', monospace;
+        font-size: 2rem;
+        font-weight: bold;
+        color: #059669;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="currency-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <div class="currency-code-display">{{ currency.currency_code }}</div>
+                <h2 class="mb-0">{{ currency.name }}</h2>
+                {% if currency.symbol %}
+                <p class="mb-0 opacity-75">Símbolo: {{ currency.symbol }}</p>
+                {% endif %}
+            </div>
+            <div class="text-end">
+                {% if currency.is_base_currency %}
+                <span class="badge bg-warning text-dark fs-6">
+                    <i class="bi bi-star-fill me-1"></i>
+                    Moneda Base
+                </span>
+                {% endif %}
+                {% if currency.is_active %}
+                <span class="badge bg-success fs-6">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Activa
+                </span>
+                {% else %}
+                <span class="badge bg-secondary fs-6">
+                    <i class="bi bi-pause-circle me-1"></i>
+                    Inactiva
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Information Cards -->
+    <div class="row">
+        <!-- Exchange Rate -->
+        <div class="col-md-4">
+            <div class="info-card">
+                <div class="info-label">
+                    <i class="bi bi-calculator me-1"></i>
+                    Tipo de Cambio
+                </div>
+                <div class="exchange-rate-display">
+                    {{ exchange_rate_formatted }}
+                </div>
+                <small class="text-muted">
+                    {% if currency.is_base_currency %}
+                    Moneda base (1.0000)
+                    {% else %}
+                    Por 1 USD
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+
+        <!-- Decimals -->
+        <div class="col-md-4">
+            <div class="info-card">
+                <div class="info-label">
+                    <i class="bi bi-123 me-1"></i>
+                    Decimales
+                </div>
+                <div class="info-value">{{ currency.decimals }}</div>
+                <small class="text-muted">Precisión de visualización</small>
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div class="col-md-4">
+            <div class="info-card">
+                <div class="info-label">
+                    <i class="bi bi-toggle-on me-1"></i>
+                    Estado
+                </div>
+                <div class="info-value">
+                    {% if currency.is_active %}
+                    <span class="badge bg-success">Activa</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Inactiva</span>
+                    {% endif %}
+                </div>
+                <small class="text-muted">Disponibilidad en el sistema</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-gear me-2"></i>
+                        Acciones
+                    </h5>
+                    <div class="btn-group" role="group">
+                        {% if can_edit %}
+                        <a href="{{ edit_url }}" class="btn btn-primary">
+                            <i class="bi bi-pencil me-2"></i>
+                            Editar Moneda
+                        </a>
+                        {% endif %}
+                        <a href="{{ list_url }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Volver a Lista
+                        </a>
+                        {% if can_delete %}
+                        <a href="{{ delete_url }}" class="btn btn-outline-danger">
+                            <i class="bi bi-trash me-2"></i>
+                            Eliminar Moneda
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

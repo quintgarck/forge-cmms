@@ -1,0 +1,319 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Categorías - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb Navigation -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'frontend:dashboard' %}" class="text-decoration-none">
+                            <i class="bi bi-house-door me-1"></i>Inicio
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'frontend:catalog_index' %}" class="text-decoration-none">
+                            <i class="bi bi-book me-1"></i>Catálogos
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <i class="bi bi-folder-category me-1"></i>Gestión de Categorías
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-folder-category text-primary me-2"></i>
+                        Gestión de Categorías
+                    </h1>
+                    <p class="text-muted mb-0">Administración de categorías para tipos de equipo</p>
+                </div>
+                <div>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'frontend:catalog_index' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Volver al Catálogo
+                        </a>
+                        <a href="{% url 'frontend:category_create' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i>
+                            Nueva Categoría
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ filters.search|default:'' }}" placeholder="Código o nombre...">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="status" class="form-label">Estado</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="" {% if not filters.status %}selected{% endif %}>Todos</option>
+                                <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Activas</option>
+                                <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Inactivas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="sort" class="form-label">Ordenar por</label>
+                            <select class="form-select" id="sort" name="sort">
+                                <option value="sort_order" {% if filters.sort == 'sort_order' or not filters.sort %}selected{% endif %}>Orden</option>
+                                <option value="name" {% if filters.sort == 'name' %}selected{% endif %}>Nombre</option>
+                                <option value="category_code" {% if filters.sort == 'category_code' %}selected{% endif %}>Código</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="order" class="form-label">Dirección</label>
+                            <select class="form-select" id="order" name="order">
+                                <option value="asc" {% if filters.order == 'asc' or not filters.order %}selected{% endif %}>Ascendente</option>
+                                <option value="desc" {% if filters.order == 'desc' %}selected{% endif %}>Descendente</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    {% if categories %}
+    <div class="stats-overview" style="background: linear-gradient(135deg, #6c5ce7 0%, #a55eea 100%); color: white; border-radius: 0.5rem; padding: 2rem; margin-bottom: 2rem;">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h4 class="mb-1">
+                    <i class="bi bi-collection me-2"></i>
+                    {{ pagination.count }} Categorías Configuradas
+                </h4>
+                <p class="mb-0 opacity-75">Total de categorías disponibles para organizar tipos de equipo</p>
+            </div>
+            <div class="col-md-4">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="h3 mb-0">{{ categories|length }}</div>
+                        <small class="opacity-75">Total</small>
+                    </div>
+                    <div class="col-4">
+                        {% with active_count=0 %}{% for cat in categories %}{% if cat.is_active %}{% with active_count=forloop.counter %}{% endwith %}{% endif %}{% endfor %}{{ active_count }}{% endwith %}
+                        <small class="opacity-75">Activas</small>
+                    </div>
+                    <div class="col-4">
+                        {% with inactive_count=0 %}{% for cat in categories %}{% if not cat.is_active %}{% with inactive_count=forloop.counter %}{% endwith %}{% endif %}{% endfor %}{{ inactive_count }}{% endwith %}
+                        <small class="opacity-75">Inactivas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Category Grid -->
+    {% if categories %}
+    <div class="row">
+        {% for category in categories %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 category-card" style="transition: all 0.3s ease; border: 1px solid #e0e0e0; border-radius: 0.5rem; overflow: hidden;">
+                <!-- Category Header -->
+                <div class="card-header text-white" style="background: {% if category.color %}{{ category.color }}{% else %}linear-gradient(135deg, #667eea 0%, #764ba2 100%){% endif %}; padding: 1rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <i class="bi {{ category.icon|default:'bi-folder' }} me-2" style="font-size: 1.5rem;"></i>
+                            <div>
+                                <h6 class="mb-0">{{ category.name }}</h6>
+                                <small class="opacity-75">{{ category.category_code }}</small>
+                            </div>
+                        </div>
+                        <div>
+                            {% if category.is_active %}
+                            <span class="badge bg-light text-dark">
+                                <i class="bi bi-check-circle me-1"></i>Activa
+                            </span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">
+                                <i class="bi bi-pause-circle me-1"></i>Inactiva
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Body -->
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <h6 class="text-muted mb-1" style="font-size: 0.75rem;">Orden</h6>
+                            <div class="h5 mb-0">{{ category.sort_order|default:0 }}</div>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="text-muted mb-1" style="font-size: 0.75rem;">Tipos de Equipo</h6>
+                            <div class="h5 mb-0">{{ category.equipment_count|default:0 }}</div>
+                        </div>
+                    </div>
+                    
+                    {% if category.description %}
+                    <p class="card-text mt-2 mb-0" style="font-size: 0.875rem; color: #6c757d;">{{ category.description|truncatechars:80 }}</p>
+                    {% endif %}
+
+                    {% if category.color %}
+                    <div class="mt-2">
+                        <span class="badge" style="background-color: {{ category.color }}; color: white;">
+                            <i class="bi bi-palette me-1"></i>{{ category.color }}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Category Footer -->
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between">
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'frontend:category_detail' pk=category.category_id %}" class="btn btn-outline-primary" title="Ver detalles">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'frontend:category_edit' pk=category.category_id %}" class="btn btn-outline-secondary" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            {% if category.equipment_count|default:0 > 0 %}
+                            <button class="btn btn-outline-secondary" disabled title="Tiene equipos asociados">
+                                <i class="bi bi-lock"></i>
+                            </button>
+                            {% else %}
+                                {% if category.is_active %}
+                                <form method="post" action="{% url 'frontend:category_toggle_active' pk=category.category_id %}" class="d-inline" onsubmit="return confirm('¿Está seguro que desea desactivar esta categoría?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-warning" title="Desactivar">
+                                        <i class="bi bi-pause-circle"></i>
+                                    </button>
+                                </form>
+                                {% else %}
+                                <form method="post" action="{% url 'frontend:category_toggle_active' pk=category.category_id %}" class="d-inline" onsubmit="return confirm('¿Está seguro que desea activar esta categoría?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-success" title="Activar">
+                                        <i class="bi bi-play-circle"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.total_pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.current_page|add:-1 }}" tabindex="-1">
+                            <i class="bi bi-chevron-left"></i>
+                            Anterior
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="bi bi-chevron-left"></i> Anterior</span>
+                    </li>
+                    {% endif %}
+
+                    {% for page in pagination.page_range %}
+                    <li class="page-item {% if page == pagination.current_page %}active{% endif %}">
+                        <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+                    </li>
+                    {% endfor %}
+
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.current_page|add:1 }}">
+                            Siguiente <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">Siguiente <i class="bi bi-chevron-right"></i></span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <p class="text-center text-muted">
+                Mostrando {{ pagination.start_index }} - {{ pagination.end_index }} de {{ pagination.count }} categorías
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-folder-plus text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No hay categorías configuradas</h4>
+                <p class="text-muted">
+                    Las categorías le permiten organizar los tipos de equipo en grupos lógicos.
+                    <br>Comience creando la primera categoría.
+                </p>
+                <div class="mt-4">
+                    <a href="{% url 'frontend:category_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Crear Primera Categoría
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Category card hover effects
+    document.querySelectorAll('.category-card').forEach(function(card) {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-4px)';
+            this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+});
+</script>
+{% endblock %}

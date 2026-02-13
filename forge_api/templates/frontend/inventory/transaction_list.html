@@ -1,0 +1,328 @@
+﻿{% extends "frontend/base/base.html" %}
+
+{% load static %}
+
+{% block title %}Transacciones de Inventario - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/inventory-transactions.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-arrow-left-right"></i> Transacciones de Inventario
+        </h1>
+        <a href="{% url 'frontend:stock_movement_create' %}" class="d-none d-sm-inline-block btn btn-sm btn-success shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> Nuevo Movimiento
+        </a>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filtros de Búsqueda</h6>
+        </div>
+        <div class="card-body">
+            <form method="get">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="search" class="form-label">Buscar Producto</label>
+                        <input type="text" class="form-control" id="search" name="search" value="{{ filters.search }}" placeholder="Buscar por nombre, código...">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="type" class="form-label">Tipo de Transacción</label>
+                        <select class="form-select" id="type" name="type">
+                            <option value="">Todos los tipos</option>
+                            {% for option in type_options %}
+                                <option value="{{ option.value }}" {% if filters.type == option.value %}selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="warehouse" class="form-label">Almacén</label>
+                        <select class="form-select" id="warehouse" name="warehouse">
+                            <option value="">Todos los almacenes</option>
+                            {% for option in warehouse_options %}
+                                <option value="{{ option.value }}" {% if filters.warehouse == option.value %}selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="date_from" class="form-label">Fecha Desde</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ filters.date_from }}">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="date_to" class="form-label">Fecha Hasta</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ filters.date_to }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2 mb-3">
+                        <label for="sort" class="form-label">Ordenar por</label>
+                        <select class="form-select" id="sort" name="sort">
+                            {% for option in sort_options %}
+                                <option value="{{ option.value }}" {% if filters.sort == option.value %}selected{% endif %}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="order" class="form-label">&nbsp;</label>
+                        <select class="form-select" id="order" name="order">
+                            <option value="desc" {% if filters.order != 'asc' %}selected{% endif %}>Descendente</option>
+                            <option value="asc" {% if filters.order == 'asc' %}selected{% endif %}>Ascendente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label>&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Filtrar</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transactions Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Historial de Transacciones</h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                    <div class="dropdown-header">Opciones:</div>
+                    <a class="dropdown-item" href="#"><i class="bi bi-download"></i> Exportar a Excel</a>
+                    <a class="dropdown-item" href="#"><i class="bi bi-file-pdf"></i> Exportar a PDF</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item text-danger" href="#"><i class="bi bi-exclamation-triangle"></i> Reporte de Movimientos</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Transaction Count -->
+            <div class="mb-3">
+                <span class="text-muted">Mostrando {{ pagination.start_index }} a {{ pagination.end_index }} de {{ pagination.count }} transacciones</span>
+            </div>
+            
+            <!-- Transactions Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered" id="transactionsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Producto</th>
+                            <th>Tipo</th>
+                            <th>Almacén</th>
+                            <th>Cantidad</th>
+                            <th>Costo Unit.</th>
+                            <th>Total</th>
+                            <th>Referencia</th>
+                            <th>Usuario</th>
+                            <th>Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.formatted_date }}</td>
+                            <td>
+                                <div>
+                                    <strong>{{ transaction.product.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ transaction.product.product_code }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ transaction.type_class }}">
+                                    <i class="bi {{ transaction.type_icon }}"></i> {{ transaction.type_label }}
+                                </span>
+                            </td>
+                            <td>
+                                <div>
+                                    {{ transaction.warehouse.name }}
+                                    <br>
+                                    <small class="text-muted">{{ transaction.warehouse.warehouse_code }}</small>
+                                </div>
+                            </td>
+                            <td class="text-center">
+                                {% if transaction.transaction_type == 'receipt' %}
+                                    <span class="text-success fw-bold"><i class="bi bi-arrow-down-circle"></i> +{{ transaction.quantity }}</span>
+                                {% elif transaction.transaction_type == 'issue' %}
+                                    <span class="text-danger fw-bold"><i class="bi bi-arrow-up-circle"></i> -{{ transaction.quantity }}</span>
+                                {% elif transaction.transaction_type == 'transfer' %}
+                                    <span class="text-primary fw-bold"><i class="bi bi-arrow-left-right"></i> {{ transaction.quantity }}</span>
+                                {% else %}
+                                    <span class="fw-bold">{{ transaction.quantity }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">${{ transaction.unit_cost|floatformat:2|default:"N/A" }}</td>
+                            <td class="text-end">${{ transaction.total_amount|floatformat:2 }}</td>
+                            <td>
+                                {% if transaction.reference_number %}
+                                    <span class="badge bg-secondary">{{ transaction.reference_number }}</span>
+                                    <br>
+                                    <small>{{ transaction.reference_type|default:"N/A" }} #{{ transaction.reference_id|default:"" }}</small>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.created_by %}
+                                    {{ transaction.created_by.first_name }} {{ transaction.created_by.last_name }}
+                                {% else %}
+                                    <span class="text-muted">Sistema</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if transaction.notes %}
+                                    <span class="text-muted" title="{{ transaction.notes }}">
+                                        {{ transaction.notes|truncatechars:50 }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-5">
+                                <i class="bi bi-journal" style="font-size: 3rem;"></i>
+                                <p class="mt-3">No hay transacciones de inventario registradas aún.</p>
+                                <a href="{% url 'frontend:stock_movement_create' %}" class="btn btn-primary">Registrar primera transacción</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if pagination.total_pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.has_previous }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.page_range %}
+                        {% if page_num == pagination.current_page %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                        {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}">{{ page_num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.has_next }}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.total_pages }}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Transaction Summary Cards -->
+    <div class="row">
+        <!-- Total Transactions -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Transacciones
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_transactions|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-journal-bookmark fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Receipts -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Entradas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_receipts|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-arrow-down-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Issues -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Salidas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_issues|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-arrow-up-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transfers -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Transferencias
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_transfers|default:0 }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-arrow-left-right fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'frontend/js/inventory-transactions.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,58 @@
+version: '3.8'
+
+# Docker Compose para producción en VPS
+# NOTA: 
+# - La base de datos PostgreSQL ya está corriendo en el contenedor 'postgres_core'
+# - Nginx Proxy Manager ya está corriendo en el contenedor 'npm_core'
+# - Ambos están en la red 'core_shared-network'
+# - Esta configuración conecta Forge CMMS a la misma red para comunicación segura
+# 
+# Uso: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: forge-cmms-web-prod
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      # Conectar a PostgreSQL usando el nombre del contenedor
+      - DB_HOST=${DB_HOST:-postgres_core}
+      - DB_NAME=${DB_NAME:-forge_db}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_PORT=${DB_PORT:-5432}
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=False
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-moviax.sagecores.com,localhost,127.0.0.1}
+    volumes:
+      - staticfiles:/app/staticfiles
+      - media:/app/media
+      - logs:/app/logs
+    # NO exponer puerto públicamente - solo accesible desde NPM a través de la red interna
+    expose:
+      - "8000"
+    networks:
+      # Red compartida donde están NPM y PostgreSQL
+      - core_shared-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  staticfiles:
+  media:
+  logs:
+
+networks:
+  # Red compartida donde están NPM y PostgreSQL
+  # Esta red ya existe en tu VPS: core_shared-network
+  core_shared-network:
+    external: true
+    name: core_shared-network

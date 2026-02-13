@@ -1,0 +1,401 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ maintenance.title }} - Mantenimiento - MovIAx{% endblock %}
+
+{% block body_class %}maintenance-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/maintenance-detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="h3 mb-2">{{ maintenance.title }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:maintenance_list' %}">Mantenimiento</a></li>
+                    <li class="breadcrumb-item active">{{ maintenance.title|truncatechars:30 }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'frontend:maintenance_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+            <a href="{% url 'frontend:maintenance_update' maintenance.id %}" class="btn btn-primary">
+                <i class="fas fa-edit me-2"></i>Editar
+            </a>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-cog me-2"></i>Acciones
+                </button>
+                <ul class="dropdown-menu">
+                    {% if maintenance.status == 'scheduled' %}
+                        <li><a class="dropdown-item" href="#" onclick="updateStatus('in_progress')">
+                            <i class="fas fa-play me-2"></i>Iniciar Mantenimiento
+                        </a></li>
+                    {% endif %}
+                    {% if maintenance.status == 'in_progress' %}
+                        <li><a class="dropdown-item" href="#" onclick="updateStatus('completed')">
+                            <i class="fas fa-check me-2"></i>Marcar Completado
+                        </a></li>
+                    {% endif %}
+                    {% if maintenance.status != 'cancelled' and maintenance.status != 'completed' %}
+                        <li><a class="dropdown-item text-warning" href="#" onclick="updateStatus('cancelled')">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete()">
+                        <i class="fas fa-trash me-2"></i>Eliminar
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Main Information -->
+        <div class="col-lg-8">
+            <!-- Status and Priority Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="status-indicator">
+                                <h6 class="text-muted mb-1">Estado</h6>
+                                <span class="badge status-{{ maintenance.status }} fs-6">
+                                    {% if maintenance.status == 'scheduled' %}
+                                        <i class="fas fa-clock me-1"></i>Programado
+                                    {% elif maintenance.status == 'in_progress' %}
+                                        <i class="fas fa-play me-1"></i>En Progreso
+                                    {% elif maintenance.status == 'completed' %}
+                                        <i class="fas fa-check me-1"></i>Completado
+                                    {% elif maintenance.status == 'cancelled' %}
+                                        <i class="fas fa-times me-1"></i>Cancelado
+                                    {% else %}
+                                        <i class="fas fa-exclamation me-1"></i>Vencido
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="priority-indicator">
+                                <h6 class="text-muted mb-1">Prioridad</h6>
+                                <span class="badge priority-{{ maintenance.priority }} fs-6">
+                                    {% if maintenance.priority == 'low' %}
+                                        <i class="fas fa-arrow-down me-1"></i>Baja
+                                    {% elif maintenance.priority == 'medium' %}
+                                        <i class="fas fa-minus me-1"></i>Media
+                                    {% elif maintenance.priority == 'high' %}
+                                        <i class="fas fa-arrow-up me-1"></i>Alta
+                                    {% else %}
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Crítica
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="type-indicator">
+                                <h6 class="text-muted mb-1">Tipo</h6>
+                                <span class="badge bg-info fs-6">
+                                    {% if maintenance.maintenance_type == 'preventive' %}
+                                        <i class="fas fa-shield-alt me-1"></i>Preventivo
+                                    {% elif maintenance.maintenance_type == 'corrective' %}
+                                        <i class="fas fa-wrench me-1"></i>Correctivo
+                                    {% elif maintenance.maintenance_type == 'predictive' %}
+                                        <i class="fas fa-chart-line me-1"></i>Predictivo
+                                    {% else %}
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Emergencia
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="duration-indicator">
+                                <h6 class="text-muted mb-1">Duración Estimada</h6>
+                                <span class="fw-bold">
+                                    <i class="fas fa-clock me-1"></i>{{ maintenance.estimated_duration }} min
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Equipment Information -->
+            {% if equipment %}
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cog me-2"></i>Información del Equipo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="equipment-info">
+                                    <h6>{{ equipment.equipment_code }}</h6>
+                                    <p class="text-muted mb-2">{{ equipment.make }} {{ equipment.model }} ({{ equipment.year }})</p>
+                                    {% if equipment.vin %}
+                                        <small class="text-muted">VIN: {{ equipment.vin }}</small><br>
+                                    {% endif %}
+                                    {% if equipment.license_plate %}
+                                        <small class="text-muted">Placa: {{ equipment.license_plate }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="equipment-status">
+                                    <small class="text-muted">Estado del Equipo:</small><br>
+                                    {% if equipment.status == 'active' %}
+                                    <span class="badge bg-success">
+                                    {% else %}
+                                    <span class="badge bg-secondary">
+                                    {% endif %}
+                                        {{ equipment.status|capfirst }}
+                                    </span>
+                                    {% if equipment.mileage %}
+                                        <br><small class="text-muted mt-2">Kilometraje: {{ equipment.mileage|floatformat:0 }} km</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{% url 'frontend:equipment_detail' equipment.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-external-link-alt me-1"></i>Ver Detalles del Equipo
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Maintenance Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Detalles del Mantenimiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if maintenance.description %}
+                        <div class="mb-3">
+                            <h6>Descripción:</h6>
+                            <p class="text-muted">{{ maintenance.description|linebreaks }}</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Fecha Programada:</h6>
+                            <p class="fw-bold">
+                                <i class="fas fa-calendar me-2"></i>
+                                {{ maintenance.scheduled_date|date:"l, d \d\e F \d\e Y" }}<br>
+                                <i class="fas fa-clock me-2"></i>
+                                {{ maintenance.scheduled_date|date:"H:i" }}
+                            </p>
+                        </div>
+                        {% if maintenance.assigned_technician %}
+                            <div class="col-md-6">
+                                <h6>Técnico Asignado:</h6>
+                                <p class="fw-bold">
+                                    <i class="fas fa-user me-2"></i>{{ maintenance.assigned_technician }}
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {% if maintenance.notes %}
+                        <div class="mt-3">
+                            <h6>Notas:</h6>
+                            <div class="bg-light p-3 rounded">
+                                {{ maintenance.notes|linebreaks }}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Timeline Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Historial
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% if maintenance.created_at %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-primary"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Tarea Creada</h6>
+                                    <small class="text-muted">{{ maintenance.created_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if maintenance.status == 'in_progress' %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Mantenimiento Iniciado</h6>
+                                    <small class="text-muted">En progreso</small>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if maintenance.completed_date %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Mantenimiento Completado</h6>
+                                    <small class="text-muted">{{ maintenance.completed_date|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if maintenance.status == 'cancelled' %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-danger"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">Mantenimiento Cancelado</h6>
+                                    <small class="text-muted">Cancelado</small>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if maintenance.status == 'scheduled' %}
+                            <button class="btn btn-success" onclick="updateStatus('in_progress')">
+                                <i class="fas fa-play me-2"></i>Iniciar Mantenimiento
+                            </button>
+                        {% endif %}
+                        
+                        {% if maintenance.status == 'in_progress' %}
+                            <button class="btn btn-primary" onclick="updateStatus('completed')">
+                                <i class="fas fa-check me-2"></i>Marcar Completado
+                            </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'frontend:maintenance_update' maintenance.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-edit me-2"></i>Editar Tarea
+                        </a>
+                        
+                        {% if equipment %}
+                            <a href="{% url 'frontend:equipment_detail' equipment.id %}" class="btn btn-outline-info">
+                                <i class="fas fa-cog me-2"></i>Ver Equipo
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'frontend:maintenance_create' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-plus me-2"></i>Nueva Tarea
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Actualizar Estado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea cambiar el estado de esta tarea de mantenimiento?</p>
+                <div id="statusChangeInfo"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="statusForm" method="post" action="{% url 'frontend:maintenance_status_update' maintenance.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" id="newStatus">
+                    <button type="submit" class="btn btn-primary" id="confirmStatusBtn">Confirmar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar esta tarea de mantenimiento?</p>
+                <p class="text-muted">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{% url 'frontend:maintenance_delete' maintenance.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updateStatus(newStatus) {
+    const statusNames = {
+        'scheduled': 'Programado',
+        'in_progress': 'En Progreso',
+        'completed': 'Completado',
+        'cancelled': 'Cancelado'
+    };
+    
+    document.getElementById('newStatus').value = newStatus;
+    document.getElementById('statusChangeInfo').innerHTML = 
+        `<strong>Nuevo estado:</strong> ${statusNames[newStatus]}`;
+    
+    const confirmBtn = document.getElementById('confirmStatusBtn');
+    if (newStatus === 'completed') {
+        confirmBtn.className = 'btn btn-success';
+        confirmBtn.innerHTML = '<i class="fas fa-check me-2"></i>Completar';
+    } else if (newStatus === 'cancelled') {
+        confirmBtn.className = 'btn btn-warning';
+        confirmBtn.innerHTML = '<i class="fas fa-times me-2"></i>Cancelar';
+    } else {
+        confirmBtn.className = 'btn btn-primary';
+        confirmBtn.innerHTML = '<i class="fas fa-play me-2"></i>Iniciar';
+    }
+    
+    new bootstrap.Modal(document.getElementById('statusModal')).show();
+}
+
+function confirmDelete() {
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

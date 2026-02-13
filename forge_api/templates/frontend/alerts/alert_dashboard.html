@@ -1,0 +1,513 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Alertas - MovIAx{% endblock %}
+
+{% block body_class %}alert-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .alert-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .alert-card.severity-critical {
+        border-left-color: #dc3545;
+    }
+    
+    .alert-card.severity-high {
+        border-left-color: #fd7e14;
+    }
+    
+    .alert-card.severity-medium {
+        border-left-color: #0dcaf0;
+    }
+    
+    .alert-card.severity-low {
+        border-left-color: #6c757d;
+    }
+    
+    .alert-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .severity-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .alert-stats .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .alert-type-tab {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .alert-type-tab:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .alert-type-tab.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    
+    .notification-bell {
+        position: relative;
+        cursor: pointer;
+    }
+    
+    .notification-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #dc3545;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-bell-fill me-2 text-primary"></i>
+                        Dashboard de Alertas
+                    </h2>
+                    <p class="text-muted mb-0">Gestión centralizada de alertas y notificaciones del sistema</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="notification-bell" id="notificationBell">
+                        <i class="bi bi-bell fs-4 text-primary"></i>
+                        {% if new_alerts > 0 %}
+                        <span class="notification-badge">{{ new_alerts }}</span>
+                        {% endif %}
+                    </div>
+                    <button class="btn btn-outline-primary" onclick="refreshAlerts()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>
+                        Actualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Statistics -->
+    <div class="row mb-4 alert-stats">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="bi bi-bell fs-2 text-primary me-2"></i>
+                        <h3 class="mb-0">{{ total_alerts }}</h3>
+                    </div>
+                    <p class="text-muted mb-0">Total de Alertas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="bi bi-exclamation-triangle-fill fs-2 text-danger me-2"></i>
+                        <h3 class="mb-0 text-danger">{{ critical_alerts }}</h3>
+                    </div>
+                    <p class="text-muted mb-0">Críticas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="bi bi-exclamation-circle-fill fs-2 text-warning me-2"></i>
+                        <h3 class="mb-0 text-warning">{{ high_alerts }}</h3>
+                    </div>
+                    <p class="text-muted mb-0">Altas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <i class="bi bi-check-circle-fill fs-2 text-success me-2"></i>
+                        <h3 class="mb-0 text-success">{{ resolved_alerts }}</h3>
+                    </div>
+                    <p class="text-muted mb-0">Resueltas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Filtrar por Severidad</label>
+                            <select class="form-select" id="severityFilter">
+                                <option value="">Todas las severidades</option>
+                                <option value="critical">Crítica</option>
+                                <option value="high">Alta</option>
+                                <option value="medium">Media</option>
+                                <option value="low">Baja</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Filtrar por Estado</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">Todos los estados</option>
+                                <option value="new">Nuevas</option>
+                                <option value="read">Leídas</option>
+                                <option value="acknowledged">Reconocidas</option>
+                                <option value="resolved">Resueltas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Filtrar por Tipo</label>
+                            <select class="form-select" id="typeFilter">
+                                <option value="">Todos los tipos</option>
+                                <option value="inventory">Inventario</option>
+                                <option value="maintenance">Mantenimiento</option>
+                                <option value="business">Reglas de Negocio</option>
+                                <option value="system">Sistema</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Buscar en título o mensaje...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Type Tabs -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex gap-2 flex-wrap">
+                <div class="alert-type-tab px-3 py-2 rounded active" data-type="all">
+                    <i class="bi bi-list me-1"></i>
+                    Todas ({{ total_alerts }})
+                </div>
+                {% for type, type_alerts in alerts_by_type.items %}
+                <div class="alert-type-tab px-3 py-2 rounded" data-type="{{ type }}">
+                    {% if type == 'inventory' %}
+                        <i class="bi bi-box-seam me-1"></i>
+                    {% elif type == 'maintenance' %}
+                        <i class="bi bi-tools me-1"></i>
+                    {% elif type == 'business' %}
+                        <i class="bi bi-briefcase me-1"></i>
+                    {% elif type == 'system' %}
+                        <i class="bi bi-gear me-1"></i>
+                    {% else %}
+                        <i class="bi bi-bell me-1"></i>
+                    {% endif %}
+                    {{ type|title }} ({{ type_alerts|length }})
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts List -->
+    <div class="row">
+        <div class="col-12">
+            <div id="alertsList">
+                {% if alerts %}
+                    {% for alert in alerts %}
+                    <div class="alert-card card mb-3 severity-{{ alert.severity }}" 
+                         data-severity="{{ alert.severity }}" 
+                         data-status="{{ alert.status }}" 
+                         data-type="{{ alert.alert_type }}">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-start">
+                                        <div class="me-3">
+                                            <i class="{{ alert.type_icon }} fs-4 text-primary"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <h5 class="mb-0 me-2">{{ alert.title }}</h5>
+                                                <span class="badge {{ alert.severity_badge }} severity-badge me-2">
+                                                    <i class="{{ alert.severity_icon }} me-1"></i>
+                                                    {{ alert.severity|title }}
+                                                </span>
+                                                <span class="badge bg-{{ alert.status_class }}">
+                                                    {{ alert.status|title }}
+                                                </span>
+                                            </div>
+                                            <p class="text-muted mb-2">{{ alert.message|truncatechars:150 }}</p>
+                                            <div class="d-flex align-items-center text-muted small">
+                                                <i class="bi bi-clock me-1"></i>
+                                                <span class="me-3">{{ alert.created_at|date:"d/m/Y H:i" }}</span>
+                                                {% if alert.ref_code %}
+                                                <i class="bi bi-tag me-1"></i>
+                                                <span class="me-3">{{ alert.ref_code }}</span>
+                                                {% endif %}
+                                                <i class="bi bi-folder me-1"></i>
+                                                <span>{{ alert.alert_type|title }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="btn-group" role="group">
+                                        <a href="{% url 'frontend:alert_detail' alert.alert_id %}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-eye me-1"></i>
+                                            Ver Detalle
+                                        </a>
+                                        {% if alert.status == 'new' %}
+                                        <button class="btn btn-outline-success btn-sm" 
+                                                onclick="acknowledgeAlert({{ alert.alert_id }})">
+                                            <i class="bi bi-check me-1"></i>
+                                            Reconocer
+                                        </button>
+                                        {% endif %}
+                                        {% if alert.status != 'resolved' %}
+                                        <button class="btn btn-outline-warning btn-sm" 
+                                                onclick="resolveAlert({{ alert.alert_id }})">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            Resolver
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-bell-slash fs-1 text-muted mb-3"></i>
+                            <h4 class="text-muted">No hay alertas disponibles</h4>
+                            <p class="text-muted">No se encontraron alertas que coincidan con los filtros seleccionados.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Modals -->
+<div class="modal fade" id="acknowledgeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reconocer Alerta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea reconocer esta alerta?</p>
+                <p class="text-muted small">Esta acción marcará la alerta como reconocida y registrará la fecha y hora.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="confirmAcknowledge">Reconocer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="resolveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Resolver Alerta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea resolver esta alerta?</p>
+                <p class="text-muted small">Esta acción marcará la alerta como resuelta y registrará la fecha y hora.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="confirmResolve">Resolver</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Filter functionality
+    const severityFilter = document.getElementById('severityFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const searchInput = document.getElementById('searchInput');
+    const alertCards = document.querySelectorAll('.alert-card');
+    const typeTabs = document.querySelectorAll('.alert-type-tab');
+
+    function filterAlerts() {
+        const severityValue = severityFilter.value.toLowerCase();
+        const statusValue = statusFilter.value.toLowerCase();
+        const typeValue = typeFilter.value.toLowerCase();
+        const searchValue = searchInput.value.toLowerCase();
+
+        alertCards.forEach(card => {
+            const severity = card.dataset.severity.toLowerCase();
+            const status = card.dataset.status.toLowerCase();
+            const type = card.dataset.type.toLowerCase();
+            const title = card.querySelector('h5').textContent.toLowerCase();
+            const message = card.querySelector('p.text-muted').textContent.toLowerCase();
+
+            const severityMatch = !severityValue || severity === severityValue;
+            const statusMatch = !statusValue || status === statusValue;
+            const typeMatch = !typeValue || type === typeValue;
+            const searchMatch = !searchValue || title.includes(searchValue) || message.includes(searchValue);
+
+            if (severityMatch && statusMatch && typeMatch && searchMatch) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Add event listeners for filters
+    severityFilter.addEventListener('change', filterAlerts);
+    statusFilter.addEventListener('change', filterAlerts);
+    typeFilter.addEventListener('change', filterAlerts);
+    searchInput.addEventListener('input', filterAlerts);
+
+    // Type tab functionality
+    typeTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active class from all tabs
+            typeTabs.forEach(t => t.classList.remove('active'));
+            // Add active class to clicked tab
+            this.classList.add('active');
+
+            const selectedType = this.dataset.type;
+            
+            if (selectedType === 'all') {
+                typeFilter.value = '';
+            } else {
+                typeFilter.value = selectedType;
+            }
+            
+            filterAlerts();
+        });
+    });
+
+    // Real-time notifications
+    function checkNotifications() {
+        fetch('/frontend/api/notifications/')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.count > 0) {
+                    const badge = document.querySelector('.notification-badge');
+                    if (badge) {
+                        badge.textContent = data.count;
+                    } else if (data.count > 0) {
+                        const bell = document.getElementById('notificationBell');
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'notification-badge';
+                        newBadge.textContent = data.count;
+                        bell.appendChild(newBadge);
+                    }
+                }
+            })
+            .catch(error => console.error('Error checking notifications:', error));
+    }
+
+    // Check notifications every 30 seconds
+    setInterval(checkNotifications, 30000);
+    checkNotifications(); // Initial check
+});
+
+// Global functions for alert actions
+let currentAlertId = null;
+
+function acknowledgeAlert(alertId) {
+    currentAlertId = alertId;
+    const modal = new bootstrap.Modal(document.getElementById('acknowledgeModal'));
+    modal.show();
+}
+
+function resolveAlert(alertId) {
+    currentAlertId = alertId;
+    const modal = new bootstrap.Modal(document.getElementById('resolveModal'));
+    modal.show();
+}
+
+function refreshAlerts() {
+    window.location.reload();
+}
+
+// Modal confirmation handlers
+document.getElementById('confirmAcknowledge').addEventListener('click', function() {
+    if (currentAlertId) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/frontend/alerts/${currentAlertId}/action/`;
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'acknowledge';
+        
+        form.appendChild(csrfInput);
+        form.appendChild(actionInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+});
+
+document.getElementById('confirmResolve').addEventListener('click', function() {
+    if (currentAlertId) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/frontend/alerts/${currentAlertId}/action/`;
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'resolve';
+        
+        form.appendChild(csrfInput);
+        form.appendChild(actionInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+});
+</script>
+{% endblock %}

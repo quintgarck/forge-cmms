@@ -1,0 +1,310 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Catálogo OEM - MovIAx{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item active">Catálogo OEM</li>
+{% endblock %}
+
+{% block body_class %}oem-page{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'frontend/css/catalog.css' %}" rel="stylesheet">
+<style>
+    .oem-module-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .oem-module-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .oem-module-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-diagram-3 text-primary me-2"></i>
+                Catálogo OEM
+            </h1>
+            <p class="text-muted mb-0">Centro de administración de partes y referencias Original Equipment Manufacturer</p>
+        </div>
+    </div>
+
+    <!-- Módulos principales -->
+    <div class="row">
+        <!-- Fabricantes OEM -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 oem-module-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-building me-2"></i>
+                        Fabricantes OEM
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Gestión completa de fabricantes y marcas OEM con códigos de identificación 
+                        y categorización por tipo de fabricante.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Funcionalidades:</small>
+                        <ul class="small">
+                            <li>CRUD de fabricantes y marcas</li>
+                            <li>Códigos OEM únicos</li>
+                            <li>Tipos: Vehículos, Maquinaria, Partes</li>
+                            <li>Información de contacto</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:oem_manufacturer_management' %}" class="btn btn-primary">
+                            <i class="bi bi-list me-1"></i> Ver Lista
+                        </a>
+                        <a href="{% url 'frontend:oem_brand_create' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-plus-lg me-1"></i> Nueva Marca
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Catálogo de Partes -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 oem-module-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-box-seam me-2"></i>
+                        Catálogo de Partes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Catálogo completo de partes Original Equipment Manufacturer con 
+                        búsqueda, filtrado y gestión de disponibilidad.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Funcionalidades:</small>
+                        <ul class="small">
+                            <li>Búsqueda por número de parte</li>
+                            <li>Filtrado por fabricante</li>
+                            <li>Estado de disponibilidad</li>
+                            <li>Referencias cruzadas</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:oem_part_catalog' %}" class="btn btn-success">
+                            <i class="bi bi-list me-1"></i> Ver Catálogo
+                        </a>
+                        <a href="{% url 'frontend:oem_catalog_item_create' %}" class="btn btn-outline-success">
+                            <i class="bi bi-plus-lg me-1"></i> Nueva Parte
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Referencias Cruzadas -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 oem-module-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-arrow-left-right me-2"></i>
+                        Referencias Cruzadas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Herramienta de búsqueda para encontrar equivalencias entre partes OEM 
+                        y alternativas del mercado aftermarket.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Funcionalidades:</small>
+                        <ul class="small">
+                            <li>Búsqueda bidireccional</li>
+                            <li>Porcentaje de confianza</li>
+                            <li>Tipos de equivalencia</li>
+                            <li>Notas y observaciones</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:oem_cross_reference_tool' %}" class="btn btn-info">
+                            <i class="bi bi-search me-1"></i> Buscar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Equivalencias -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 oem-module-card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-link-45deg me-2"></i>
+                        Equivalencias OEM
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Gestión de equivalencias entre partes OEM y alternativas del mercado 
+                        con niveles de confianza configurables.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Funcionalidades:</small>
+                        <ul class="small">
+                            <li>Crear equivalencias</li>
+                            <li>Niveles de confianza</li>
+                            <li>Tipos: Directo, Compatible, Upgrade</li>
+                            <li>Verificación y validación</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:equivalence_management' %}" class="btn btn-warning">
+                            <i class="bi bi-list me-1"></i> Ver Equivalencias
+                        </a>
+                        <a href="{% url 'frontend:oem_equivalence_create_ui' %}" class="btn btn-outline-warning">
+                            <i class="bi bi-plus-lg me-1"></i> Nueva Equivalencia
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Importar OEM -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 oem-module-card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-cloud-upload me-2"></i>
+                        Importar Datos OEM
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Importación de productos desde el catálogo OEM hacia el inventario 
+                        local con sincronización de precios y disponibilidad.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Funcionalidades:</small>
+                        <ul class="small">
+                            <li>Importación individual</li>
+                            <li>Importación por marca</li>
+                            <li>Sincronización de precios</li>
+                            <li>Estado de importación</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:oem_import_dashboard' %}" class="btn btn-secondary">
+                            <i class="bi bi-cloud me-1"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestión de Equivalencias -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 oem-module-card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        Herramientas OEM
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Herramientas avanzadas de gestión del catálogo OEM incluyendo 
+                        compatibilidades y gestión de datos.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Opciones:</small>
+                        <ul class="small">
+                            <li>Gestión de equivalencias</li>
+                            <li>Compatibilidad de partes</li>
+                            <li>Importación de datos</li>
+                            <li>Administración de fabricantes</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:oem_manufacturer_management' %}" class="btn btn-dark">
+                            <i class="bi bi-building me-1"></i> Fabricantes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up me-2"></i>
+                        Estadísticas del Catálogo OEM
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="h3 text-primary mb-0">{{ stats.total_brands|default:0 }}</div>
+                            <small class="text-muted">Marcas</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="h3 text-success mb-0">{{ stats.total_parts|default:0 }}</div>
+                            <small class="text-muted">Partes</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="h3 text-info mb-0">{{ stats.total_equivalences|default:0 }}</div>
+                            <small class="text-muted">Equivalencias</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="h3 text-warning mb-0">{{ stats.imported_products|default:0 }}</div>
+                            <small class="text-muted">Importados</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animación de entrada para las tarjetas
+    const cards = document.querySelectorAll('.oem-module-card');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'opacity 0.3s, transform 0.3s';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+{% endblock %}

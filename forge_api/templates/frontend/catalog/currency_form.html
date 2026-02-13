@@ -1,0 +1,426 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .form-section {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+    .form-section-header {
+        background: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .form-section-body {
+        padding: 1.5rem;
+    }
+    .currency-code-preview {
+        font-family: 'Courier New', monospace;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #2563EB;
+        padding: 0.5rem;
+        background: #EFF6FF;
+        border-radius: 0.25rem;
+        display: inline-block;
+    }
+    .exchange-rate-display {
+        font-family: 'Courier New', monospace;
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #059669;
+    }
+    .validation-feedback {
+        display: block;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+    }
+    .validation-feedback.valid-feedback {
+        color: #198754;
+    }
+    .validation-feedback.invalid-feedback {
+        color: #dc3545;
+    }
+    .form-actions {
+        position: sticky;
+        bottom: 20px;
+        background: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+        z-index: 100;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="form-container">
+        <!-- Header -->
+        <div class="form-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <a href="{% url 'frontend:currency_list' %}" class="btn btn-light btn-sm me-3" title="Volver a la lista">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="h2 mb-0">{{ title }}</h1>
+                        <p class="mb-0 opacity-75">
+                            {% if is_edit %}
+                            Modificar la información de la moneda
+                            {% else %}
+                            Agregar una nueva moneda al sistema
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                <a href="{% url 'frontend:currency_list' %}" class="btn btn-light">
+                    <i class="bi bi-list me-2"></i>
+                    Ver todas las monedas
+                </a>
+            </div>
+        </div>
+
+        <!-- Error Messages -->
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+            {% for error in form.non_field_errors %}
+                {{ error }}<br>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+
+        <form method="post" id="currency-form" action="">
+            {% csrf_token %}
+            
+            <!-- Basic Information -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Información Básica
+                    </h5>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <!-- Currency Code -->
+                        <div class="col-md-6">
+                            <label for="{{ form.currency_code.id_for_label }}" class="form-label">
+                                {{ form.currency_code.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.currency_code }}
+                            {% if form.currency_code.help_text %}
+                            <div class="form-text">{{ form.currency_code.help_text }}</div>
+                            {% endif %}
+                            {% if form.currency_code.errors %}
+                            <div class="validation-feedback invalid-feedback">
+                                {{ form.currency_code.errors.0 }}
+                            </div>
+                            {% endif %}
+                            <div id="code-availability" class="validation-feedback" style="display: none;"></div>
+                        </div>
+
+                        <!-- Name -->
+                        <div class="col-md-6">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                {{ form.name.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.name }}
+                            {% if form.name.help_text %}
+                            <div class="form-text">{{ form.name.help_text }}</div>
+                            {% endif %}
+                            {% if form.name.errors %}
+                            <div class="validation-feedback invalid-feedback">
+                                {{ form.name.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Symbol -->
+                        <div class="col-md-6">
+                            <label for="{{ form.symbol.id_for_label }}" class="form-label">
+                                {{ form.symbol.label }}
+                            </label>
+                            {{ form.symbol }}
+                            {% if form.symbol.help_text %}
+                            <div class="form-text">{{ form.symbol.help_text }}</div>
+                            {% endif %}
+                            {% if form.symbol.errors %}
+                            <div class="validation-feedback invalid-feedback">
+                                {{ form.symbol.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exchange Rate Settings -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calculator me-2"></i>
+                        Configuración de Tipo de Cambio
+                    </h5>
+                </div>
+                <div class="form-section-body">
+                    <div class="row g-3">
+                        <!-- Exchange Rate -->
+                        <div class="col-md-6">
+                            <label for="{{ form.exchange_rate.id_for_label }}" class="form-label">
+                                {{ form.exchange_rate.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.exchange_rate }}
+                            {% if form.exchange_rate.help_text %}
+                            <div class="form-text">{{ form.exchange_rate.help_text }}</div>
+                            {% endif %}
+                            {% if form.exchange_rate.errors %}
+                            <div class="validation-feedback invalid-feedback">
+                                {{ form.exchange_rate.errors.0 }}
+                            </div>
+                            {% endif %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    El tipo de cambio 1.0000 indica que es la moneda base
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Decimals -->
+                        <div class="col-md-6">
+                            <label for="{{ form.decimals.id_for_label }}" class="form-label">
+                                {{ form.decimals.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.decimals }}
+                            {% if form.decimals.help_text %}
+                            <div class="form-text">{{ form.decimals.help_text }}</div>
+                            {% endif %}
+                            {% if form.decimals.errors %}
+                            <div class="validation-feedback invalid-feedback">
+                                {{ form.decimals.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="form-section">
+                <div class="form-section-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-toggle-on me-2"></i>
+                        Estado
+                    </h5>
+                </div>
+                <div class="form-section-body">
+                    <div class="form-check form-switch">
+                        {{ form.is_active }}
+                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                            {{ form.is_active.label }}
+                        </label>
+                        {% if form.is_active.help_text %}
+                        <div class="form-text">{{ form.is_active.help_text }}</div>
+                        {% endif %}
+                        {% if form.is_active.errors %}
+                        <div class="validation-feedback invalid-feedback">
+                            {{ form.is_active.errors.0 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <div class="d-flex justify-content-between">
+                    <a href="{{ cancel_url }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-2"></i>
+                        Cancelar
+                    </a>
+                    <div>
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                            <i class="bi bi-check-lg me-2"></i>
+                            {{ submit_text }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('currency-form');
+    const currencyCodeInput = document.getElementById('{{ form.currency_code.id_for_label }}');
+    const exchangeRateInput = document.getElementById('{{ form.exchange_rate.id_for_label }}');
+    let formSubmitted = false;
+    
+    // Code availability check (para creación Y edición)
+    let codeCheckTimeout;
+    if (currencyCodeInput) {
+        currencyCodeInput.addEventListener('input', function() {
+            clearTimeout(codeCheckTimeout);
+            const code = this.value.trim().toUpperCase();
+            const availabilityDiv = document.getElementById('code-availability');
+            
+            if (code.length === 3) {
+                codeCheckTimeout = setTimeout(() => {
+                    {% if is_edit %}
+                    const excludeCode = '{{ object.currency_code|escapejs }}';
+                    {% else %}
+                    const excludeCode = '';
+                    {% endif %}
+                    checkCodeAvailability(code, availabilityDiv, excludeCode);
+                }, 500);
+            } else {
+                availabilityDiv.style.display = 'none';
+            }
+        });
+    }
+    
+    // Auto-uppercase for currency code
+    if (currencyCodeInput) {
+        currencyCodeInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+    
+    // Form validation and submit handling
+    form.addEventListener('submit', function(e) {
+        if (formSubmitted) {
+            e.preventDefault();
+            return;
+        }
+        
+        if (!validateForm()) {
+            e.preventDefault();
+            return;
+        }
+        
+        formSubmitted = true;
+        
+        // Show loading state
+        const submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            const originalHTML = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+            
+            // Re-enable after 15 seconds as fallback (aumentado para dar tiempo a la API)
+            setTimeout(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHTML;
+                formSubmitted = false;
+                if (!form.dataset.submitted) {
+                    console.log('Timeout: re-enabling form');
+                }
+            }, 15000);
+        }
+    });
+    
+    // Functions
+    function checkCodeAvailability(code, availabilityDiv, excludeCode = '') {
+        let url = `{% url 'frontend:currency_check_code' %}?code=${encodeURIComponent(code)}`;
+        if (excludeCode) {
+            url += `&exclude_code=${encodeURIComponent(excludeCode)}`;
+        }
+        
+        // Timeout de 3 segundos para la verificación
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        fetch(url, {
+            signal: controller.signal
+        })
+            .then(response => {
+                clearTimeout(timeoutId);
+                return response.json();
+            })
+            .then(data => {
+                availabilityDiv.style.display = 'block';
+                if (data.available) {
+                    availabilityDiv.className = 'validation-feedback valid-feedback';
+                    availabilityDiv.textContent = '✓ Código disponible';
+                } else {
+                    availabilityDiv.className = 'validation-feedback invalid-feedback';
+                    availabilityDiv.textContent = data.message || 'Código no disponible';
+                }
+            })
+            .catch(error => {
+                clearTimeout(timeoutId);
+                console.error('Error checking code availability:', error);
+                // No mostrar error al usuario, permitir que continúe
+                availabilityDiv.style.display = 'none';
+            });
+    }
+    
+    function validateForm() {
+        let isValid = true;
+        
+        // Validate required fields
+        const requiredFields = [
+            currencyCodeInput,
+            document.getElementById('{{ form.name.id_for_label }}'),
+            document.getElementById('{{ form.exchange_rate.id_for_label }}'),
+            document.getElementById('{{ form.decimals.id_for_label }}')
+        ];
+        
+        requiredFields.forEach(field => {
+            if (field && !field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else if (field) {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        // Validate currency code format
+        if (currencyCodeInput && currencyCodeInput.value.length !== 3) {
+            currencyCodeInput.classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        // Validate exchange rate
+        if (exchangeRateInput) {
+            const rate = parseFloat(exchangeRateInput.value);
+            if (isNaN(rate) || rate <= 0) {
+                exchangeRateInput.classList.add('is-invalid');
+                isValid = false;
+            }
+        }
+        
+        return isValid;
+    }
+});
+</script>
+{% endblock %}

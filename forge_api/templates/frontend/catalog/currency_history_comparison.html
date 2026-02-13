@@ -1,0 +1,443 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Comparación de Monedas - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comparison-chart {
+        height: 500px;
+        margin-bottom: 2rem;
+    }
+    .currency-selector {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .currency-badge {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .currency-badge:hover {
+        transform: scale(1.05);
+    }
+    .currency-badge.selected {
+        border: 2px solid #2563EB;
+        box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+    }
+    .comparison-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    .stat-item {
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 0.5rem;
+        border-left: 4px solid #2563EB;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'frontend:catalog_index' %}">
+                            <i class="bi bi-house"></i> Catálogos
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'frontend:currency_list' %}">Monedas</a>
+                    </li>
+                    <li class="breadcrumb-item active">Comparación</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-bar-chart text-primary me-2"></i>
+                        Comparación de Tasas de Cambio
+                    </h1>
+                    <p class="text-muted mb-0">Compare la evolución de múltiples monedas en el tiempo</p>
+                </div>
+                <div class="btn-group mt-2">
+                    <button class="btn btn-outline-primary" data-period="7">7 días</button>
+                    <button class="btn btn-outline-primary {% if days == 30 %}active{% endif %}" data-period="30">30 días</button>
+                    <button class="btn btn-outline-primary" data-period="90">90 días</button>
+                    <button class="btn btn-outline-primary" data-period="365">1 año</button>
+                    <a href="{% url 'frontend:currency_rates' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Selector de Monedas -->
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check me-2"></i>
+                        Monedas Disponibles
+                    </h5>
+                </div>
+                <div class="card-body currency-selector">
+                    <form id="currency-selection-form">
+                        {% for currency in available_currencies %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input currency-checkbox" 
+                                   type="checkbox" 
+                                   value="{{ currency.currency_code }}"
+                                   id="currency-{{ currency.currency_code }}"
+                                   {% if currency.currency_code in selected_currencies %}checked{% endif %}>
+                            <label class="form-check-label d-flex align-items-center" 
+                                   for="currency-{{ currency.currency_code }}">
+                                <span class="badge bg-primary me-2">{{ currency.currency_code }}</span>
+                                <span>{{ currency.name }}</span>
+                            </label>
+                        </div>
+                        {% empty %}
+                        <p class="text-muted">No hay monedas disponibles para comparar</p>
+                        {% endfor %}
+                        
+                        <div class="mt-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-arrow-repeat me-1"></i>
+                                Actualizar Comparación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico de Comparación -->
+        <div class="col-lg-9">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up-arrow me-2"></i>
+                        Evolución Comparativa
+                    </h5>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="export-chart-btn">
+                        <i class="bi bi-download me-1"></i>Exportar
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="comparison-chart">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas de Comparación -->
+            {% if comparison_data %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bar-chart-line me-2"></i>
+                        Estadísticas Comparativas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="comparison-stats">
+                        {% for data in comparison_data %}
+                        <div class="stat-item">
+                            <h6 class="mb-2">
+                                <span class="badge bg-primary">{{ data.currency.currency_code }}</span>
+                                {{ data.currency.name }}
+                            </h6>
+                            <div class="small">
+                                <div class="mb-1">
+                                    <strong>Tasa Actual:</strong> {{ data.stats.current|floatformat:4 }}
+                                </div>
+                                <div class="mb-1">
+                                    <strong>Promedio:</strong> {{ data.stats.avg|floatformat:4 }}
+                                </div>
+                                <div class="mb-1">
+                                    <strong>Rango:</strong> {{ data.stats.min|floatformat:4 }} - {{ data.stats.max|floatformat:4 }}
+                                </div>
+                                <div>
+                                    <strong>Cambio ({{ days }} días):</strong>
+                                    {% if data.stats.direction == 'up' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-arrow-up"></i> +{{ data.stats.change_percent|floatformat:2 }}%
+                                        </span>
+                                    {% elif data.stats.direction == 'down' %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-arrow-down"></i> {{ data.stats.change_percent|floatformat:2 }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">
+                                            {{ data.stats.change_percent|floatformat:2 }}%
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Panel de Alertas de Comparación -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Alertas de Cambios Significativos
+                    </h5>
+                    <div class="input-group" style="width: 300px;">
+                        <span class="input-group-text">Umbral:</span>
+                        <input type="number" class="form-control" id="alert-threshold" value="5.0" step="0.5" min="0" max="50">
+                        <span class="input-group-text">%</span>
+                        <button class="btn btn-outline-primary" id="refresh-alerts-btn">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body" id="alerts-container">
+                    <div class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando alertas...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let comparisonChart = null;
+    const days = {{ days }};
+    
+    // Cargar gráfico de comparación
+    function loadComparisonChart() {
+        const selectedCurrencies = Array.from(document.querySelectorAll('.currency-checkbox:checked'))
+            .map(cb => cb.value);
+        
+        if (selectedCurrencies.length === 0) {
+            alert('Seleccione al menos una moneda para comparar');
+            return;
+        }
+        
+        const params = new URLSearchParams({
+            days: days,
+            ...selectedCurrencies.reduce((acc, code, idx) => {
+                acc[`currencies[${idx}]`] = code;
+                return acc;
+            }, {})
+        });
+        
+        fetch(`{% url 'frontend:currency_history_comparison_api' %}?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.chart_data) {
+                    renderComparisonChart(data.chart_data);
+                } else {
+                    console.error('Error loading comparison data:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    }
+    
+    // Renderizar gráfico de comparación
+    function renderComparisonChart(chartData) {
+        const ctx = document.getElementById('comparisonChart').getContext('2d');
+        
+        if (comparisonChart) {
+            comparisonChart.destroy();
+        }
+        
+        comparisonChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: chartData.datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(4);
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Comparación de Tasas de Cambio'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toFixed(4);
+                            }
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+    }
+    
+    // Cargar alertas
+    function loadAlerts() {
+        const threshold = parseFloat(document.getElementById('alert-threshold').value) || 5.0;
+        const params = new URLSearchParams({
+            threshold: threshold,
+            period_days: 7
+        });
+        
+        const container = document.getElementById('alerts-container');
+        container.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-primary"></div></div>';
+        
+        fetch(`{% url 'frontend:currency_alerts_api' %}?${params.toString()}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    renderAlerts(data.alerts);
+                } else {
+                    container.innerHTML = '<div class="alert alert-danger">Error al cargar alertas</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                container.innerHTML = '<div class="alert alert-danger">Error al cargar alertas</div>';
+            });
+    }
+    
+    // Renderizar alertas
+    function renderAlerts(alerts) {
+        const container = document.getElementById('alerts-container');
+        
+        if (alerts.length === 0) {
+            container.innerHTML = '<div class="alert alert-info"><i class="bi bi-check-circle me-2"></i>No hay alertas de cambios significativos</div>';
+            return;
+        }
+        
+        let html = '<div class="row g-3">';
+        alerts.forEach(alert => {
+            const alertClass = alert.alert_type === 'danger' ? 'danger' : 
+                              alert.alert_type === 'warning' ? 'warning' : 'info';
+            const icon = alert.direction === 'up' ? 'arrow-up' : 
+                        alert.direction === 'down' ? 'arrow-down' : 'dash';
+            
+            html += `
+                <div class="col-md-6">
+                    <div class="alert alert-${alertClass} d-flex align-items-start">
+                        <i class="bi bi-${icon}-circle-fill me-2 fs-5"></i>
+                        <div class="flex-grow-1">
+                            <strong>${alert.currency_name} (${alert.currency_code})</strong><br>
+                            <small>${alert.message || `Cambio del ${Math.abs(alert.change_percent).toFixed(2)}% en los últimos 7 días`}</small>
+                            <div class="mt-2">
+                                <span class="badge bg-${alert.alert_type}">
+                                    ${alert.change_percent > 0 ? '+' : ''}${alert.change_percent.toFixed(2)}%
+                                </span>
+                                <span class="badge bg-secondary ms-2">
+                                    ${alert.current_rate.toFixed(4)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        container.innerHTML = html;
+    }
+    
+    // Event listeners
+    document.getElementById('currency-selection-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const selectedCurrencies = Array.from(document.querySelectorAll('.currency-checkbox:checked'))
+            .map(cb => cb.value);
+        
+        if (selectedCurrencies.length === 0) {
+            alert('Seleccione al menos una moneda');
+            return;
+        }
+        
+        const params = new URLSearchParams({
+            days: days
+        });
+        selectedCurrencies.forEach(code => {
+            params.append('currencies', code);
+        });
+        
+        window.location.href = `?${params.toString()}`;
+    });
+    
+    document.querySelectorAll('[data-period]').forEach(button => {
+        button.addEventListener('click', function() {
+            const period = this.dataset.period;
+            const selectedCurrencies = Array.from(document.querySelectorAll('.currency-checkbox:checked'))
+                .map(cb => cb.value);
+            
+            const params = new URLSearchParams({
+                days: period
+            });
+            selectedCurrencies.forEach(code => {
+                params.append('currencies', code);
+            });
+            
+            window.location.href = `?${params.toString()}`;
+        });
+    });
+    
+    document.getElementById('refresh-alerts-btn').addEventListener('click', loadAlerts);
+    document.getElementById('alert-threshold').addEventListener('change', loadAlerts);
+    
+    document.getElementById('export-chart-btn').addEventListener('click', function() {
+        if (comparisonChart) {
+            const url = comparisonChart.toBase64Image();
+            const link = document.createElement('a');
+            link.download = 'currency-comparison.png';
+            link.href = url;
+            link.click();
+        }
+    });
+    
+    // Inicializar
+    loadComparisonChart();
+    loadAlerts();
+});
+</script>
+{% endblock %}

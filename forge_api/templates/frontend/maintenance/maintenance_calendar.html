@@ -1,0 +1,346 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Calendario de Mantenimiento - MovIAx{% endblock %}
+
+{% block body_class %}maintenance-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/maintenance-calendar.css' %}">
+<!-- FullCalendar CSS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Calendario de Mantenimiento</h1>
+            <p class="text-muted">Vista de calendario de todas las tareas de mantenimiento programadas</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'frontend:maintenance_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-list me-2"></i>Vista Lista
+            </a>
+            <a href="{% url 'frontend:maintenance_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nueva Tarea
+            </a>
+        </div>
+    </div>
+
+    <!-- Calendar Legend -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="mb-2">Tipos de Mantenimiento:</h6>
+                    <div class="d-flex flex-wrap gap-3">
+                        <span class="legend-item">
+                            <i class="fas fa-shield-alt text-success me-1"></i>Preventivo
+                        </span>
+                        <span class="legend-item">
+                            <i class="fas fa-wrench text-warning me-1"></i>Correctivo
+                        </span>
+                        <span class="legend-item">
+                            <i class="fas fa-chart-line text-info me-1"></i>Predictivo
+                        </span>
+                        <span class="legend-item">
+                            <i class="fas fa-exclamation-triangle text-danger me-1"></i>Emergencia
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="mb-2">Prioridades:</h6>
+                    <div class="d-flex flex-wrap gap-3">
+                        <span class="badge bg-success">Baja</span>
+                        <span class="badge bg-warning">Media</span>
+                        <span class="badge bg-orange">Alta</span>
+                        <span class="badge bg-danger">Crítica</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Container -->
+    <div class="card">
+        <div class="card-body">
+            <div id="calendar"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Detail Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventTitle">Detalles del Mantenimiento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="eventDetails">
+                <!-- Event details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <a href="#" class="btn btn-primary" id="viewEventBtn">Ver Detalles Completos</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Create Modal -->
+<div class="modal fade" id="quickCreateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crear Tarea Rápida</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickCreateForm">
+                    <div class="mb-3">
+                        <label for="quickTitle" class="form-label">Título</label>
+                        <input type="text" class="form-control" id="quickTitle" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickDate" class="form-label">Fecha y Hora</label>
+                        <input type="datetime-local" class="form-control" id="quickDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickType" class="form-label">Tipo</label>
+                        <select class="form-select" id="quickType" required>
+                            <option value="preventive">Preventivo</option>
+                            <option value="corrective">Correctivo</option>
+                            <option value="predictive">Predictivo</option>
+                            <option value="emergency">Emergencia</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="quickPriority" class="form-label">Prioridad</label>
+                        <select class="form-select" id="quickPriority" required>
+                            <option value="low">Baja</option>
+                            <option value="medium" selected>Media</option>
+                            <option value="high">Alta</option>
+                            <option value="critical">Crítica</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="createQuickEvent()">Crear</button>
+                <a href="{% url 'frontend:maintenance_create' %}" class="btn btn-outline-primary">Formulario Completo</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- FullCalendar JS -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/locales/es.global.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    
+    // Calendar events data from Django
+    const events = {{ calendar_events|safe }};
+    
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'es',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+        },
+        buttonText: {
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            day: 'Día',
+            list: 'Lista'
+        },
+        height: 'auto',
+        events: events,
+        eventClick: function(info) {
+            showEventDetails(info.event);
+        },
+        dateClick: function(info) {
+            showQuickCreate(info.date);
+        },
+        eventDidMount: function(info) {
+            // Add tooltip
+            info.el.setAttribute('title', 
+                `${info.event.title}\n` +
+                `Tipo: ${info.event.extendedProps.maintenance_type}\n` +
+                `Prioridad: ${info.event.extendedProps.priority}\n` +
+                `Equipo: ${info.event.extendedProps.equipment}`
+            );
+        },
+        eventDisplay: 'block',
+        dayMaxEvents: 3,
+        moreLinkClick: 'popover'
+    });
+    
+    calendar.render();
+    
+    // Event detail functions
+    window.showEventDetails = function(event) {
+        document.getElementById('eventTitle').textContent = event.title;
+        
+        const details = `
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Fecha:</strong><br>
+                    ${event.start.toLocaleDateString('es-ES', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}
+                </div>
+                <div class="col-md-6">
+                    <strong>Equipo:</strong><br>
+                    ${event.extendedProps.equipment}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <strong>Tipo:</strong><br>
+                    <span class="badge bg-info">${event.extendedProps.maintenance_type}</span>
+                </div>
+                <div class="col-md-6">
+                    <strong>Prioridad:</strong><br>
+                    <span class="badge priority-${event.extendedProps.priority}">${event.extendedProps.priority}</span>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <strong>Estado:</strong><br>
+                    <span class="badge status-${event.extendedProps.status}">${event.extendedProps.status}</span>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('eventDetails').innerHTML = details;
+        document.getElementById('viewEventBtn').href = `/maintenance/${event.id}/`;
+        
+        new bootstrap.Modal(document.getElementById('eventModal')).show();
+    };
+    
+    // Quick create functions
+    window.showQuickCreate = function(date) {
+        const dateStr = date.toISOString().slice(0, 16);
+        document.getElementById('quickDate').value = dateStr;
+        new bootstrap.Modal(document.getElementById('quickCreateModal')).show();
+    };
+    
+    window.createQuickEvent = function() {
+        const title = document.getElementById('quickTitle').value;
+        const date = document.getElementById('quickDate').value;
+        const type = document.getElementById('quickType').value;
+        const priority = document.getElementById('quickPriority').value;
+        
+        if (!title || !date) {
+            alert('Por favor, complete todos los campos requeridos.');
+            return;
+        }
+        
+        // Redirect to full form with pre-filled data
+        const params = new URLSearchParams({
+            title: title,
+            scheduled_date: date,
+            maintenance_type: type,
+            priority: priority
+        });
+        
+        window.location.href = `{% url 'frontend:maintenance_create' %}?${params.toString()}`;
+    };
+});
+
+// Calendar view switching
+function switchView(viewName) {
+    calendar.changeView(viewName);
+}
+
+// Export calendar
+function exportCalendar() {
+    // This would implement calendar export functionality
+    alert('Función de exportación en desarrollo');
+}
+
+// Print calendar
+function printCalendar() {
+    window.print();
+}
+</script>
+
+<style>
+/* Custom calendar styles */
+.fc-event {
+    border-radius: 4px;
+    border: none !important;
+    font-size: 0.85em;
+}
+
+.fc-event-title {
+    font-weight: 500;
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.9em;
+}
+
+/* Priority colors for calendar events */
+.fc-event[style*="background-color: rgb(40, 167, 69)"] {
+    /* Low priority - Green */
+}
+
+.fc-event[style*="background-color: rgb(255, 193, 7)"] {
+    /* Medium priority - Yellow */
+    color: #000 !important;
+}
+
+.fc-event[style*="background-color: rgb(253, 126, 20)"] {
+    /* High priority - Orange */
+}
+
+.fc-event[style*="background-color: rgb(220, 53, 69)"] {
+    /* Critical priority - Red */
+}
+
+/* Responsive calendar */
+@media (max-width: 768px) {
+    .fc-toolbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+    }
+}
+
+/* Print styles */
+@media print {
+    .btn, .modal, .dropdown {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+{% endblock %}

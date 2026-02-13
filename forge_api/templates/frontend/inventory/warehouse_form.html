@@ -1,0 +1,317 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/warehouse-form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">{{ title }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:warehouse_list' %}">Almacenes</a></li>
+                    <li class="breadcrumb-item active">{{ action|capfirst }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'frontend:warehouse_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver a Lista
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Main Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-warehouse me-2"></i>Información del Almacén
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="warehouseForm">
+                        {% csrf_token %}
+                        
+                        <!-- Code and Name -->
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.code.id_for_label }}" class="form-label required">
+                                    {{ form.code.label }}
+                                </label>
+                                {{ form.code }}
+                                {% if form.code.help_text %}
+                                    <div class="form-text">{{ form.code.help_text }}</div>
+                                {% endif %}
+                                {% if form.code.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.code.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <label for="{{ form.name.id_for_label }}" class="form-label required">
+                                    {{ form.name.label }}
+                                </label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.name.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.description.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Location -->
+                        <div class="mb-3">
+                            <label for="{{ form.location.id_for_label }}" class="form-label">
+                                {{ form.location.label }}
+                            </label>
+                            {{ form.location }}
+                            {% if form.location.help_text %}
+                                <div class="form-text">{{ form.location.help_text }}</div>
+                            {% endif %}
+                            {% if form.location.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.location.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Manager -->
+                        <div class="mb-3">
+                            <label for="{{ form.manager_name.id_for_label }}" class="form-label">
+                                {{ form.manager_name.label }}
+                            </label>
+                            {{ form.manager_name }}
+                            {% if form.manager_name.help_text %}
+                                <div class="form-text">{{ form.manager_name.help_text }}</div>
+                            {% endif %}
+                            {% if form.manager_name.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.manager_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Active Status -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    {{ form.is_active.label }}
+                                </label>
+                                {% if form.is_active.help_text %}
+                                    <div class="form-text">{{ form.is_active.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            {% if form.is_active.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.is_active.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'frontend:warehouse_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>
+                                {% if action == 'create' %}Crear Almacén{% else %}Actualizar Almacén{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Help Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Información de Ayuda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h6>Código del Almacén:</h6>
+                    <p class="small text-muted">
+                        Utiliza un código único y descriptivo para identificar el almacén. 
+                        Ejemplos: WH-001, MAIN, DEPOT-A.
+                    </p>
+
+                    <h6>Nombre del Almacén:</h6>
+                    <p class="small text-muted">
+                        Nombre descriptivo que identifique claramente el almacén. 
+                        Ejemplos: Almacén Principal, Depósito Norte, Bodega Central.
+                    </p>
+
+                    <h6>Ubicación:</h6>
+                    <p class="small text-muted">
+                        Dirección física completa del almacén para facilitar la localización 
+                        y gestión logística.
+                    </p>
+
+                    <h6>Encargado:</h6>
+                    <p class="small text-muted">
+                        Nombre de la persona responsable de la gestión y supervisión 
+                        del almacén.
+                    </p>
+
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        <strong>Consejo:</strong> Mantén los códigos de almacén cortos pero descriptivos 
+                        para facilitar su uso en reportes y movimientos de stock.
+                    </div>
+                </div>
+            </div>
+
+            {% if action == 'update' and warehouse %}
+                <!-- Current Status Card -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-info me-2"></i>Estado Actual
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <strong>Estado:</strong>
+                            {% if warehouse.is_active %}
+                                <span class="badge bg-success ms-2">Activo</span>
+                            {% else %}
+                                <span class="badge bg-secondary ms-2">Inactivo</span>
+                            {% endif %}
+                        </div>
+                        {% if warehouse.created_at %}
+                            <div class="mb-2">
+                                <strong>Creado:</strong> {{ warehouse.created_at|date:"d/m/Y H:i" }}
+                            </div>
+                        {% endif %}
+                        {% if warehouse.updated_at %}
+                            <div class="mb-2">
+                                <strong>Actualizado:</strong> {{ warehouse.updated_at|date:"d/m/Y H:i" }}
+                            </div>
+                        {% endif %}
+                        {% if warehouse.total_products %}
+                            <div class="mb-2">
+                                <strong>Productos:</strong> {{ warehouse.total_products }}
+                            </div>
+                        {% endif %}
+                        {% if warehouse.total_value %}
+                            <div class="mb-2">
+                                <strong>Valor Total:</strong> ${{ warehouse.total_value|floatformat:2 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Best Practices Card -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-star me-2"></i>Mejores Prácticas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Usa códigos consistentes y fáciles de recordar
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Incluye la ubicación física completa
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Asigna un encargado responsable
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Mantén actualizada la información de contacto
+                        </li>
+                        <li>
+                            <i class="fas fa-check text-success me-2"></i>
+                            Desactiva almacenes que ya no se usen
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.getElementById('warehouseForm');
+    const requiredFields = form.querySelectorAll('[required]');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, complete todos los campos requeridos.');
+        }
+    });
+    
+    // Real-time validation
+    requiredFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            if (!this.value.trim()) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+    
+    // Code field auto-uppercase
+    const codeField = document.querySelector('input[name="code"]');
+    if (codeField) {
+        codeField.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+});
+</script>
+{% endblock %}

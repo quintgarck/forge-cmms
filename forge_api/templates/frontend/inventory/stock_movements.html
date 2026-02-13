@@ -1,0 +1,280 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Movimientos de Stock - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/stock-movements.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Movimientos de Stock</h1>
+            <p class="text-muted">Historial de entradas, salidas y ajustes de inventario</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'frontend:stock_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-boxes me-2"></i>Ver Stock
+            </a>
+            <a href="{% url 'frontend:stock_movement_create' %}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Nuevo Movimiento
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="product_search" class="form-label">Buscar Producto</label>
+                    <input type="text" class="form-control" id="product_search" name="product_search" 
+                           value="{{ request.GET.product_search }}" placeholder="Buscar por código, nombre...">
+                </div>
+                <div class="col-md-2">
+                    <label for="movement_type" class="form-label">Tipo</label>
+                    <select name="movement_type" class="form-select" id="movement-type-filter">
+                        <option value="">Todos los tipos</option>
+                        <option value="in" {% if request.GET.movement_type == 'in' %}selected{% endif %}>Entrada</option>
+                        <option value="out" {% if request.GET.movement_type == 'out' %}selected{% endif %}>Salida</option>
+                        <option value="adjustment" {% if request.GET.movement_type == 'adjustment' %}selected{% endif %}>Ajuste</option>
+                        <option value="transfer" {% if request.GET.movement_type == 'transfer' %}selected{% endif %}>Transferencia</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="warehouse_id" class="form-label">Almacén</label>
+                    <select name="warehouse_id" class="form-select" id="warehouse-filter">
+                        <option value="">Todos los almacenes</option>
+                        {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}" 
+                                {% if request.GET.warehouse_id == warehouse.id|stringformat:"s" %}selected{% endif %}>
+                                {{ warehouse.code }} - {{ warehouse.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label">Desde</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" 
+                           value="{{ request.GET.date_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label">Hasta</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" 
+                           value="{{ request.GET.date_to }}">
+                </div>
+                <div class="col-md-1">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+            
+            {% if request.GET %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <a href="{% url 'frontend:stock_movements' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Limpiar Filtros
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="text-muted">
+            {% if pagination.count %}
+                Mostrando {{ movements|length }} de {{ pagination.count }} movimientos
+            {% else %}
+                No se encontraron movimientos
+            {% endif %}
+        </div>
+        <div class="movement-stats">
+            <span class="badge bg-success me-2">Entradas</span>
+            <span class="badge bg-danger me-2">Salidas</span>
+            <span class="badge bg-info me-2">Ajustes</span>
+            <span class="badge bg-warning">Transferencias</span>
+        </div>
+    </div>
+
+    <!-- Movements List -->
+    {% if movements %}
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Producto</th>
+                                <th>Almacén</th>
+                                <th>Tipo</th>
+                                <th>Cantidad</th>
+                                <th>Costo Unit.</th>
+                                <th>Total</th>
+                                <th>Motivo</th>
+                                <th>Referencia</th>
+                                <th>Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for movement in movements %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ movement.created_at|date:"d/m/Y" }}</strong><br>
+                                        <small class="text-muted">{{ movement.created_at|date:"H:i" }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <strong>{{ movement.product_code }}</strong><br>
+                                                <small class="text-muted">{{ movement.product_name|truncatechars:30 }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if movement.warehouse_name %}
+                                            <strong>{{ movement.warehouse_code }}</strong><br>
+                                            <small class="text-muted">{{ movement.warehouse_name|truncatechars:20 }}</small>
+                                        {% else %}
+                                            <span class="text-muted">General</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if movement.movement_type == 'in' %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-arrow-up me-1"></i>Entrada
+                                            </span>
+                                        {% elif movement.movement_type == 'out' %}
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-arrow-down me-1"></i>Salida
+                                            </span>
+                                        {% elif movement.movement_type == 'adjustment' %}
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-adjust me-1"></i>Ajuste
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-exchange-alt me-1"></i>Transferencia
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold {% if movement.movement_type == 'in' %}text-success{% else %}text-danger{% endif %}">
+                                            {% if movement.movement_type == 'in' %}+{% else %}-{% endif %}{{ movement.quantity|floatformat:2 }}
+                                        </span>
+                                        {% if movement.unit_of_measure %}
+                                            <small class="text-muted">{{ movement.unit_of_measure }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if movement.unit_cost %}
+                                            ${{ movement.unit_cost|floatformat:2 }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if movement.total_cost %}
+                                            <strong>${{ movement.total_cost|floatformat:2 }}</strong>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">{{ movement.reason|capfirst }}</span>
+                                    </td>
+                                    <td>
+                                        {% if movement.reference_document %}
+                                            <small>{{ movement.reference_document }}</small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if movement.created_by %}
+                                            <small>{{ movement.created_by }}</small>
+                                        {% else %}
+                                            <span class="text-muted">Sistema</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.total_pages > 1 %}
+            <nav aria-label="Paginación de movimientos" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'-1' }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.page_range %}
+                        <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if pagination.next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'1' }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-history fa-3x text-muted mb-3"></i>
+            <h4>No hay movimientos de stock</h4>
+            <p class="text-muted">No se encontraron movimientos con los filtros aplicados.</p>
+            <a href="{% url 'frontend:stock_movement_create' %}" class="btn btn-success">
+                <i class="fas fa-plus me-2"></i>Registrar Primer Movimiento
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-submit form on filter change
+document.addEventListener('DOMContentLoaded', function() {
+    const filterSelects = document.querySelectorAll('#movement-type-filter, #warehouse-filter');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Date range auto-submit
+    const dateInputs = document.querySelectorAll('#date_from, #date_to');
+    dateInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+});
+</script>
+{% endblock %}

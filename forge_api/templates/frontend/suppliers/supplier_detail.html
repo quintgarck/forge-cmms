@@ -1,0 +1,366 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ supplier.name|default:"Proveedor" }} - MovIAx{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/client-detail.css' %}">
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item"><a href="{% url 'frontend:supplier_list' %}">Proveedores</a></li>
+    <li class="breadcrumb-item active">{{ supplier.name|default:"Proveedor" }}</li>
+{% endblock %}
+
+{% block content %}
+{% if supplier %}
+    <!-- Supplier Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card enhanced-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center client-avatar" 
+                                 style="width: 60px; height: 60px;">
+                                <i class="bi bi-truck" style="font-size: 1.5rem;"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h1 class="h3 mb-1">{{ supplier.name }}</h1>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-hash me-1"></i>
+                                ID: {{ supplier.supplier_id }}
+                                {% if supplier.supplier_code %}
+                                    | Código: {{ supplier.supplier_code }}
+                                {% endif %}
+                            </p>
+                            {% if supplier.is_preferred %}
+                                <span class="badge bg-warning text-dark mt-1">
+                                    <i class="bi bi-star-fill"></i> Proveedor Preferido
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="flex-shrink-0">
+                            {% if supplier.status == 'ACTIVE' %}
+                                <span class="badge bg-success fs-6 px-3 py-2" style="border-radius: 20px;">
+                                    <i class="bi bi-check-circle-fill me-1"></i>
+                                    <strong>Activo</strong>
+                                </span>
+                            {% elif supplier.status == 'INACTIVE' %}
+                                <span class="badge bg-secondary fs-6 px-3 py-2" style="border-radius: 20px;">
+                                    <i class="bi bi-x-circle-fill me-1"></i>
+                                    <strong>Inactivo</strong>
+                                </span>
+                            {% elif supplier.status == 'SUSPENDED' %}
+                                <span class="badge bg-danger fs-6 px-3 py-2" style="border-radius: 20px;">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                    <strong>Suspendido</strong>
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-auto">
+            <div class="d-flex gap-2">
+                <!-- Main Action Buttons -->
+                <div class="btn-group" role="group">
+                    <a href="{% url 'frontend:supplier_update' supplier.supplier_id %}" class="btn btn-primary">
+                        <i class="bi bi-pencil me-1"></i>
+                        Editar Proveedor
+                    </a>
+                    <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="visually-hidden">Más opciones</span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="{% url 'frontend:purchase_order_create' %}?supplier={{ supplier.supplier_id }}">
+                                <i class="bi bi-cart-plus me-2 text-success"></i>
+                                <strong>Crear Orden de Compra</strong>
+                                <br><small class="text-muted">Generar nueva orden de compra para este proveedor</small>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="#" onclick="confirmDelete()">
+                                <i class="bi bi-trash me-2"></i>
+                                Eliminar Proveedor
+                                <br><small class="text-muted">Eliminar permanentemente este proveedor</small>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Refresh Button -->
+                <button type="button" class="btn btn-outline-secondary" id="refreshSupplierBtn" title="Actualizar datos">
+                    <i class="bi bi-arrow-repeat"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supplier Information Cards -->
+    <div class="row">
+        <!-- Contact Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card enhanced-card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-lines-fill me-2 text-primary"></i>
+                        Información de Contacto
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        {% if supplier.contact_person %}
+                        <dt class="col-sm-4">Contacto:</dt>
+                        <dd class="col-sm-8">{{ supplier.contact_person }}</dd>
+                        {% endif %}
+                        
+                        {% if supplier.contact_email %}
+                        <dt class="col-sm-4">Email:</dt>
+                        <dd class="col-sm-8">
+                            <a href="mailto:{{ supplier.contact_email }}">{{ supplier.contact_email }}</a>
+                        </dd>
+                        {% endif %}
+                        
+                        {% if supplier.contact_phone %}
+                        <dt class="col-sm-4">Teléfono:</dt>
+                        <dd class="col-sm-8">
+                            <a href="tel:{{ supplier.contact_phone }}">{{ supplier.contact_phone }}</a>
+                        </dd>
+                        {% endif %}
+                        
+                        {% if supplier.website %}
+                        <dt class="col-sm-4">Sitio Web:</dt>
+                        <dd class="col-sm-8">
+                            <a href="{{ supplier.website }}" target="_blank" rel="noopener">
+                                {{ supplier.website }}
+                                <i class="bi bi-box-arrow-up-right ms-1"></i>
+                            </a>
+                        </dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Address Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card enhanced-card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-geo-alt-fill me-2 text-primary"></i>
+                        Dirección
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        {% if supplier.address %}
+                        <dt class="col-sm-4">Dirección:</dt>
+                        <dd class="col-sm-8">{{ supplier.address }}</dd>
+                        {% endif %}
+                        
+                        {% if supplier.city %}
+                        <dt class="col-sm-4">Ciudad:</dt>
+                        <dd class="col-sm-8">{{ supplier.city }}</dd>
+                        {% endif %}
+                        
+                        {% if supplier.state %}
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">{{ supplier.state }}</dd>
+                        {% endif %}
+                        
+                        {% if supplier.country %}
+                        <dt class="col-sm-4">País:</dt>
+                        <dd class="col-sm-8">{{ supplier.country }}</dd>
+                        {% endif %}
+                        
+                        {% if supplier.tax_id %}
+                        <dt class="col-sm-4">ID Fiscal:</dt>
+                        <dd class="col-sm-8">{{ supplier.tax_id }}</dd>
+                        {% endif %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supplier Metrics -->
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Calificación</h6>
+                    <h3 class="mb-0">
+                        {% if supplier.rating %}
+                            <span class="badge bg-{% if supplier.rating >= 4.5 %}success{% elif supplier.rating >= 3.5 %}warning{% else %}danger{% endif %} fs-4">
+                                {{ supplier.rating|floatformat:1 }} ⭐
+                            </span>
+                        {% else %}
+                            <span class="text-muted">Sin calificación</span>
+                        {% endif %}
+                    </h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Tiempo de Entrega Promedio</h6>
+                    <h3 class="mb-0">{{ supplier.delivery_time_avg|default:"N/A" }} días</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted mb-2">Términos de Pago</h6>
+                    <h3 class="mb-0">{{ supplier.payment_terms|default:"30" }} días</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes -->
+    {% if supplier.notes %}
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-sticky-fill me-2 text-primary"></i>
+                        Notas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ supplier.notes|linebreaks }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar al proveedor <strong>{{ supplier.name }}</strong>?</p>
+                    <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form method="post" action="{% url 'frontend:supplier_delete' supplier.supplier_id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Proveedor no encontrado.
+    </div>
+    <a href="{% url 'frontend:supplier_list' %}" class="btn btn-primary">
+        <i class="bi bi-arrow-left me-1"></i>
+        Volver a la Lista
+    </a>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete() {
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Auto-refresh supplier data after returning from edit
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we came from an edit operation
+    const urlParams = new URLSearchParams(window.location.search);
+    const justEdited = urlParams.get('updated') === 'true';
+    
+    if (justEdited) {
+        // Show success message
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.innerHTML = `
+            <i class="bi bi-check-circle me-2"></i>
+            ¡Proveedor actualizado exitosamente!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+        
+        // Remove the parameter from URL
+        const newUrl = window.location.pathname + window.location.search.replace(/&?updated=true/, '').replace(/\?$/, '');
+        window.history.replaceState({}, document.title, newUrl);
+    }
+    
+    // Setup refresh button
+    const refreshBtn = document.getElementById('refreshSupplierBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            // Show loading state
+            const originalHtml = this.innerHTML;
+            this.innerHTML = '<i class="bi bi-arrow-repeat fa-spin"></i>';
+            this.disabled = true;
+            
+            // Reload the page to get fresh data
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        });
+    }
+    
+    // Auto-refresh every 5 minutes if the page is visible
+    let refreshInterval;
+    function startAutoRefresh() {
+        refreshInterval = setInterval(() => {
+            if (!document.hidden) {
+                // Could implement partial refresh here instead of full reload
+                console.log('Auto-refresh check...');
+            }
+        }, 5 * 60 * 1000); // 5 minutes
+    }
+    
+    function stopAutoRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+        }
+    }
+    
+    // Handle page visibility
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopAutoRefresh();
+        } else {
+            startAutoRefresh();
+        }
+    });
+    
+    // Start auto-refresh initially
+    startAutoRefresh();
+});
+</script>
+{% endblock %}
+

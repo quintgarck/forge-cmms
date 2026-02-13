@@ -1,0 +1,177 @@
+[
+  {
+    "test": "Authentication Login",
+    "success": true,
+    "message": "Successfully logged in",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:08.186571"
+  },
+  {
+    "test": "Token Validation",
+    "success": true,
+    "message": "Token works for protected endpoints",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:08.261263"
+  },
+  {
+    "test": "Frontend Login Page",
+    "success": true,
+    "message": "Login page accessible",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:08.263263"
+  },
+  {
+    "test": "Client Creation API",
+    "success": true,
+    "message": "Client created with ID 9",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:08.358115"
+  },
+  {
+    "test": "Client Read API",
+    "success": true,
+    "message": "Client retrieved successfully",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:08.419871"
+  },
+  {
+    "test": "Client Update API",
+    "success": true,
+    "message": "Client updated successfully",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:08.508615"
+  },
+  {
+    "test": "Frontend Client List",
+    "success": false,
+    "message": "Client list page missing content",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:08.511900"
+  },
+  {
+    "test": "Frontend Client Detail",
+    "success": false,
+    "message": "Client detail page missing content",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:08.515432"
+  },
+  {
+    "test": "Client Delete API",
+    "success": true,
+    "message": "Client deleted successfully",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:08.638803"
+  },
+  {
+    "test": "Dashboard Page",
+    "success": false,
+    "message": "Dashboard page missing content",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:08.952948"
+  },
+  {
+    "test": "Dashboard API",
+    "success": false,
+    "message": "No working dashboard API endpoint found",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.161034"
+  },
+  {
+    "test": "KPI clients",
+    "success": false,
+    "message": "No working clients KPI endpoint found",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.180387"
+  },
+  {
+    "test": "KPI work_orders",
+    "success": false,
+    "message": "No working work_orders KPI endpoint found",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.202357"
+  },
+  {
+    "test": "KPI inventory",
+    "success": false,
+    "message": "No working inventory KPI endpoint found",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.223061"
+  },
+  {
+    "test": "404 Error Handling",
+    "success": true,
+    "message": "404 errors handled correctly",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.231676"
+  },
+  {
+    "test": "Validation Error Handling",
+    "success": true,
+    "message": "Validation errors handled correctly",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.300596"
+  },
+  {
+    "test": "Auth Error Handling",
+    "success": true,
+    "message": "Unauthorized access blocked correctly",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.303929"
+  },
+  {
+    "test": "Client Count Consistency",
+    "success": true,
+    "message": "API returns 6 clients (dashboard API not available)",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.546666"
+  },
+  {
+    "test": "Frontend-Backend Consistency",
+    "success": false,
+    "message": "Frontend missing client content",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.619896"
+  },
+  {
+    "test": "Performance Clients API",
+    "success": true,
+    "message": "Response time: 60ms",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.680149"
+  },
+  {
+    "test": "Performance Root Page",
+    "success": true,
+    "message": "Response time: 3ms",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.684133"
+  },
+  {
+    "test": "Performance Client List Page",
+    "success": true,
+    "message": "Response time: 3ms",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.687188"
+  },
+  {
+    "test": "Performance Dashboard Page",
+    "success": true,
+    "message": "Response time: 2ms",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.689204"
+  },
+  {
+    "test": "Performance Dashboard API /api/dashboard-data/",
+    "success": true,
+    "message": "Endpoint not found (404) - 7ms",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.696684"
+  },
+  {
+    "test": "Performance Dashboard API /frontend/api/dashboard-data/",
+    "success": true,
+    "message": "Endpoint not found (404) - 6ms",
+    "details": null,
+    "timestamp": "2026-01-01T23:44:09.702217"
+  }
+]

@@ -1,0 +1,575 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'frontend/css/main.css' %}" rel="stylesheet">
+<style>
+    /* Asegurar que el navbar tenga el color correcto en modo claro */
+    .navbar,
+    #main-navbar,
+    .navbar-dark,
+    .navbar.bg-primary {
+        background-color: #2563EB !important;
+        color: white !important;
+    }
+    .navbar-brand,
+    .navbar-brand:hover,
+    .nav-link,
+    .navbar-text,
+    .navbar i,
+    .navbar .bi {
+        color: white !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            {% for breadcrumb in breadcrumbs %}
+                {% if breadcrumb.url %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ breadcrumb.url }}">{{ breadcrumb.name }}</a>
+                    </li>
+                {% else %}
+                    <li class="breadcrumb-item active" aria-current="page">
+                        {{ breadcrumb.name }}
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-diagram-2 text-primary"></i>
+                {{ title }}
+            </h1>
+            <p class="text-muted mb-0">
+                {% if object %}
+                    Modificar la información del sistema de taxonomía
+                {% else %}
+                    Complete la información para crear un nuevo sistema
+                {% endif %}
+            </p>
+        </div>
+        
+        <div class="btn-group" role="group">
+                <a href="{% url 'frontend:taxonomy_system_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Lista
+                </a>
+                {% if object and object.system_code %}
+                    <a href="{% url 'frontend:taxonomy_system_detail' object.system_code %}" class="btn btn-outline-info">
+                        <i class="bi bi-eye"></i> Ver Detalles
+                    </a>
+                {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario principal -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-form"></i> Información del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="taxonomy-system-form">
+                        {% csrf_token %}
+                        
+                        <!-- Mostrar errores generales -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Errores en el formulario:</strong>
+                                <ul class="mb-0 mt-2">
+                                    {% for error in form.non_field_errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="row">
+                            <!-- Código -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.system_code.id_for_label }}" class="form-label">
+                                        {{ form.system_code.label }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.system_code }}
+                                    {% if form.system_code.help_text %}
+                                        <div class="form-text">{{ form.system_code.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.system_code.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.system_code.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="code-validation-feedback"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Categoría -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label">
+                                        {{ form.category.label }}
+                                    </label>
+                                    {{ form.category }}
+                                    {% if form.category.help_text %}
+                                        <div class="form-text">{{ form.category.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.category.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.category.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Nombre Español -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.name_es.id_for_label }}" class="form-label">
+                                        {{ form.name_es.label }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.name_es }}
+                                    {% if form.name_es.help_text %}
+                                        <div class="form-text">{{ form.name_es.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.name_es.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.name_es.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Nombre Inglés -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.name_en.id_for_label }}" class="form-label">
+                                        {{ form.name_en.label }}
+                                    </label>
+                                    {{ form.name_en }}
+                                    {% if form.name_en.help_text %}
+                                        <div class="form-text">{{ form.name_en.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.name_en.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.name_en.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <!-- Icono con preview -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.icon.id_for_label }}" class="form-label">
+                                        {{ form.icon.label }}
+                                    </label>
+                                    <div class="input-group">
+                                        {{ form.icon }}
+                                        <span class="input-group-text">
+                                            <i id="icon-preview" class="bi bi-gear" style="font-size: 1.2rem;"></i>
+                                        </span>
+                                    </div>
+                                    {% if form.icon.help_text %}
+                                        <div class="form-text">{{ form.icon.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.icon.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.icon.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Ejemplos: bi bi-gear, fas fa-car, bi bi-truck
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Orden -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.sort_order.id_for_label }}" class="form-label">
+                                        {{ form.sort_order.label }}
+                                    </label>
+                                    {{ form.sort_order }}
+                                    {% if form.sort_order.help_text %}
+                                        <div class="form-text">{{ form.sort_order.help_text }}</div>
+                                    {% endif %}
+                                    {% if form.sort_order.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.sort_order.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    {{ form.is_active.label }}
+                                </label>
+                            </div>
+                            {% if form.is_active.help_text %}
+                                <div class="form-text">{{ form.is_active.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Alcance -->
+                        <div class="mb-3">
+                            <label for="{{ form.scope.id_for_label }}" class="form-label">
+                                {{ form.scope.label }}
+                            </label>
+                            {{ form.scope }}
+                            {% if form.scope.help_text %}
+                                <div class="form-text">{{ form.scope.help_text }}</div>
+                            {% endif %}
+                            {% if form.scope.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.scope.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <span id="scope-counter">0</span>/500 caracteres
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check"></i>
+                                {% if object %}Actualizar Sistema{% else %}Crear Sistema{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Vista previa -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-eye"></i> Vista Previa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="system-preview">
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-diagram-2" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">Complete el formulario para ver la vista previa</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ayuda y consejos -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightbulb"></i> Consejos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <h6>Código del Sistema:</h6>
+                        <ul class="mb-3">
+                            <li>Use códigos descriptivos y únicos</li>
+                            <li>Solo letras mayúsculas, números y guiones bajos</li>
+                            <li>Máximo 10 caracteres</li>
+                            <li>Ejemplos: ENGINE, TRANSM, BRAKES</li>
+                        </ul>
+                        
+                        <h6>Nombre del Sistema:</h6>
+                        <ul class="mb-3">
+                            <li>Use nombres claros y descriptivos</li>
+                            <li>Evite abreviaciones confusas</li>
+                            <li>Ejemplos: "Sistema de Motor", "Sistema de Transmisión"</li>
+                        </ul>
+                        
+                        <h6>Alcance:</h6>
+                        <ul class="mb-0">
+                            <li>Proporcione contexto adicional</li>
+                            <li>Explique el propósito del sistema</li>
+                            <li>Mencione componentes principales</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información adicional -->
+            {% if object %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle"></i> Información del Sistema
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="small">
+                            <div class="row mb-2">
+                                <div class="col-sm-6"><strong>Código:</strong></div>
+                                <div class="col-sm-6">{{ object.system_code }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-6"><strong>Categoría:</strong></div>
+                                <div class="col-sm-6">{{ object.category }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-6"><strong>Creado:</strong></div>
+                                <div class="col-sm-6">{{ object.created_at|date:"d/m/Y H:i" }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-6"><strong>Subsistemas:</strong></div>
+                                <div class="col-sm-6">
+                                    <span class="badge bg-secondary">{{ object.subsystems_count|default:0 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Variable para almacenar el ID del objeto en modo edición
+    const objectId = '{{ object.system_code|default:"" }}';
+    
+    const form = document.getElementById('taxonomy-system-form');
+    const codeInput = document.getElementById('{{ form.system_code.id_for_label }}');
+    const categoryInput = document.getElementById('{{ form.category.id_for_label }}');
+    const nameEsInput = document.getElementById('{{ form.name_es.id_for_label }}');
+    const nameEnInput = document.getElementById('{{ form.name_en.id_for_label }}');
+    const iconInput = document.getElementById('{{ form.icon.id_for_label }}');
+    const scopeInput = document.getElementById('{{ form.scope.id_for_label }}');
+    const isActiveInput = document.getElementById('{{ form.is_active.id_for_label }}');
+    const previewContainer = document.getElementById('system-preview');
+    const scopeCounter = document.getElementById('scope-counter');
+    const iconPreview = document.getElementById('icon-preview');
+    
+    // Add null checks for all elements
+    if (!codeInput || !nameEsInput || !form) {
+        console.error('Form elements not found');
+        return;
+    }
+    
+    // Ensure loading overlay is hidden when form page loads
+    // This addresses the issue where the modal appears blocked
+    const loadingOverlay = document.querySelector('.global-loader-overlay');
+    if (loadingOverlay) {
+        loadingOverlay.classList.remove('show');
+    }
+    
+    // Handle form submission
+    form.addEventListener('submit', function(e) {
+        // Don't prevent default - let Django handle the form submission
+        // The form will submit to the current URL (the CreateView or UpdateView)
+        console.log('Form submitted, checking validity...');
+        
+        // If form is invalid, Django will show errors
+        // If form is valid, the view's form_valid will be called
+    });
+    
+    // Validación en tiempo real del código
+    let codeValidationTimeout;
+    codeInput.addEventListener('input', function() {
+        const code = this.value.toUpperCase();
+        this.value = code;
+        
+        clearTimeout(codeValidationTimeout);
+        codeValidationTimeout = setTimeout(function() {
+            validateCode(code);
+        }, 500);
+        
+        updatePreview();
+    });
+    
+    // Actualizar vista previa en tiempo real
+    if (nameEsInput) {
+        nameEsInput.addEventListener('input', updatePreview);
+    }
+    if (scopeInput) {
+        scopeInput.addEventListener('input', updatePreview);
+    }
+    if (isActiveInput) {
+        isActiveInput.addEventListener('change', updatePreview);
+    }
+    
+    // Icon preview functionality
+    if (iconInput && iconPreview) {
+        iconInput.addEventListener('input', function() {
+            const iconClass = this.value.trim();
+            if (iconClass) {
+                iconPreview.className = iconClass;
+            } else {
+                iconPreview.className = 'bi bi-gear';
+            }
+            updatePreview(); // Update preview when icon changes
+        });
+        
+        // Initialize icon preview with current value
+        const initialIcon = iconInput.value.trim();
+        if (initialIcon) {
+            iconPreview.className = initialIcon;
+        }
+    }
+    
+    // Contador de caracteres para alcance
+    if (scopeInput && scopeCounter) {
+        scopeInput.addEventListener('input', function() {
+            const count = this.value.length;
+            scopeCounter.textContent = count;
+            
+            if (count > 500) {
+                scopeCounter.classList.add('text-danger');
+            } else if (count > 400) {
+                scopeCounter.classList.add('text-warning');
+                scopeCounter.classList.remove('text-danger');
+            } else {
+                scopeCounter.classList.remove('text-warning', 'text-danger');
+            }
+        });
+        
+        // Inicializar contador
+        scopeCounter.textContent = scopeInput.value.length;
+    }
+    
+    // Validación de código único
+    function validateCode(code) {
+        if (code.length < 2) return;
+        
+        const validationFeedback = document.querySelector('.code-validation-feedback');
+        if (!validationFeedback) return;
+        
+        validationFeedback.innerHTML = '<small class="text-muted"><i class="bi bi-hourglass-split"></i> Verificando...</small>';
+        
+        // Obtener el ID del objeto actual para excluirlo de la validación (si estamos en modo edición)
+        var excludeId = objectId || null;
+        
+        var bodyData = {
+            code: code,
+            type: 'system'
+        };
+        if (excludeId) {
+            bodyData.exclude_id = excludeId;
+        }
+        
+        fetch('{% url "frontend:taxonomy_validate_code" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(bodyData)
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.is_unique) {
+                validationFeedback.innerHTML = '<small class="text-success"><i class="bi bi-check-circle"></i> Código disponible</small>';
+                codeInput.classList.remove('is-invalid');
+                codeInput.classList.add('is-valid');
+            } else {
+                validationFeedback.innerHTML = '<small class="text-danger"><i class="bi bi-x-circle"></i> Código ya existe</small>';
+                codeInput.classList.remove('is-valid');
+                codeInput.classList.add('is-invalid');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error validating code:', error);
+            validationFeedback.innerHTML = '<small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Error al validar</small>';
+        });
+    }
+    
+    // Actualizar vista previa
+    function updatePreview() {
+        if (!previewContainer) return;
+        
+        const code = codeInput ? codeInput.value.trim() : '';
+        const nameEs = nameEsInput ? nameEsInput.value.trim() : '';
+        const scope = scopeInput ? scopeInput.value.trim() : '';
+        const isActive = isActiveInput ? isActiveInput.checked : true;
+        
+        // Obtener el icono seleccionado o usar el default
+        let iconClass = 'bi bi-diagram-2';
+        if (iconInput && iconInput.value.trim()) {
+            iconClass = iconInput.value.trim();
+        }
+        
+        if (!code && !nameEs) {
+            previewContainer.innerHTML = '<div class="text-center text-muted py-3"><i class="bi bi-diagram-2" style="font-size: 2rem;"></i><p class="mt-2 mb-0">Complete el formulario para ver la vista previa</p></div>';
+            return;
+        }
+        
+        const statusBadge = isActive 
+            ? '<span class="badge bg-success"><i class="bi bi-check-circle"></i> Activo</span>'
+            : '<span class="badge bg-warning"><i class="bi bi-pause-circle"></i> Inactivo</span>';
+        
+        previewContainer.innerHTML = '<div class="system-preview-card"><div class="d-flex align-items-start mb-2"><div class="me-3"><i class="' + iconClass + ' text-primary" style="font-size: 1.5rem;"></i></div><div class="flex-grow-1"><h6 class="mb-1">' + (nameEs || 'Nombre del sistema') + '</h6><div class="mb-2">' + (code ? '<span class="badge bg-primary">' + code + '</span>' : '') + ' ' + statusBadge + '</div>' + (scope ? '<p class="text-muted small mb-0">' + scope + '</p>' : '') + '</div></div></div>';
+    }
+    
+    // Inicializar vista previa
+    updatePreview();
+    
+    // Validar código inicial si existe
+    if (codeInput && codeInput.value) {
+        validateCode(codeInput.value);
+    }
+});
+
+// Ensure the global loader is hidden when the page loads
+// This fixes the issue where the form appears blocked by an overlay
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait a bit to ensure all components are initialized, then hide loader
+    setTimeout(function() {
+        const loadingOverlay = document.querySelector('.global-loader-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.remove('show');
+        }
+    }, 100);
+});
+</script>
+{% endblock %}

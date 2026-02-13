@@ -1,0 +1,299 @@
+<!-- Step 2: Service Selection -->
+<div class="wizard-step-content">
+    <h4 class="mb-4">
+        <i class="bi bi-tools me-2"></i>
+        Paso 2: Selección de Servicios y Partes
+    </h4>
+    
+    <div class="row">
+        <!-- Services Selection -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-wrench me-2"></i>
+                        Servicios
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="service-list">
+                        {% for service in services %}
+                            <div class="service-item mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input service-checkbox" 
+                                           type="checkbox" 
+                                           name="service_ids" 
+                                           value="{{ service.id }}" 
+                                           id="service_{{ service.id }}"
+                                           {% for selected in selected_services %}
+                                               {% if selected.id == service.id|stringformat:"s" %}checked{% endif %}
+                                           {% endfor %}>
+                                    <label class="form-check-label" for="service_{{ service.id }}">
+                                        <strong>{{ service.name }}</strong>
+                                        <div class="text-muted small">{{ service.description }}</div>
+                                        <div class="text-success small">
+                                            ${{ service.price|floatformat:2 }}
+                                            {% if service.estimated_hours %} - {{ service.estimated_hours }}h{% endif %}
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="quantity-control mt-2" style="display: none;">
+                                    <label class="form-label small">Cantidad:</label>
+                                    <input type="number" 
+                                           class="form-control form-control-sm" 
+                                           name="service_quantity_{{ service.id }}" 
+                                           value="{% for selected in selected_services %}{% if selected.id == service.id|stringformat:"s" %}{{ selected.quantity }}{% endif %}{% endfor %}"
+                                           min="1" 
+                                           max="10" 
+                                           style="width: 80px;">
+                                    <!-- Hidden fields for service details -->
+                                    <input type="hidden" name="service_name_{{ service.id }}" value="{{ service.name }}">
+                                    <input type="hidden" name="service_price_{{ service.id }}" value="{{ service.price }}">
+                                    <input type="hidden" name="service_hours_{{ service.id }}" value="{{ service.estimated_hours|default:0 }}">
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="text-muted text-center py-3">
+                                <i class="bi bi-tools display-4"></i>
+                                <p class="mt-2">No hay servicios disponibles</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Parts Selection -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-box me-2"></i>
+                        Partes y Materiales
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="part-list">
+                        {% for part in parts %}
+                            <div class="part-item mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input part-checkbox" 
+                                           type="checkbox" 
+                                           name="part_ids" 
+                                           value="{{ part.id }}" 
+                                           id="part_{{ part.id }}"
+                                           {% for selected in selected_parts %}
+                                               {% if selected.id == part.id|stringformat:"s" %}checked{% endif %}
+                                           {% endfor %}>
+                                    <label class="form-check-label" for="part_{{ part.id }}">
+                                        <strong>{{ part.name }}</strong>
+                                        <div class="text-muted small">{{ part.description }}</div>
+                                        <div class="text-success small">
+                                            ${{ part.price|floatformat:2 }}
+                                            {% if part.brand %} - {{ part.brand }}{% endif %}
+                                        </div>
+                                    </label>
+                                </div>
+                                <div class="quantity-control mt-2" style="display: none;">
+                                    <label class="form-label small">Cantidad:</label>
+                                    <input type="number" 
+                                           class="form-control form-control-sm" 
+                                           name="part_quantity_{{ part.id }}" 
+                                           value="{% for selected in selected_parts %}{% if selected.id == part.id|stringformat:"s" %}{{ selected.quantity }}{% endif %}{% endfor %}"
+                                           min="1" 
+                                           max="100" 
+                                           style="width: 80px;">
+                                    <!-- Hidden fields for part details -->
+                                    <input type="hidden" name="part_name_{{ part.id }}" value="{{ part.name }}">
+                                    <input type="hidden" name="part_price_{{ part.id }}" value="{{ part.price }}">
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="text-muted text-center py-3">
+                                <i class="bi bi-box display-4"></i>
+                                <p class="mt-2">No hay partes disponibles</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Selection Summary -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-calculator me-2"></i>
+                        Resumen de Selección
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Servicios Seleccionados:</h6>
+                            <div id="selectedServices" class="selected-items">
+                                <p class="text-muted">Ningún servicio seleccionado</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Partes Seleccionadas:</h6>
+                            <div id="selectedParts" class="selected-items">
+                                <p class="text-muted">Ninguna parte seleccionada</p>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Total Estimado: <span id="totalCost">$0.00</span></strong>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Horas Estimadas: <span id="totalHours">0.0h</span></strong>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Items: <span id="totalItems">0</span></strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation Buttons -->
+    <div class="wizard-navigation mt-4">
+        <div class="d-flex justify-content-between">
+            <button type="submit" name="action" value="prev" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>
+                Anterior
+            </button>
+            <div>
+                <button type="submit" name="action" value="cancel" class="btn btn-outline-danger me-2">
+                    <i class="bi bi-x-lg me-1"></i>
+                    Cancelar
+                </button>
+                <button type="submit" name="action" value="next" class="btn btn-primary" id="nextButton" disabled>
+                    Siguiente
+                    <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const serviceCheckboxes = document.querySelectorAll('.service-checkbox');
+    const partCheckboxes = document.querySelectorAll('.part-checkbox');
+    const nextButton = document.getElementById('nextButton');
+    
+    // Handle service selection
+    serviceCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const quantityControl = this.closest('.service-item').querySelector('.quantity-control');
+            if (this.checked) {
+                quantityControl.style.display = 'block';
+                quantityControl.querySelector('input[type="number"]').value = 1;
+            } else {
+                quantityControl.style.display = 'none';
+            }
+            updateSummary();
+        });
+        
+        // Initialize quantity controls for pre-selected items
+        if (checkbox.checked) {
+            const quantityControl = checkbox.closest('.service-item').querySelector('.quantity-control');
+            quantityControl.style.display = 'block';
+        }
+    });
+    
+    // Handle part selection
+    partCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const quantityControl = this.closest('.part-item').querySelector('.quantity-control');
+            if (this.checked) {
+                quantityControl.style.display = 'block';
+                quantityControl.querySelector('input[type="number"]').value = 1;
+            } else {
+                quantityControl.style.display = 'none';
+            }
+            updateSummary();
+        });
+        
+        // Initialize quantity controls for pre-selected items
+        if (checkbox.checked) {
+            const quantityControl = checkbox.closest('.part-item').querySelector('.quantity-control');
+            quantityControl.style.display = 'block';
+        }
+    });
+    
+    // Handle quantity changes
+    document.addEventListener('input', function(e) {
+        if (e.target.type === 'number' && (e.target.name.includes('quantity'))) {
+            updateSummary();
+        }
+    });
+    
+    function updateSummary() {
+        let totalCost = 0;
+        let totalHours = 0;
+        let totalItems = 0;
+        let selectedServicesHtml = '';
+        let selectedPartsHtml = '';
+        
+        // Calculate services
+        serviceCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const serviceItem = checkbox.closest('.service-item');
+                const quantityInput = serviceItem.querySelector('input[type="number"]');
+                const quantity = parseInt(quantityInput.value) || 1;
+                const price = parseFloat(serviceItem.querySelector('input[name*="price"]').value) || 0;
+                const hours = parseFloat(serviceItem.querySelector('input[name*="hours"]').value) || 0;
+                const name = serviceItem.querySelector('input[name*="name"]').value;
+                
+                totalCost += price * quantity;
+                totalHours += hours * quantity;
+                totalItems += quantity;
+                
+                selectedServicesHtml += `<div class="selected-item">
+                    <strong>${name}</strong> x${quantity} - $${(price * quantity).toFixed(2)}
+                    ${hours > 0 ? ` (${(hours * quantity).toFixed(1)}h)` : ''}
+                </div>`;
+            }
+        });
+        
+        // Calculate parts
+        partCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const partItem = checkbox.closest('.part-item');
+                const quantityInput = partItem.querySelector('input[type="number"]');
+                const quantity = parseInt(quantityInput.value) || 1;
+                const price = parseFloat(partItem.querySelector('input[name*="price"]').value) || 0;
+                const name = partItem.querySelector('input[name*="name"]').value;
+                
+                totalCost += price * quantity;
+                totalItems += quantity;
+                
+                selectedPartsHtml += `<div class="selected-item">
+                    <strong>${name}</strong> x${quantity} - $${(price * quantity).toFixed(2)}
+                </div>`;
+            }
+        });
+        
+        // Update summary display
+        document.getElementById('selectedServices').innerHTML = selectedServicesHtml || '<p class="text-muted">Ningún servicio seleccionado</p>';
+        document.getElementById('selectedParts').innerHTML = selectedPartsHtml || '<p class="text-muted">Ninguna parte seleccionada</p>';
+        document.getElementById('totalCost').textContent = `$${totalCost.toFixed(2)}`;
+        document.getElementById('totalHours').textContent = `${totalHours.toFixed(1)}h`;
+        document.getElementById('totalItems').textContent = totalItems;
+        
+        // Enable/disable next button
+        nextButton.disabled = totalItems === 0;
+    }
+    
+    // Initial summary update
+    updateSummary();
+});
+</script>

@@ -1,0 +1,132 @@
+📐 Lógica de Integración: OEM + CATÁLOGO + INVENTARIO
+🎯 Flujo de Integración Completo
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           FLUJO INTEGRACIÓN FORGE-CMMS                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+     ┌──────────────┐          ┌──────────────┐          ┌──────────────┐
+     │    CATÁLOGO  │◄────────►│     OEM      │◄────────►│   INVENTARIO │
+     │  (Maestro)   │          │ (Referencia) │          │  (Stock)     │
+     └──────┬───────┘          └──────┬───────┘          └──────┬───────┘
+            │                        │                        │
+            │   group_code           │   oem_ref              │   internal_sku
+            │   category_id          │   oem_code             │   supplier_sku
+            │   equipment_type       │   part_number          │   stock_level
+            ▼                        ▼                        ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           MODELOS DE DATOS                                  │
+│                                                                             │
+│  CATÁLOGO                    OEM                      INVENTARIO           │
+│  ┌─────────────┐            ┌─────────────┐           ┌─────────────┐      │
+│  │ Category    │───────────►│ OEMBrand    │           │ProductMaster│      │
+│  │ (type_id)   │   1:N      │ (oem_code) │           │(internal_sku)      │
+│  └─────────────┘            └─────────────┘           └──────┬──────┘      │
+│        │                          │                           │             │
+│        │   ┌─────────────┐        │   ┌─────────────┐        │             │
+│        └──►│EquipmentType│◄───────┴──►│OEMCatalog   │────────┘             │
+│            │(type_id)    │   1:N   │Item         │   N:1                 │
+│            └─────────────┘          └─────────────┘                       │
+│                                     │                                      │
+│                                     │   ┌─────────────┐                    │
+│                                     └──►│OEMEquivalence├───┐                │
+│                                         │             │   │                │
+│                                         └─────────────┘   │                │
+│                                                           │                │
+└───────────────────────────────────────────────────────────┼────────────────┘
+                                                            │
+                                                            ▼
+                                                    ┌─────────────┐
+                                                    │  Fitment    │
+                                                    │(compatibilidad)
+                                                    └─────────────┘
+🔗 Claves de Relación Entre Modelos
+De	Campo	Relación	Hacia	Campo
+ProductMaster	oem_ref	N:1	OEMCatalogItem	part_number
+ProductMaster	oem_code	N:1	OEMBrand	oem_code
+ProductMaster	group_code	N:1	TaxonomyGroup	group_code
+ProductMaster	supplier_mpn	N:1	SupplierSKU	supplier_mpn
+OEMCatalogItem	group_code	N:1	TaxonomyGroup	group_code
+OEMEquivalence	oem_code	N:1	OEMBrand	oem_code
+Fitment	internal_sku	N:1	ProductMaster	internal_sku
+📋 Escenarios de Integración
+1️⃣ Búsqueda de Repuesto por Número OEM
+Usuario busca: "Filtro diesel 123456"
+    │
+    ▼
+┌─────────────────────────────────────────────────────────┐
+│  1. Consultar OEM Catalog (oem_catalog_items)           │
+│     WHERE part_number LIKE '%123456%'                  │
+│     └─► OEMBrand, OEMCatalogItem                       │
+│                                                         │
+│  2. Obtener equivalencias (si existe)                  │
+│     WHERE oem_part_number = '123456'                   │
+│     └─► OEMEquivalence (aftermarket_sku alternatives)  │
+│                                                         │
+│  3. Buscar en inventario (si hay alternativa)          │
+│     WHERE internal_sku IN (...)                        │
+│     └─► ProductMaster, Stock                           │
+│                                                         │
+│  4. Mostrar: OEM Price │ Aftermarket Price │ Stock     │
+└─────────────────────────────────────────────────────────┘
+2️⃣ Crear Producto en Inventario desde OEM
+Usuario selecciona OEM Part Number del catálogo
+    │
+    ▼
+┌─────────────────────────────────────────────────────────┐
+│  1. Copiar datos desde OEMCatalogItem:                  │
+│     - description_es → name                            │
+│     - oem_code → oem_code                              │
+│     - part_number → oem_ref                            │
+│     - weight_kg → weight_kg                             │
+│     - dimensions → dimensions_cm                         │
+│     - list_price → standard_cost                        │
+│                                                         │
+│  2. Generar internal_sku único                         │
+│     Formato: {OEM_CODE}{SEQ}                           │
+│     Ejemplo: CAT0010001                                 │
+│                                                         │
+│  3. Vincular con taxonomy (group_code)                  │
+│     Auto-seleccionar según categoría del OEM            │
+│                                                         │
+│  4. Crear registro en ProductMaster                    │
+└─────────────────────────────────────────────────────────┘
+3️⃣ Compatibilidad con Equipos (Fitment)
+Usuario selecciona equipo del cliente
+    │
+    ▼
+┌─────────────────────────────────────────────────────────┐
+│  1. Obtener datos del equipo:                           │
+│     - brand (Ford, CAT, John Deere)                    │
+│     - model (F-150, 320)                              │
+│     - year (2020, 2023)                               │
+│     - engine_code, transmission_code                    │
+│                                                         │
+│  2. Buscar en OEM Catalog compatible:                   │
+│     WHERE oem_code IN (equipos del mismo brand)         │
+│     AND (year_start <= equipo.year)                     │
+│     AND (year_end IS NULL OR >= equipo.year)           │
+│     AND (engine_codes CONTAINS equipo.engine_code)      │
+│                                                         │
+│  3. Filtrar productos en inventario                    │
+│     WHERE oem_ref IN (OEM parts compatibles)            │
+│     AND stock.qty_available > 0                        │
+│                                                         │
+│  4. Mostrar partes recomendadas para el equipo         │
+└─────────────────────────────────────────────────────────┘
+📊 Tabla de APIs/Servicios de Integración
+Servicio	Endpoint	Función
+api_client.get_oem_brands()	GET /api/oem/brands/	Lista marcas OEM
+api_client.get_oem_catalog_items()	GET /api/oem/catalog/	Catálogo de partes OEM
+api_client.get_oem_equivalences()	GET /api/oem/equivalences/	Equivalencias OEM↔Aftermarket
+api_client.get_product_master()	GET /api/inventory/products/	Productos inventario
+api_client.get_stock()	GET /api/inventory/stock/	Stock por warehouse
+api_client.get_fitment()	GET /api/inventory/fitment/	Compatibilidad equipo-producto
+🎯 Pasos para Completar la Integración OEM
+#	Componente	Estado	Acción Requerida
+1	OEM Brands CRUD	⚠️ Parcial	Completar vistas de gestión
+2	OEM Catalog Items	⚠️ Parcial	Completar CRUD completo
+3	OEM Equivalences	❌ Faltante	Crear modelo+vista+API
+4	Fitment (compatibilidad)	❌ Faltante	Crear modelo+vista+API
+5	Integración ProductMaster↔OEM	❌ Faltante	Crear servicio de importación
+6	Búsqueda unificada	❌ Faltante	API de búsqueda cruzada
+¿Quieres que detalle el desarrollo de alguno de estos componentes de integración?

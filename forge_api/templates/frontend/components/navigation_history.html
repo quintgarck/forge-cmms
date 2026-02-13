@@ -1,0 +1,39 @@
+{% if history %}
+<div class="dropdown">
+    <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+            id="navigationHistoryDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-clock-history"></i> Historial
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navigationHistoryDropdown">
+        <li><h6 class="dropdown-header">Páginas Recientes</h6></li>
+        {% for page in history %}
+            <li>
+                <a class="dropdown-item" href="{{ page.url }}">
+                    <i class="bi bi-{{ page.icon|default:'file' }}"></i>
+                    {{ page.name }}
+                    <small class="text-muted d-block">{{ page.timestamp|timesince }} ago</small>
+                </a>
+            </li>
+        {% endfor %}
+        <li><hr class="dropdown-divider"></li>
+        <li>
+            <a class="dropdown-item text-danger" href="#" onclick="clearNavigationHistory()">
+                <i class="bi bi-trash"></i> Limpiar Historial
+            </a>
+        </li>
+    </ul>
+</div>
+
+<script>
+function clearNavigationHistory() {
+    if (confirm('¿Está seguro de que desea limpiar el historial de navegación?')) {
+        fetch('{% url "frontend:clear_navigation_history" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        }).then(() => location.reload());
+    }
+}
+</script>
+{% endif %}

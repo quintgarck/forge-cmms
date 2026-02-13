@@ -1,0 +1,526 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Timeline - Orden {{ work_order.wo_number }} - MovIAx{% endblock %}
+
+{% block body_class %}service-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline-container {
+        position: relative;
+        padding: 2rem 0;
+    }
+    .timeline-line {
+        position: absolute;
+        left: 30px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #007bff, #28a745);
+    }
+    .timeline-event {
+        position: relative;
+        margin-bottom: 2rem;
+        padding-left: 80px;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: 15px;
+        top: 10px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.9rem;
+        z-index: 2;
+    }
+    .timeline-content {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border-left: 4px solid #007bff;
+    }
+    .service-progress-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .service-progress-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .progress-ring {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+    }
+    .efficiency-meter {
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        background: #e9ecef;
+        margin: 0.5rem 0;
+    }
+    .efficiency-fill {
+        height: 100%;
+        transition: width 0.3s ease;
+    }
+    .item-status-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+    }
+    .overall-progress {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .real-time-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #28a745;
+        animation: pulse 2s infinite;
+        margin-right: 0.5rem;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if work_order %}
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-clock-history text-primary me-2"></i>
+                        Timeline - Orden {{ work_order.wo_number }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        {{ work_order.client.name }} - {{ work_order.equipment.make }} {{ work_order.equipment.model }}
+                    </p>
+                </div>
+                <div>
+                    <span class="badge bg-{{ status_info.class }} fs-6 px-3 py-2">
+                        <i class="{{ status_info.icon }} me-1"></i>
+                        {{ status_info.label }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Progress -->
+    <div class="overall-progress">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h4 class="mb-1">
+                    <span class="real-time-indicator"></span>
+                    Progreso General: {{ overall_progress|floatformat:0 }}%
+                </h4>
+                <p class="mb-0 opacity-75">
+                    {{ services|length }} servicio{{ services|length|pluralize }} programado{{ services|length|pluralize }}
+                    | {{ items|length }} item{{ items|length|pluralize }} requerido{{ items|length|pluralize }}
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="progress-ring bg-{% if overall_progress >= 100 %}success{% elif overall_progress >= 50 %}warning{% else %}info{% endif %}">
+                    {{ overall_progress|floatformat:0 }}%
+                </div>
+            </div>
+        </div>
+        <div class="progress mt-3" style="height: 8px;">
+            <div class="progress-bar bg-light" style="width: {{ overall_progress }}%;"></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Timeline Column -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-timeline me-2"></i>
+                        Cronología de Eventos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if timeline_events %}
+                    <div class="timeline-container">
+                        <div class="timeline-line"></div>
+                        {% for event in timeline_events %}
+                        <div class="timeline-event">
+                            <div class="timeline-marker bg-{{ event.color }}">
+                                <i class="{{ event.icon }}"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0">{{ event.title }}</h6>
+                                    <small class="text-muted">{{ event.timestamp|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <p class="text-muted mb-1">{{ event.description }}</p>
+                                <small class="text-primary">
+                                    <i class="bi bi-person me-1"></i>
+                                    {{ event.user }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock text-muted fs-1"></i>
+                        <p class="text-muted mt-2">No hay eventos registrados aún</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Services and Items Column -->
+        <div class="col-lg-6">
+            <!-- Services Progress -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear me-2"></i>
+                        Servicios en Tiempo Real
+                        <span class="real-time-indicator"></span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if services %}
+                    {% for service in services %}
+                    <div class="service-progress-card">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="{{ service.status_icon }} text-{{ service.status_class }} me-2"></i>
+                                        <h6 class="mb-0">{{ service.description|truncatechars:50 }}</h6>
+                                    </div>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="badge bg-{{ service.status_class }} me-2">
+                                            {{ service.completion_status|title }}
+                                        </span>
+                                        {% if service.technician %}
+                                        <small class="text-muted">
+                                            <i class="bi bi-person me-1"></i>
+                                            {{ service.technician.name }}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Progress Bar -->
+                                    <div class="progress mb-2" style="height: 6px;">
+                                        <div class="progress-bar bg-{{ service.status_class }}" 
+                                             style="width: {{ service.progress_percent }}%;"></div>
+                                    </div>
+                                    
+                                    <!-- Efficiency Meter -->
+                                    {% if service.efficiency_percent > 0 %}
+                                    <div class="efficiency-meter">
+                                        <div class="efficiency-fill bg-{% if service.efficiency_percent >= 100 %}success{% elif service.efficiency_percent >= 80 %}warning{% else %}danger{% endif %}" 
+                                             style="width: {{ service.efficiency_percent|floatformat:0 }}%;"></div>
+                                    </div>
+                                    <small class="text-muted">
+                                        Eficiencia: {{ service.efficiency_percent|floatformat:0 }}%
+                                        ({{ service.actual_hours }}h / {{ service.flat_hours }}h)
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="progress-ring bg-{{ service.status_class }}">
+                                        {{ service.progress_percent }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-gear text-muted fs-1"></i>
+                        <p class="text-muted mt-2">No hay servicios programados</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Items Tracking -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box me-2"></i>
+                        Seguimiento de Partes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if items %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Parte</th>
+                                    <th>Estado</th>
+                                    <th>Cantidad</th>
+                                    <th>Uso</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.internal_sku|default:"N/A" }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="item-status-badge bg-{{ item.status_class }} text-white">
+                                            <i class="{{ item.status_icon }} me-1"></i>
+                                            {{ item.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ item.qty_used }} / {{ item.qty_ordered }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 4px; width: 60px;">
+                                            <div class="progress-bar bg-{{ item.status_class }}" 
+                                                 style="width: {{ item.usage_percent }}%;"></div>
+                                        </div>
+                                        <small class="text-muted">{{ item.usage_percent|floatformat:0 }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-box text-muted fs-1"></i>
+                        <p class="text-muted mt-2">No hay partes requeridas</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Work Order Details -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Detalles de la Orden
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Descripción del Problema</h6>
+                            <p>{{ work_order.complaint|default:"Sin descripción disponible" }}</p>
+                            
+                            {% if work_order.diagnosis %}
+                            <h6 class="text-muted">Diagnóstico</h6>
+                            <p>{{ work_order.diagnosis }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Prioridad</small>
+                                    <span class="badge bg-{% if work_order.priority == 'urgent' %}danger{% elif work_order.priority == 'high' %}warning{% else %}info{% endif %}">
+                                        {{ work_order.priority|title }}
+                                    </span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Horas Estimadas</small>
+                                    <strong>{{ work_order.estimated_hours|default:"N/A" }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Costo Estimado</small>
+                                    <strong>${{ work_order.estimated_cost|default:"0"|floatformat:2 }}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Fecha Programada</small>
+                                    <strong>{{ work_order.scheduled_date|date:"d/m/Y"|default:"Sin programar" }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'frontend:workorder_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Volver a Órdenes
+                </a>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-outline-primary">
+                        <i class="bi bi-pencil me-1"></i>
+                        Editar
+                    </button>
+                    <button class="btn btn-outline-info">
+                        <i class="bi bi-printer me-1"></i>
+                        Imprimir
+                    </button>
+                    <button class="btn btn-primary">
+                        <i class="bi bi-arrow-right me-1"></i>
+                        Siguiente Estado
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Error State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-exclamation-triangle text-warning" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">Orden de Trabajo No Encontrada</h4>
+                <p class="text-muted">
+                    La orden de trabajo solicitada no existe o no está disponible.
+                </p>
+                <a href="{% url 'frontend:workorder_list' %}" class="btn btn-primary">
+                    <i class="bi bi-arrow-left me-2"></i>
+                    Volver a Órdenes
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Real-time updates simulation
+    function updateRealTimeData() {
+        // Simulate real-time updates
+        const indicators = document.querySelectorAll('.real-time-indicator');
+        indicators.forEach(indicator => {
+            indicator.style.animation = 'pulse 1s infinite';
+        });
+        
+        // Update progress bars with animation
+        const progressBars = document.querySelectorAll('.progress-bar');
+        progressBars.forEach(bar => {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.width = width;
+            }, 100);
+        });
+    }
+    
+    // Update every 30 seconds
+    setInterval(updateRealTimeData, 30000);
+    
+    // Service card interactions
+    document.querySelectorAll('.service-progress-card').forEach(card => {
+        card.addEventListener('click', function() {
+            // Highlight selected service
+            document.querySelectorAll('.service-progress-card').forEach(c => {
+                c.classList.remove('border-primary');
+            });
+            this.classList.add('border-primary');
+        });
+    });
+    
+    // Timeline event hover effects
+    document.querySelectorAll('.timeline-event').forEach(event => {
+        event.addEventListener('mouseenter', function() {
+            this.querySelector('.timeline-content').style.transform = 'translateX(10px)';
+        });
+        
+        event.addEventListener('mouseleave', function() {
+            this.querySelector('.timeline-content').style.transform = 'translateX(0)';
+        });
+    });
+    
+    // Progress ring animations
+    document.querySelectorAll('.progress-ring').forEach(ring => {
+        ring.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.1)';
+        });
+        
+        ring.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+    
+    // Auto-refresh functionality
+    const autoRefreshCheckbox = document.createElement('div');
+    autoRefreshCheckbox.innerHTML = `
+        <div class="form-check position-fixed" style="top: 100px; right: 20px; z-index: 1000;">
+            <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+            <label class="form-check-label small" for="autoRefresh">
+                Auto-actualizar
+            </label>
+        </div>
+    `;
+    document.body.appendChild(autoRefreshCheckbox);
+    
+    // Handle auto-refresh
+    let autoRefreshInterval;
+    const autoRefreshInput = document.getElementById('autoRefresh');
+    
+    function startAutoRefresh() {
+        autoRefreshInterval = setInterval(() => {
+            // In a real implementation, this would fetch updated data
+            updateRealTimeData();
+        }, 10000); // Every 10 seconds
+    }
+    
+    function stopAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+        }
+    }
+    
+    autoRefreshInput.addEventListener('change', function() {
+        if (this.checked) {
+            startAutoRefresh();
+        } else {
+            stopAutoRefresh();
+        }
+    });
+    
+    // Start auto-refresh by default
+    startAutoRefresh();
+});
+</script>
+{% endblock %}

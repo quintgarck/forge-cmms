@@ -1,0 +1,293 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+{% load navigation_tags %}
+
+{% block title %}Eliminar Subsistema - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumbs -->
+    {% render_breadcrumbs breadcrumbs %}
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-danger">
+                <i class="bi bi-exclamation-triangle"></i>
+                Eliminar Subsistema de Taxonomía
+            </h1>
+            <p class="text-muted mb-0">Esta acción no se puede deshacer</p>
+        </div>
+        
+        <div class="btn-group" role="group">
+            <a href="{% url 'frontend:taxonomy_subsystem_detail' object.subsystem_code %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Cancelar
+            </a>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Advertencias -->
+            {% if warnings %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        {% for warning in warnings %}
+                            <div class="alert alert-{{ warning.level }} alert-dismissible fade show" role="alert">
+                                <h5 class="alert-heading">
+                                    <i class="bi bi-{{ warning.icon }}"></i> {{ warning.title }}
+                                </h5>
+                                <p class="mb-2">{{ warning.message }}</p>
+                                {% if warning.details %}
+                                    <hr>
+                                    <ul class="mb-0">
+                                        {% for detail in warning.details %}
+                                            <li>{{ detail }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Información del subsistema -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-diagram-3 text-success"></i>
+                        Subsistema a Eliminar
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Información Básica</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Código:</strong></td>
+                                    <td><span class="badge bg-success">{{ object.subsystem_code }}</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Nombre:</strong></td>
+                                    <td>{{ object.name_es }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Sistema:</strong></td>
+                                    <td>
+                                        {% if system %}
+                                            <span class="badge bg-primary">{{ system.name }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Estado:</strong></td>
+                                    <td>
+                                        {% if object.is_active %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Activo
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-pause-circle"></i> Inactivo
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            {% if object.scope %}
+                                <h6 class="text-muted">Descripción</h6>
+                                <p class="text-muted">{{ object.scope }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Verificación de dependencias -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-search"></i>
+                        Verificación de Dependencias
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if dependencies.has_dependencies %}
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>¡Atención!</strong> Este subsistema tiene dependencias que impiden su eliminación.
+                        </div>
+                        
+                        <h6 class="text-danger">Dependencias encontradas:</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for dep_type in dependencies.dependency_types %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-link-45deg text-warning me-2"></i>
+                                        {% if dep_type == 'groups' %}
+                                            <strong>Grupos:</strong> Hay grupos asociados a este subsistema
+                                        {% elif dep_type == 'equipment' %}
+                                            <strong>Equipos:</strong> Hay equipos que usan este subsistema
+                                        {% else %}
+                                            <strong>{{ dep_type|title }}:</strong> Dependencias encontradas
+                                        {% endif %}
+                                    </div>
+                                    <span class="badge bg-danger">
+                                        {{ dependencies.counts.dep_type|default:0 }}
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        
+                        <div class="mt-3">
+                            <h6 class="text-info">Acciones recomendadas:</h6>
+                            <ul class="text-muted">
+                                <li>Elimine o reasigne todos los grupos asociados</li>
+                                <li>Verifique que no haya equipos usando este subsistema</li>
+                                <li>Considere desactivar el subsistema en lugar de eliminarlo</li>
+                            </ul>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success" role="alert">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>Verificación exitosa.</strong> No se encontraron dependencias que impidan la eliminación.
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-md-6">
+                                <div class="p-3">
+                                    <i class="bi bi-collection text-success" style="font-size: 2rem;"></i>
+                                    <h6 class="mt-2">Grupos</h6>
+                                    <span class="badge bg-success">0</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3">
+                                    <i class="bi bi-gear text-success" style="font-size: 2rem;"></i>
+                                    <h6 class="mt-2">Equipos</h6>
+                                    <span class="badge bg-success">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Formulario de confirmación -->
+            {% if not dependencies.has_dependencies %}
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Confirmación de Eliminación
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Importante:</strong> Esta acción eliminará permanentemente el subsistema 
+                            "<strong>{{ object.name }}</strong>" y no se puede deshacer.
+                        </div>
+                        
+                        <form method="post" id="delete-form">
+                            {% csrf_token %}
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="confirm-delete" required>
+                                <label class="form-check-label" for="confirm-delete">
+                                    Entiendo que esta acción es irreversible y confirmo que deseo eliminar este subsistema.
+                                </label>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <button type="submit" class="btn btn-danger" id="delete-button" disabled>
+                                        <i class="bi bi-trash"></i>
+                                        Eliminar Subsistema Permanentemente
+                                    </button>
+                                </div>
+                                <div>
+                                    <a href="{% url 'frontend:taxonomy_subsystem_detail' object.subsystem_code %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x"></i> Cancelar
+                                    </a>
+                                    <a href="{% url 'frontend:taxonomy_subsystem_edit' system_id=system_id pk=object.subsystem_code %}" class="btn btn-outline-warning">
+                                        <i class="bi bi-pause"></i> Desactivar en su lugar
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Acciones alternativas cuando hay dependencias -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-tools"></i>
+                            Acciones Alternativas
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">
+                            Como este subsistema tiene dependencias, considere estas alternativas:
+                        </p>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                            <a href="{% url 'frontend:taxonomy_subsystem_edit' system_id=system_id pk=object.subsystem_code %}" class="btn btn-warning">
+                                <i class="bi bi-pause-circle"></i>
+                                Desactivar Subsistema
+                            </a>
+                            <a href="{% url 'frontend:taxonomy_subsystem_detail' object.subsystem_code %}" class="btn btn-info">
+                                <i class="bi bi-list"></i>
+                                Ver Dependencias Detalladas
+                            </a>
+                            <a href="{% url 'frontend:taxonomy_subsystem_list' system_id=system_id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i>
+                                Volver a Lista
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmDelete = document.getElementById('confirm-delete');
+    const deleteButton = document.getElementById('delete-button');
+    const deleteForm = document.getElementById('delete-form');
+    
+    if (confirmDelete && deleteButton) {
+        confirmDelete.addEventListener('change', function() {
+            deleteButton.disabled = !this.checked;
+        });
+        
+        deleteForm.addEventListener('submit', function(e) {
+            const confirmed = confirm(
+                '¿Está seguro de que desea eliminar este subsistema?\n\n' +
+                'Esta acción NO SE PUEDE DESHACER.'
+            );
+            
+            if (!confirmed) {
+                e.preventDefault();
+                return false;
+            }
+            
+            deleteButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Eliminando...';
+            deleteButton.disabled = true;
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,313 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - MovIAx{% endblock %}
+
+{% block body_class %}maintenance-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/maintenance-form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">{{ title }}</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'frontend:maintenance_list' %}">Mantenimiento</a></li>
+                    <li class="breadcrumb-item active">{{ action|capfirst }}</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="{% url 'frontend:maintenance_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver a Lista
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Main Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tools me-2"></i>Información del Mantenimiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="maintenanceForm">
+                        {% csrf_token %}
+                        
+                        <!-- Equipment Selection -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.equipment_id.id_for_label }}" class="form-label required">
+                                    {{ form.equipment_id.label }}
+                                </label>
+                                {{ form.equipment_id }}
+                                {% if form.equipment_id.help_text %}
+                                    <div class="form-text">{{ form.equipment_id.help_text }}</div>
+                                {% endif %}
+                                {% if form.equipment_id.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.equipment_id.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.maintenance_type.id_for_label }}" class="form-label required">
+                                    {{ form.maintenance_type.label }}
+                                </label>
+                                {{ form.maintenance_type }}
+                                {% if form.maintenance_type.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.maintenance_type.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Title and Priority -->
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <label for="{{ form.title.id_for_label }}" class="form-label required">
+                                    {{ form.title.label }}
+                                </label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.title.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <label for="{{ form.priority.id_for_label }}" class="form-label required">
+                                    {{ form.priority.label }}
+                                </label>
+                                {{ form.priority }}
+                                {% if form.priority.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.priority.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                {{ form.description.label }}
+                            </label>
+                            {{ form.description }}
+                            {% if form.description.help_text %}
+                                <div class="form-text">{{ form.description.help_text }}</div>
+                            {% endif %}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.description.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Scheduling -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.scheduled_date.id_for_label }}" class="form-label required">
+                                    {{ form.scheduled_date.label }}
+                                </label>
+                                {{ form.scheduled_date }}
+                                {% if form.scheduled_date.help_text %}
+                                    <div class="form-text">{{ form.scheduled_date.help_text }}</div>
+                                {% endif %}
+                                {% if form.scheduled_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.scheduled_date.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.estimated_duration.id_for_label }}" class="form-label">
+                                    {{ form.estimated_duration.label }}
+                                </label>
+                                <div class="input-group">
+                                    {{ form.estimated_duration }}
+                                    <span class="input-group-text">minutos</span>
+                                </div>
+                                {% if form.estimated_duration.help_text %}
+                                    <div class="form-text">{{ form.estimated_duration.help_text }}</div>
+                                {% endif %}
+                                {% if form.estimated_duration.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.estimated_duration.errors %}{{ error }}{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Technician Assignment -->
+                        <div class="mb-3">
+                            <label for="{{ form.assigned_technician.id_for_label }}" class="form-label">
+                                {{ form.assigned_technician.label }}
+                            </label>
+                            {{ form.assigned_technician }}
+                            {% if form.assigned_technician.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.assigned_technician.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-4">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                {{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.notes.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'frontend:maintenance_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>
+                                {% if action == 'create' %}Crear Tarea{% else %}Actualizar Tarea{% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Help Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Información de Ayuda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h6>Tipos de Mantenimiento:</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>Preventivo:</strong> Mantenimiento programado regular</li>
+                        <li><strong>Correctivo:</strong> Reparación de fallas conocidas</li>
+                        <li><strong>Predictivo:</strong> Basado en análisis de datos</li>
+                        <li><strong>Emergencia:</strong> Reparación urgente</li>
+                    </ul>
+
+                    <h6 class="mt-3">Niveles de Prioridad:</h6>
+                    <ul class="list-unstyled">
+                        <li><span class="badge bg-success">Baja</span> - Puede esperar</li>
+                        <li><span class="badge bg-warning">Media</span> - Programar pronto</li>
+                        <li><span class="badge bg-orange">Alta</span> - Atención prioritaria</li>
+                        <li><span class="badge bg-danger">Crítica</span> - Atención inmediata</li>
+                    </ul>
+                </div>
+            </div>
+
+            {% if action == 'update' and maintenance %}
+                <!-- Current Status Card -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-info me-2"></i>Estado Actual
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <strong>Estado:</strong>
+                            <span class="badge status-{{ maintenance.status }} ms-2">
+                                {% if maintenance.status == 'scheduled' %}Programado
+                                {% elif maintenance.status == 'in_progress' %}En Progreso
+                                {% elif maintenance.status == 'completed' %}Completado
+                                {% elif maintenance.status == 'cancelled' %}Cancelado
+                                {% else %}Vencido{% endif %}
+                            </span>
+                        </div>
+                        {% if maintenance.created_at %}
+                            <div class="mb-2">
+                                <strong>Creado:</strong> {{ maintenance.created_at|date:"d/m/Y H:i" }}
+                            </div>
+                        {% endif %}
+                        {% if maintenance.updated_at %}
+                            <div class="mb-2">
+                                <strong>Actualizado:</strong> {{ maintenance.updated_at|date:"d/m/Y H:i" }}
+                            </div>
+                        {% endif %}
+                        {% if maintenance.completed_date %}
+                            <div class="mb-2">
+                                <strong>Completado:</strong> {{ maintenance.completed_date|date:"d/m/Y H:i" }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form validation
+    const form = document.getElementById('maintenanceForm');
+    const requiredFields = form.querySelectorAll('[required]');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('is-invalid');
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, complete todos los campos requeridos.');
+        }
+    });
+    
+    // Real-time validation
+    requiredFields.forEach(field => {
+        field.addEventListener('blur', function() {
+            if (!this.value.trim()) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+    
+    // Set minimum date to today for scheduled_date
+    const scheduledDateField = document.querySelector('input[type="datetime-local"]');
+    if (scheduledDateField) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        
+        const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+        scheduledDateField.min = minDateTime;
+    }
+});
+</script>
+{% endblock %}

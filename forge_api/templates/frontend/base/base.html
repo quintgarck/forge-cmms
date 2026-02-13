@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MovIAx - Sistema de Gestión de Talleres{% endblock %}</title>
+    
+    <!-- Cache Control - Force reload for theme fixes -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- Performance optimizations -->
+    <meta name="theme-color" content="#4e73df">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    
+    <!-- Critical CSS - inline for performance -->
+    <style>
+        /* Critical above-the-fold styles */
+        body { margin: 0; padding-top: 56px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .navbar, #main-navbar { background-color: #2563EB !important; z-index: 1030 !important; position: fixed !important; top: 0 !important; width: 100% !important; }
+        .navbar-dark { background-color: #2563EB !important; }
+        .navbar.bg-primary { background-color: #2563EB !important; }
+        /* Fix dropdown z-index issue - must be higher than loading overlay */
+        .navbar .dropdown-menu { 
+            z-index: 10000 !important; 
+            position: absolute !important;
+        }
+        .navbar .nav-item.dropdown { 
+            position: relative; 
+            z-index: 9999 !important; 
+        }
+        .navbar .dropdown.show .dropdown-menu { 
+            z-index: 10000 !important; 
+        }
+        /* Ensure cards and content have lower z-index */
+        .card, .btn, .table, .container-fluid { 
+            position: relative; 
+            z-index: 1; 
+        }
+        /* Ensure modal appears above loading overlay */
+        .modal-backdrop { z-index: 9997 !important; }
+        .modal { z-index: 9999 !important; }
+        .modal.show { display: flex !important; }
+        .loading-spinner { display: flex; justify-content: center; align-items: center; height: 200px; }
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    </style>
+    
+    <!-- Bootstrap CSS - async load -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"></noscript>
+    
+    <!-- Bootstrap Icons - async load -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet"></noscript>
+    
+    {% load static %}
+    <!-- Custom CSS -->
+    <link href="{% static 'frontend/css/moviax-theme.css' %}" rel="stylesheet">
+    <link href="{% static 'frontend/css/main.css' %}" rel="stylesheet">
+    <link href="{% static 'frontend/css/sidebar.css' %}" rel="stylesheet">
+    <link href="{% static 'frontend/css/responsive.css' %}" rel="stylesheet">
+    <link href="{% static 'frontend/css/performance-optimizations.css' %}" rel="stylesheet">
+    <link href="{% static 'frontend/css/user-feedback.css' %}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Favicon and app icons -->
+    <link rel="icon" type="image/x-icon" href="{% static 'frontend/img/favicon.ico' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'frontend/img/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'frontend/img/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'frontend/img/favicon-16x16.png' %}">
+    <link rel="manifest" href="{% static 'frontend/manifest.json' %}">
+    
+    <!-- Meta tags for SEO and social sharing -->
+    <meta name="description" content="MovIAx - Sistema integral de gestión para talleres automotrices">
+    <meta name="keywords" content="taller, automotriz, gestión, inventario, clientes, órdenes">
+    <meta name="author" content="MovIAx Team">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}MovIAx - Sistema de Gestión de Talleres{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Sistema integral de gestión para talleres automotrices{% endblock %}">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="{% static 'frontend/css/main.css' %}" as="style">
+    <link rel="preload" href="{% static 'frontend/js/performance.js' %}" as="script">
+    <link rel="preload" href="{% static 'frontend/js/main.js' %}" as="script">
+    
+    <!-- Resource hints for better performance -->
+    <link rel="prefetch" href="{% url 'frontend:dashboard' %}">
+    
+    <!-- Service Worker registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('{% static "frontend/js/sw.js" %}')
+                    .then(function(registration) {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(function(registrationError) {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</head>
+<body class="{% block body_class %}{% endblock %}" data-bs-spy="scroll" data-bs-target="#main-navbar">
+    <!-- Skip to main content for accessibility -->
+    <a class="visually-hidden-focusable" href="#main-content">Saltar al contenido principal</a>
+    
+    <!-- Loading overlay for better UX -->
+    <div id="loading-overlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0, 0, 0, 0.5); z-index: 9998; backdrop-filter: blur(8px);">
+        <div class="d-flex flex-column justify-content-center align-items-center h-100">
+            <div class="bg-white rounded-4 shadow-lg p-4" style="max-width: 400px;">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status" style="width: 3.5rem; height: 3.5rem; border-width: 0.35rem;">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <h5 class="text-primary fw-bold mb-2">Cargando...</h5>
+                    <p class="text-muted mb-3" id="loading-message" style="font-size: 0.95rem;">Por favor espera un momento</p>
+                    <div class="progress" style="height: 3px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm" id="main-navbar" style="background-color: #2563EB !important;">
+        <div class="container-fluid">
+            <!-- Sidebar toggle button (always visible) -->
+            <button class="navbar-toggler me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" 
+                    aria-controls="sidebar" aria-expanded="false" aria-label="Toggle navigation"
+                    style="border: 2px solid white; padding: 0.5rem;">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Brand -->
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'frontend:dashboard' %}">
+                <span class="fw-bold fs-5">MovIAx</span>
+                <small class="ms-2 opacity-75 d-none d-sm-inline" style="font-size: 0.75rem;">by Sagecores</small>
+            </a>
+            
+            <!-- Top Bar - Right side only -->
+            <div class="d-flex align-items-center ms-auto">
+                <ul class="navbar-nav flex-row align-items-center">
+                    <!-- Theme Switcher -->
+                    <li class="nav-item me-2">
+                        <button id="theme-toggle" class="btn btn-sm" aria-label="Cambiar tema">
+                            <i class="bi bi-moon-stars-fill" id="theme-icon"></i>
+                        </button>
+                    </li>
+                    
+                    <!-- Dashboard -->
+                    <!-- Dashboard -->
+                    <li class="nav-item d-none d-lg-block me-2">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" 
+                           href="{% url 'frontend:dashboard' %}">
+                            <i class="bi bi-speedometer2 me-1"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    
+                    <!-- Search -->
+                    <li class="nav-item dropdown d-none d-lg-block me-2">
+                        <a class="nav-link" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-search"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 300px;">
+                            <form class="d-flex" role="search" id="global-search-form">
+                                <input class="form-control me-2" type="search" placeholder="Buscar..." 
+                                       aria-label="Search" id="global-search-input">
+                                <button class="btn btn-outline-primary" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </form>
+                            <div class="mt-2">
+                                <small class="text-muted">Buscar en clientes, órdenes, productos...</small>
+                            </div>
+                        </div>
+                    </li>
+                    
+                    <!-- Notifications -->
+                    <li class="nav-item dropdown me-2">
+                        <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" 
+                                  id="notification-badge" style="font-size: 0.6em; display: none;">
+                                0
+                            </span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end notification-dropdown" 
+                             id="notification-dropdown" style="min-width: 380px;">
+                            <div class="dropdown-item-text text-center py-3">
+                                <div class="spinner-border spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Cargando...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    
+                    <!-- User Menu -->
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="bg-secondary rounded-circle me-2 d-flex align-items-center justify-content-center" 
+                                     style="width: 32px; height: 32px;">
+                                    <i class="bi bi-person text-white"></i>
+                                </div>
+                                <span class="d-none d-md-inline">{{ user.get_full_name|default:user.username }}</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li class="dropdown-header">
+                                    <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>
+                                    <small class="text-muted">{{ user.email }}</small>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="bi bi-person me-2"></i>Mi Perfil
+                                </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="bi bi-gear me-2"></i>Configuración
+                                </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="bi bi-question-circle me-2"></i>Ayuda
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/swagger/" target="_blank">
+                                    <i class="bi bi-code-square me-2"></i>API Documentation (Swagger)
+                                </a></li>
+                                <li><a class="dropdown-item" href="/redoc/" target="_blank">
+                                    <i class="bi bi-file-text me-2"></i>API Documentation (ReDoc)
+                                </a></li>
+                                <li><a class="dropdown-item" href="/admin/" target="_blank">
+                                    <i class="bi bi-shield-lock me-2"></i>Admin Panel
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'frontend:logout' %}">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link btn btn-outline-light btn-sm" href="{% url 'frontend:login' %}">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar Sesión
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sidebar Offcanvas -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebar" aria-labelledby="sidebarLabel" style="width: 280px;">
+        <div class="offcanvas-header bg-primary text-white">
+            <h5 class="offcanvas-title d-flex align-items-center" id="sidebarLabel">
+                <i class="bi bi-grid-3x3-gap-fill me-2"></i>
+                <span>MovIAx</span>
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div class="accordion accordion-flush" id="sidebarAccordion">
+                <!-- Operations Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#operationsCollapse" aria-expanded="false" aria-controls="operationsCollapse">
+                            <i class="bi bi-grid me-2"></i>OPERACIONES
+                        </button>
+                    </h2>
+                    <div id="operationsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <div class="list-group list-group-flush">
+                                <a href="{% url 'frontend:client_list' %}" class="list-group-item list-group-item-action {% if 'client' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-people me-2"></i>Clientes
+                                </a>
+                                <a href="{% url 'frontend:technician_list' %}" class="list-group-item list-group-item-action {% if 'technician' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-person-badge me-2"></i>Técnicos
+                                </a>
+                                <a href="{% url 'frontend:equipment_list' %}" class="list-group-item list-group-item-action {% if 'equipment' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-tools me-2"></i>Equipos
+                                </a>
+                                <a href="{% url 'frontend:workorder_list' %}" class="list-group-item list-group-item-action {% if 'workorder' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-clipboard-check me-2"></i>Órdenes de Trabajo
+                                </a>
+                                <a href="{% url 'frontend:invoice_list' %}" class="list-group-item list-group-item-action {% if 'invoice' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-receipt me-2"></i>Facturas
+                                </a>
+                                <a href="{% url 'frontend:quote_list' %}" class="list-group-item list-group-item-action {% if 'quote' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-file-earmark-text me-2"></i>Cotizaciones
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Inventory Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#inventoryCollapse" aria-expanded="false" aria-controls="inventoryCollapse">
+                            <i class="bi bi-box-seam me-2"></i>INVENTARIO
+                        </button>
+                    </h2>
+                    <div id="inventoryCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <div class="list-group list-group-flush">
+                                <a href="{% url 'frontend:inventory_list' %}" class="list-group-item list-group-item-action {% if 'inventory' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-boxes me-2"></i>Dashboard Inventario
+                                </a>
+                                <a href="{% url 'frontend:product_list' %}" class="list-group-item list-group-item-action {% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-list-ul me-2"></i>Productos
+                                </a>
+                                <a href="{% url 'frontend:stock_list' %}" class="list-group-item list-group-item-action {% if 'stock' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-bar-chart me-2"></i>Stock
+                                </a>
+                                <a href="{% url 'frontend:transaction_list' %}" class="list-group-item list-group-item-action {% if 'transaction' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-arrow-left-right me-2"></i>Transacciones
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Internal Catalogs Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#catalogCollapse" aria-expanded="false" aria-controls="catalogCollapse">
+                            <i class="bi bi-collection me-2"></i>CATÁLOGOS INTERNOS
+                        </button>
+                    </h2>
+                    <div id="catalogCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <div class="list-group list-group-flush">
+                                <a href="{% url 'frontend:catalog_index' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'catalog_index' %}active{% endif %}">
+                                    <i class="bi bi-grid-3x3-gap me-2"></i>Índice Catálogos
+                                </a>
+                                <a href="{% url 'frontend:category_list' %}" class="list-group-item list-group-item-action {% if 'category' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-folder me-2"></i>Categorías
+                                </a>
+                                <a href="{% url 'frontend:equipment_type_list' %}" class="list-group-item list-group-item-action {% if 'equipment_type' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-gear-wide-connected me-2"></i>Tipos de Equipo
+                                </a>
+                                <a href="{% url 'frontend:taxonomy_tree' %}" class="list-group-item list-group-item-action {% if 'taxonomy' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-diagram-3 me-2"></i>Taxonomía
+                                </a>
+                                <a href="{% url 'frontend:reference_code_list' %}" class="list-group-item list-group-item-action {% if 'reference_code' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-tag me-2"></i>Códigos Standard
+                                </a>
+                                <a href="{% url 'frontend:currency_list' %}" class="list-group-item list-group-item-action {% if 'currency' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-currency-exchange me-2"></i>Monedas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- OEM Catalog Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#oemCollapse" aria-expanded="false" aria-controls="oemCollapse">
+                            <i class="bi bi-diagram-3 me-2"></i>CATÁLOGO MARCAS EQUIPO
+                        </button>
+                    </h2>
+                    <div id="oemCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <div class="list-group list-group-flush">
+                                <a href="{% url 'frontend:oem_catalog_index' %}" class="list-group-item list-group-item-action {% if request.resolver_match.url_name == 'oem_catalog_index' %}active{% endif %}">
+                                    <i class="bi bi-grid me-2"></i>Inicio Catálogo
+                                </a>
+                                <a href="{% url 'frontend:oem_manufacturer_management' %}" class="list-group-item list-group-item-action {% if 'manufacturer' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-building me-2"></i>Fabricantes
+                                </a>
+                                <a href="{% url 'frontend:oem_part_catalog' %}" class="list-group-item list-group-item-action">
+                                    <i class="bi bi-box-seam me-2"></i>Catálogo Partes
+                                </a>
+                                <a href="{% url 'frontend:oem_cross_reference_tool' %}" class="list-group-item list-group-item-action">
+                                    <i class="bi bi-arrow-left-right me-2"></i>Referencias Cruzadas
+                                </a>
+                                <a href="{% url 'frontend:equivalence_management' %}" class="list-group-item list-group-item-action">
+                                    <i class="bi bi-link-45deg me-2"></i>Equivalencias
+                                </a>
+                                <a href="{% url 'frontend:oem_import_dashboard' %}" class="list-group-item list-group-item-action">
+                                    <i class="bi bi-cloud-upload me-2"></i>Importar OEM
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Services Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#servicesCollapse" aria-expanded="false" aria-controls="servicesCollapse">
+                            <i class="bi bi-wrench-adjustable me-2"></i>SERVICIOS
+                        </button>
+                    </h2>
+                    <div id="servicesCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <div class="list-group list-group-flush">
+                                <a href="{% url 'frontend:service_dashboard' %}" class="list-group-item list-group-item-action {% if 'service' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-speedometer2 me-2"></i>Dashboard Servicios
+                                </a>
+                                <a href="{% url 'frontend:flat_rate_calculator' %}" class="list-group-item list-group-item-action">
+                                    <i class="bi bi-calculator me-2"></i>Calculadora Tarifas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Suppliers Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#suppliersCollapse" aria-expanded="false" aria-controls="suppliersCollapse">
+                            <i class="bi bi-truck me-2"></i>PROVEEDORES
+                        </button>
+                    </h2>
+                    <div id="suppliersCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <div class="list-group list-group-flush">
+                                <a href="{% url 'frontend:supplier_list' %}" class="list-group-item list-group-item-action {% if 'supplier' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-list-ul me-2"></i>Proveedores
+                                </a>
+                                <a href="{% url 'frontend:purchase_order_list' %}" class="list-group-item list-group-item-action {% if 'purchase' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-cart me-2"></i>Órdenes de Compra
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Analytics Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#analyticsCollapse" aria-expanded="false" aria-controls="analyticsCollapse">
+                            <i class="bi bi-graph-up me-2"></i>ANALYTICS
+                        </button>
+                    </h2>
+                    <div id="analyticsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <div class="list-group list-group-flush">
+                                <a href="{% url 'frontend:dashboard' %}" class="list-group-item list-group-item-action">
+                                    <i class="bi bi-speedometer2 me-2"></i>KPIs y Métricas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Alerts Section -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#alertsCollapse" aria-expanded="false" aria-controls="alertsCollapse">
+                            <i class="bi bi-bell me-2"></i>ALERTAS
+                        </button>
+                    </h2>
+                    <div id="alertsCollapse" class="accordion-collapse collapse" data-bs-parent="#sidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <div class="list-group list-group-flush">
+                                <a href="{% url 'frontend:alert_dashboard' %}" class="list-group-item list-group-item-action {% if 'alert' in request.resolver_match.url_name %}active{% endif %}">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>Dashboard Alertas
+                                </a>
+                                <a href="{% url 'frontend:business_rule_management' %}" class="list-group-item list-group-item-action">
+                                    <i class="bi bi-gear me-2"></i>Reglas de Negocio
+                                </a>
+                                <a href="{% url 'frontend:audit_log' %}" class="list-group-item list-group-item-action">
+                                    <i class="bi bi-journal-text me-2"></i>Auditoría
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breadcrumb Navigation -->
+    {% block breadcrumb %}
+    {% if not hide_breadcrumb %}
+    <nav aria-label="breadcrumb" class="bg-light border-bottom">
+        <div class="container-fluid">
+            <ol class="breadcrumb mb-0 py-2">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'frontend:dashboard' %}" class="text-decoration-none">
+                        <i class="bi bi-house-door me-1"></i>Inicio
+                    </a>
+                </li>
+                {% block breadcrumb_items %}{% endblock %}
+            </ol>
+        </div>
+    </nav>
+    {% endif %}
+    {% endblock %}
+
+    <!-- System Alerts -->
+    {% if messages %}
+        <div class="container-fluid mt-3">
+            {% for message in messages %}
+                {% comment %}Skip warning messages - they are shown in modals instead{% endcomment %}
+                {% if message.tags != 'warning' %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <div class="d-flex align-items-center">
+                        {% if message.tags == 'success' %}
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif message.tags == 'error' or message.tags == 'danger' %}
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% else %}
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        <div class="flex-grow-1">{{ message }}</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="container-fluid py-4" id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light border-top mt-5">
+        <div class="container-fluid py-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-gear-fill text-primary me-2"></i>
+                        <span class="fw-bold">MovIAx</span>
+                        <small class="ms-2 text-muted">Sistema de Gestión de Talleres</small>
+                    </div>
+                    <p class="text-muted small mb-0 mt-1">
+                        © 2026 MovIAx. Todos los derechos reservados.
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="d-flex justify-content-md-end gap-3">
+                        <a href="#" class="text-muted text-decoration-none small">Soporte</a>
+                        <a href="/swagger/" target="_blank" class="text-muted text-decoration-none small">API Docs</a>
+                        <a href="/redoc/" target="_blank" class="text-muted text-decoration-none small">ReDoc</a>
+                        <a href="#" class="text-muted text-decoration-none small">Términos</a>
+                        <a href="#" class="text-muted text-decoration-none small">Privacidad</a>
+                    </div>
+                    <div class="text-muted small mt-1">
+                        Versión 1.0.0 | Estado: 
+                        <span class="text-success">
+                            <i class="bi bi-circle-fill" style="font-size: 0.5em;"></i> En línea
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Loading Overlay - Modificado para no bloquear modales -->
+    <div id="loading-overlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" 
+         style="background: rgba(0,0,0,0.5); z-index: 9998;">
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="bg-white rounded p-4 text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <div>Cargando...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS - load synchronously before other scripts that depend on it -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Chart.js - load only when needed -->
+    <script>
+        // Lazy load Chart.js only when charts are present
+        // Check for canvas elements with data-chart attribute OR canvas elements with IDs that suggest charts
+        const hasCharts = document.querySelector('canvas[data-chart]') || 
+                         document.querySelector('canvas#workordersChart') ||
+                         document.querySelector('canvas#statusChart') ||
+                         document.querySelector('canvas#revenueChart') ||
+                         document.querySelector('canvas#productivityChart') ||
+                         document.querySelector('canvas#inventoryCategoryChart') ||
+                         document.querySelector('canvas#inventoryMovementsChart');
+        if (hasCharts) {
+            const script = document.createElement('script');
+            script.src = "{% static 'frontend/vendor/chart.min.js' %}";
+            script.async = false; // Load synchronously to ensure it's available
+            document.head.appendChild(script);
+        }
+    </script>
+    
+    <!-- Performance optimization scripts -->
+    <script src="{% static 'frontend/js/performance.js' %}" defer></script>
+    
+    <!-- Core functionality -->
+    <script src="{% static 'frontend/js/main.js' %}" defer></script>
+    
+    <!-- Error handling and user feedback -->
+    <script src="{% static 'frontend/js/error-handler.js' %}" defer></script>
+    <script src="{% static 'frontend/js/user-feedback.js' %}" defer></script>
+    <script src="{% static 'frontend/js/api-integration.js' %}" defer></script>
+    
+    <!-- Custom JS -->
+    <script src="{% static 'frontend/js/notification-system.js' %}" defer></script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    <!-- Initialize application -->
+    <script>
+        // Wait for Bootstrap to be available
+        function initializeBootstrapComponents() {
+            if (typeof bootstrap === 'undefined') {
+                // If Bootstrap is not loaded yet, wait a bit and try again
+                setTimeout(initializeBootstrapComponents, 50);
+                return;
+            }
+            
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Bootstrap components
+            initializeBootstrapComponents();
+            
+            // Initialize performance monitoring
+            if (window.PerformanceMonitor) {
+                new PerformanceMonitor();
+            }
+            
+            // Load notifications
+            loadNotifications();
+            
+            // Global search functionality with debouncing
+            const searchForm = document.getElementById('global-search-form');
+            const searchInput = document.getElementById('global-search-input');
+            
+            if (searchForm && searchInput) {
+                // Debounced search
+                let searchTimeout;
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        if (this.value.length >= 2) {
+                            performGlobalSearch(this.value);
+                        }
+                    }, 300);
+                });
+                
+                searchForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const query = searchInput.value;
+                    if (query.trim()) {
+                        window.location.href = `/search/?q=${encodeURIComponent(query)}`;
+                    }
+                });
+            }
+            
+            // Initialize lazy loading
+            if (window.LazyLoader) {
+                new LazyLoader();
+            }
+            
+            // Initialize image optimization
+            if (window.ImageOptimizer) {
+                new ImageOptimizer();
+            }
+            
+            // Show loading overlay for form submissions (skip forms with data-no-loading)
+            document.querySelectorAll('form:not([data-no-loading])').forEach(form => {
+                form.addEventListener('submit', function() {
+                    showLoadingOverlay();
+                });
+            });
+            
+            // Hide loading overlay when page is fully loaded
+            window.addEventListener('load', function() {
+                hideLoadingOverlay();
+            });
+        });
+        
+        function performGlobalSearch(query) {
+            // Implement live search suggestions
+            console.log('Searching for:', query);
+            // This would typically make an AJAX request for search suggestions
+        }
+        
+        function loadNotifications() {
+            // Load notifications asynchronously
+            if (window.apiCache) {
+                window.apiCache.fetchWithCache('/api/notifications/unread/')
+                    .then(data => {
+                        updateNotificationBadge(data.count || 0);
+                        updateNotificationDropdown(data.results || []);
+                    })
+                    .catch(error => {
+                        console.error('Failed to load notifications:', error);
+                    });
+            }
+        }
+        
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notification-badge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.style.display = 'block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+        
+        function updateNotificationDropdown(notifications) {
+            const dropdown = document.getElementById('notification-dropdown');
+            if (dropdown && notifications.length > 0) {
+                let html = '<div class="dropdown-header">Notificaciones Recientes</div>';
+                
+                notifications.slice(0, 5).forEach(notification => {
+                    html += `
+                        <a class="dropdown-item py-2" href="#">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="bi bi-${notification.icon || 'info-circle'} text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-2">
+                                    <div class="fw-bold small">${notification.title}</div>
+                                    <div class="text-muted small">${notification.message}</div>
+                                    <div class="text-muted small">${notification.created_at}</div>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                });
+                
+                html += '<div class="dropdown-divider"></div>';
+                html += '<a class="dropdown-item text-center" href="#">Ver todas las notificaciones</a>';
+                
+                dropdown.innerHTML = html;
+            }
+        }
+        
+        function showLoadingOverlay(message) {
+            const overlay = document.getElementById('loading-overlay');
+            const messageElement = document.getElementById('loading-message');
+            if (overlay) {
+                if (messageElement && message) {
+                    messageElement.textContent = message;
+                }
+                overlay.classList.remove('d-none');
+            }
+        }
+        
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('loading-overlay');
+            const messageElement = document.getElementById('loading-message');
+            if (overlay) {
+                overlay.classList.add('d-none');
+                if (messageElement) {
+                    messageElement.textContent = 'Por favor espera un momento';
+                }
+            }
+        }
+        
+        // Performance optimization: Preload next likely pages
+        function preloadNextPages() {
+            const currentPath = window.location.pathname;
+            let nextPages = [];
+            
+            if (currentPath === '/') {
+                nextPages = ['/clients/', '/workorders/', '/inventory/'];
+            } else if (currentPath.startsWith('/clients/')) {
+                nextPages = ['/clients/create/', '/workorders/create/'];
+            }
+            
+            nextPages.forEach(page => {
+                const link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = page;
+                document.head.appendChild(link);
+            });
+        }
+        
+        // Call preload after page is loaded
+        window.addEventListener('load', preloadNextPages);
+        
+        // Global link interceptor for showing loading on navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Intercept all links that navigate to detail/edit pages
+            document.addEventListener('click', function(e) {
+                const target = e.target.closest('a');
+                if (!target) return;
+
+                const href = target.getAttribute('href');
+                if (!href || href.startsWith('#') || target.getAttribute('target') === '_blank') return;
+
+                // Skip if link has data-no-loading attribute
+                if (target.hasAttribute('data-no-loading')) return;
+
+                // Show loading for client detail/edit links
+                if (href.includes('/clients/') && (href.includes('/detail') || href.includes('/update'))) {
+                    showLoadingOverlay('Cargando información del cliente...');
+                }
+                // Show loading for equipment detail/edit links
+                else if (href.includes('/equipment/') && (href.includes('/detail') || href.includes('/update'))) {
+                    showLoadingOverlay('Cargando información del equipo...');
+                }
+                // Show loading for workorder detail/edit links
+                else if (href.includes('/workorders/') && (href.includes('/detail') || href.includes('/update'))) {
+                    showLoadingOverlay('Cargando orden de trabajo...');
+                }
+                // Generic loading for other navigation (exclude export links)
+                else if (!href.startsWith('mailto:') && !href.startsWith('tel:') && !href.includes('/export')) {
+                    showLoadingOverlay('Cargando página...');
+                }
+            });
+            
+            // Hide loading when page is fully loaded
+            window.addEventListener('pageshow', function() {
+                hideLoadingOverlay();
+            });
+        });
+    </script>
+    
+    <!-- Theme Switcher - Load early for immediate theme application -->
+    <script src="{% static 'frontend/js/theme-switcher.js' %}?v=2.0"></script>
+    
+    <!-- Force All Colors - Critical Fix v2.0 -->
+    <script>
+        (function() {
+            function forceAllColors() {
+                const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                
+                // ========================================
+                // EXCLUIR MODALES DE TODOS LOS ESTILOS
+                // ========================================
+                const modales = document.querySelectorAll('.modal');
+                modales.forEach(modal => {
+                    if (modal.classList.contains('show')) {
+                        // No aplicar estilos a modales abiertos
+                        return;
+                    }
+                });
+                
+                // ========================================
+                // NAVBAR
+                // ========================================
+                const navbar = document.getElementById('main-navbar');
+                if (navbar) {
+                    const navbarBgColor = isDark ? '#0F172A' : '#2563EB';
+                    
+                    // Forzar color de fondo del navbar
+                    navbar.style.setProperty('background-color', navbarBgColor, 'important');
+                    
+                    // Manejar clases Bootstrap del navbar
+                    if (isDark) {
+                        navbar.classList.remove('bg-primary');
+                        navbar.classList.add('bg-dark');
+                    } else {
+                        navbar.classList.remove('bg-dark');
+                        navbar.classList.add('bg-primary');
+                    }
+                    
+                    // Forzar color de todos los elementos dentro del navbar
+                    const navbarElements = navbar.querySelectorAll('*');
+                    navbarElements.forEach(el => {
+                        // Solo aplicar a elementos visibles (no scripts, etc)
+                        if (el.offsetParent !== null || el === navbar) {
+                            el.style.setProperty('color', '#FFFFFF', 'important');
+                        }
+                    });
+                    
+                    // Forzar específicamente elementos clave del navbar
+                    const navbarKeyElements = navbar.querySelectorAll(
+                        '.navbar-brand, .nav-link, .navbar-text, i, .bi, ' +
+                        '.btn, .dropdown-toggle, span, small, a, .navbar-nav'
+                    );
+                    navbarKeyElements.forEach(el => {
+                        el.style.setProperty('color', '#FFFFFF', 'important');
+                    });
+                    
+                    // Forzar container-fluid dentro del navbar
+                    const navbarContainers = navbar.querySelectorAll('.container-fluid');
+                    navbarContainers.forEach(container => {
+                        container.style.setProperty('background-color', navbarBgColor, 'important');
+                    });
+                } else {
+                    // Navbar no encontrado
+                }
+                
+                // ========================================
+                // BODY Y FONDOS - EXCLUIR ÁREA DE MODALES
+                // ========================================
+                const bgColor = isDark ? '#141B28' : '#F8FAFC';
+                const textColor = isDark ? '#F8FAFC' : '#0F172A';
+                
+                // Forzar color de body
+                document.body.style.setProperty('background-color', bgColor, 'important');
+                document.body.style.setProperty('color', textColor, 'important');
+                
+                // Forzar color de todos los container-fluid (excepto los del navbar Y los dentro de modales)
+                const containers = document.querySelectorAll('.container-fluid');
+                containers.forEach(container => {
+                    // Solo aplicar si NO está dentro del navbar Y NO está dentro de un modal
+                    if (!container.closest('#main-navbar') && !container.closest('.modal')) {
+                        container.style.setProperty('background-color', bgColor, 'important');
+                        container.style.setProperty('color', textColor, 'important');
+                    }
+                });
+                
+                // Forzar color de main (pero no si está dentro de un modal)
+                const mainElements = document.querySelectorAll('main');
+                mainElements.forEach(main => {
+                    if (!main.closest('.modal')) {
+                        main.style.setProperty('background-color', bgColor, 'important');
+                        main.style.setProperty('color', textColor, 'important');
+                    }
+                });
+                
+                // Forzar color de páginas específicas (excepto si están en modales)
+                const pageClasses = [
+                    '.dashboard-page', '.client-page', '.equipment-page', 
+                    '.workorder-page', '.invoice-page', '.inventory-page',
+                    '.product-page', '.service-page', '.supplier-page',
+                    '.technician-page', '.alert-page', '.catalog-page', '.oem-page'
+                ];
+                
+                pageClasses.forEach(className => {
+                    const elements = document.querySelectorAll(className);
+                    elements.forEach(el => {
+                        if (!el.closest('.modal')) {
+                            el.style.setProperty('background-color', bgColor, 'important');
+                            el.style.setProperty('color', textColor, 'important');
+                        }
+                    });
+                });
+                
+                // ========================================
+                // DROPDOWNS (Buscar, Notificaciones, Usuario)
+                // ========================================
+                const dropdownBgColor = isDark ? '#1E293B' : '#FFFFFF';
+                const dropdownTextColor = isDark ? '#F8FAFC' : '#0F172A';
+                const dropdownBorderColor = isDark ? '#334155' : '#E2E8F0';
+                
+                // Forzar todos los dropdown-menu (excepto los dentro de modales)
+                const dropdowns = document.querySelectorAll('.dropdown-menu');
+                dropdowns.forEach(dropdown => {
+                    if (dropdown.closest('.modal')) return; // Saltar dropdowns en modales
+                    
+                    dropdown.style.setProperty('background-color', dropdownBgColor, 'important');
+                    dropdown.style.setProperty('color', dropdownTextColor, 'important');
+                    dropdown.style.setProperty('border-color', dropdownBorderColor, 'important');
+                    
+                    // Forzar dropdown-items
+                    const items = dropdown.querySelectorAll('.dropdown-item');
+                    items.forEach(item => {
+                        item.style.setProperty('color', dropdownTextColor, 'important');
+                        item.style.setProperty('background-color', 'transparent', 'important');
+                    });
+                    
+                    // Forzar dropdown-header
+                    const headers = dropdown.querySelectorAll('.dropdown-header');
+                    headers.forEach(header => {
+                        header.style.setProperty('color', dropdownTextColor, 'important');
+                    });
+                    
+                    // Forzar dropdown-divider
+                    const dividers = dropdown.querySelectorAll('.dropdown-divider');
+                    dividers.forEach(divider => {
+                        divider.style.setProperty('border-color', dropdownBorderColor, 'important');
+                    });
+                    
+                    // Forzar textos dentro de dropdowns
+                    const texts = dropdown.querySelectorAll('small, .text-muted, .fw-bold');
+                    texts.forEach(text => {
+                        if (text.classList.contains('text-muted')) {
+                            text.style.setProperty('color', isDark ? '#94A3B8' : '#64748B', 'important');
+                        } else {
+                            text.style.setProperty('color', dropdownTextColor, 'important');
+                        }
+                    });
+                    
+                    // Forzar iconos dentro de dropdowns
+                    const icons = dropdown.querySelectorAll('i, .bi');
+                    icons.forEach(icon => {
+                        // Mantener colores de iconos específicos (success, danger, etc)
+                        if (!icon.classList.contains('text-primary') && 
+                            !icon.classList.contains('text-success') && 
+                            !icon.classList.contains('text-danger') &&
+                            !icon.classList.contains('text-warning')) {
+                            icon.style.setProperty('color', dropdownTextColor, 'important');
+                        }
+                    });
+                    
+                    // ========================================
+                    // ELEMENTOS ESPECÍFICOS DE NOTIFICACIONES
+                    // ========================================
+                    
+                    // Notification Header
+                    const notificationHeaders = dropdown.querySelectorAll('.notification-header');
+                    notificationHeaders.forEach(header => {
+                        header.style.setProperty('background-color', isDark ? '#334155' : '#F1F5F9', 'important');
+                        header.style.setProperty('border-bottom-color', dropdownBorderColor, 'important');
+                        header.style.setProperty('color', dropdownTextColor, 'important');
+                    });
+                    
+                    // Notification Content
+                    const notificationContents = dropdown.querySelectorAll('.notification-content');
+                    notificationContents.forEach(content => {
+                        content.style.setProperty('background-color', 'transparent', 'important');
+                        content.style.setProperty('border-bottom-color', dropdownBorderColor, 'important');
+                        content.style.setProperty('color', dropdownTextColor, 'important');
+                    });
+                    
+                    // Form Select dentro de dropdowns
+                    const formSelects = dropdown.querySelectorAll('.form-select');
+                    formSelects.forEach(select => {
+                        select.style.setProperty('background-color', isDark ? '#1E293B' : '#FFFFFF', 'important');
+                        select.style.setProperty('border-color', dropdownBorderColor, 'important');
+                        select.style.setProperty('color', dropdownTextColor, 'important');
+                    });
+                    
+                    // Botones dentro de dropdowns
+                    const buttons = dropdown.querySelectorAll('.btn');
+                    buttons.forEach(button => {
+                        if (button.classList.contains('btn-outline-primary')) {
+                            button.style.setProperty('border-color', isDark ? '#60A5FA' : '#2563EB', 'important');
+                            button.style.setProperty('color', isDark ? '#60A5FA' : '#2563EB', 'important');
+                            button.style.setProperty('background-color', 'transparent', 'important');
+                        }
+                    });
+                    
+                    // Border-bottom general
+                    const borderBottoms = dropdown.querySelectorAll('.border-bottom');
+                    borderBottoms.forEach(el => {
+                        el.style.setProperty('border-bottom-color', dropdownBorderColor, 'important');
+                    });
+                    
+                    // Elementos con mb-0 (breadcrumbs, listas, etc)
+                    const mb0Elements = dropdown.querySelectorAll('.mb-0');
+                    mb0Elements.forEach(el => {
+                        el.style.setProperty('color', dropdownTextColor, 'important');
+                        // Si es un breadcrumb
+                        if (el.classList.contains('breadcrumb')) {
+                            el.style.setProperty('background-color', 'transparent', 'important');
+                        }
+                    });
+                    
+                    // ========================================
+                    // ELEMENTOS ADICIONALES DE NOTIFICACIONES
+                    // ========================================
+                    
+                    // Notification Message
+                    const notificationMessages = dropdown.querySelectorAll('.notification-message');
+                    notificationMessages.forEach(msg => {
+                        msg.style.setProperty('color', dropdownTextColor, 'important');
+                    });
+                    
+                    // Notification Icon - mantener colores específicos
+                    const notificationIcons = dropdown.querySelectorAll('.notification-icon');
+                    notificationIcons.forEach(icon => {
+                        // Los colores de fondo se mantienen (bg-info, bg-success, etc)
+                        // Solo asegurar que el texto sea blanco
+                        if (icon.classList.contains('text-white')) {
+                            icon.style.setProperty('color', '#FFFFFF', 'important');
+                        }
+                    });
+                    
+                    // Badges
+                    const badges = dropdown.querySelectorAll('.badge');
+                    badges.forEach(badge => {
+                        if (badge.classList.contains('bg-light')) {
+                            badge.style.setProperty('background-color', isDark ? '#334155' : '#F1F5F9', 'important');
+                            badge.style.setProperty('color', dropdownTextColor, 'important');
+                        }
+                        if (badge.classList.contains('text-dark')) {
+                            badge.style.setProperty('color', dropdownTextColor, 'important');
+                        }
+                    });
+                    
+                    // D-flex containers
+                    const dFlexContainers = dropdown.querySelectorAll('.d-flex');
+                    dFlexContainers.forEach(container => {
+                        // Solo aplicar si no tiene clase de color específica
+                        if (!container.classList.contains('text-white') && 
+                            !container.classList.contains('text-primary') &&
+                            !container.classList.contains('bg-primary')) {
+                            container.style.setProperty('color', dropdownTextColor, 'important');
+                        }
+                    });
+                });
+                
+                // Forzar específicamente el dropdown de notificaciones
+                const notificationDropdown = document.getElementById('notification-dropdown');
+                if (notificationDropdown && !notificationDropdown.closest('.modal')) {
+                    notificationDropdown.style.setProperty('background-color', dropdownBgColor, 'important');
+                    notificationDropdown.style.setProperty('color', dropdownTextColor, 'important');
+                }
+            }
+            
+            // Aplicar inmediatamente
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', forceAllColors);
+            } else {
+                forceAllColors();
+            }
+            
+            // Aplicar cuando cambie el tema - con pequeño delay para asegurar que se aplique
+            window.addEventListener('themeChanged', function() {
+                setTimeout(forceAllColors, 50);
+            });
+            
+            // Aplicar cuando la página termine de cargar completamente
+            window.addEventListener('load', function() {
+                forceAllColors();
+            });
+            
+            // Aplicar cuando la página sea visible (después de navegación)
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    setTimeout(forceAllColors, 100);
+                }
+            });
+            
+            // Aplicar cuando se muestre la página (navegación back/forward)
+            window.addEventListener('pageshow', function(event) {
+                setTimeout(forceAllColors, 100);
+            });
+            
+            // Aplicar cada 100ms durante los primeros 3 segundos (aumentado de 2 a 3)
+            let attempts = 0;
+            const interval = setInterval(() => {
+                forceAllColors();
+                attempts++;
+                if (attempts >= 10) { // Aumentado de 20 a 30
+                    clearInterval(interval);
+                }
+            }, 100);
+            
+            // Aplicar cuando se abra cualquier dropdown
+            document.addEventListener('shown.bs.dropdown', function() {
+                setTimeout(forceAllColors, 10);
+            });
+            
+            // Aplicar cuando se abra un modal
+            document.addEventListener('shown.bs.modal', function() {
+                setTimeout(forceAllColors, 10);
+            });
+        })();
+    </script>
+</body>
+</html>

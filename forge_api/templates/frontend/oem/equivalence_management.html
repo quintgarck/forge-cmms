@@ -1,0 +1,210 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Equivalencias OEM - MovIAx{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'frontend:oem_catalog_index' %}" class="text-decoration-none">
+            <i class="bi bi-diagram-3 me-1"></i>Catálogo OEM
+        </a>
+    </li>
+    <li class="breadcrumb-item active">Equivalencias</li>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .equivalence-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    .equivalence-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        border-color: #007bff;
+    }
+    .confidence-badge {
+        font-size: 1.2rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+    }
+    .confidence-high { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; }
+    .confidence-medium { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); color: white; }
+    .confidence-low { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); color: white; }
+    .oem-badge { background: #007bff; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
+    .aftermarket-badge { background: #17a2b8; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-arrow-left-right text-primary me-2"></i>
+                        Equivalencias OEM ↔ Aftermarket
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Gestión de equivalencias entre partes OEM y alternativas del mercado
+                    </p>
+                </div>
+                <a href="{% url 'frontend:oem_equivalence_create_ui' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Nueva Equivalencia
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    {% if stats %}
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ stats.total|default:0 }}</h3>
+                    <p class="card-text">Total Equivalencias</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ stats.by_confidence_ranges.high|default:0 }}</h3>
+                    <p class="card-text">Alta Confianza (>80%)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ stats.by_type|length|default:0 }}</h3>
+                    <p class="card-text">Tipos Configurados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h3 class="card-title">{{ stats.by_confidence_ranges.low|default:0 }}</h3>
+                    <p class="card-text">Baja Confianza (<50%)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Error Message -->
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Filters -->
+    <form method="get" class="mb-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Número OEM</label>
+                <input type="text" name="oem_part" class="form-control" 
+                       placeholder="Buscar por OEM..." value="{{ filters.oem_part }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">SKU Aftermarket</label>
+                <input type="text" name="aftermarket" class="form-control" 
+                       placeholder="Buscar por SKU..." value="{{ filters.aftermarket }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Tipo</label>
+                <select name="equivalence_type" class="form-select">
+                    <option value="">Todos los tipos</option>
+                    {% for value, label in equivalence_types %}
+                    <option value="{{ value }}" {% if filters.equivalence_type == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Confianza Mín.</label>
+                <select name="min_confidence" class="form-select">
+                    <option value="">Cualquiera</option>
+                    <option value="90" {% if filters.min_confidence == '90' %}selected{% endif %}> > 90%</option>
+                    <option value="70" {% if filters.min_confidence == '70' %}selected{% endif %}> > 70%</option>
+                    <option value="50" {% if filters.min_confidence == '50' %}selected{% endif %}> > 50%</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search me-1"></i> Buscar
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Results -->
+    {% if equivalences %}
+    <div class="row">
+        {% for eq in equivalences %}
+        <div class="col-md-6">
+            <div class="equivalence-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="oem-badge me-2">{{ eq.oem_part_number }}</span>
+                            <i class="bi bi-arrow-right text-muted mx-2"></i>
+                            <span class="aftermarket-badge">{{ eq.aftermarket_sku|default:'N/A' }}</span>
+                        </div>
+                        <p class="text-muted mb-1">
+                            <strong>Marca:</strong> {{ eq.oem_brand_name|default:eq.oem_code.name|default:'N/A' }}
+                        </p>
+                        <p class="mb-0">
+                            <span class="badge bg-{% if eq.equivalence_type == 'DIRECT' %}success{% elif eq.equivalence_type == 'COMPATIBLE' %}info{% elif eq.equivalence_type == 'UPGRADE' %}primary{% else %}secondary{% endif %}">
+                                {{ eq.get_equivalence_type_display|default:eq.equivalence_type }}
+                            </span>
+                            {% if eq.verified_date %}
+                            <span class="badge bg-success ms-1">
+                                <i class="bi bi-check-circle me-1"></i>Verificado
+                            </span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="confidence-badge confidence-{% if eq.confidence_score >= 80 %}high{% elif eq.confidence_score >= 50 %}medium{% else %}low{% endif %}">
+                            {{ eq.confidence_score|default:0 }}%
+                        </div>
+                        <small class="text-muted d-block">Confianza</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">{{ eq.notes|truncatechars:50|default:'Sin notas' }}</small>
+                    <div>
+                        <a href="{% url 'frontend:oem_equivalence_edit_ui' eq.equivalence_id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-arrow-left-right text-muted" style="font-size: 4rem;"></i>
+        <h4 class="text-muted mt-3">No hay equivalencias configuradas</h4>
+        <p class="text-muted">Comience agregando equivalencias entre partes OEM y alternativas del mercado.</p>
+        <a href="{% url 'frontend:oem_equivalence_create_ui' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>
+            Agregar Primera Equivalencia
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,200 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Importación OEM - Dashboard - MovIAx{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'frontend:oem_catalog_index' %}" class="text-decoration-none">
+            <i class="bi bi-diagram-3 me-1"></i>Catálogo OEM
+        </a>
+    </li>
+    <li class="breadcrumb-item active">Importar OEM</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="bi bi-cloud-upload text-primary me-2"></i>
+                        Importación de Datos OEM
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Importe productos del catálogo OEM hacia el inventario
+                    </p>
+                </div>
+                <a href="{% url 'frontend:oem_brand_management' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-gear me-1"></i>
+                    Gestionar Marcas OEM
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Status -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h2 class="card-title">{{ import_status.total_oem_items|default:0 }}</h2>
+                    <p class="card-text">Items OEM Disponibles</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h2 class="card-title">{{ import_status.imported_products|default:0 }}</h2>
+                    <p class="card-text">Productos Importados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body text-center">
+                    <h2 class="card-title">{{ import_status.pending_import|default:0 }}</h2>
+                    <p class="card-text">Pendientes de Importar</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h2 class="card-title">{{ import_status.import_percentage|default:0 }}%</h2>
+                    <p class="card-text">Progreso</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Quick Import -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning me-2"></i>
+                        Importación Rápida
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'frontend:api_oem_import' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="import_type" value="single">
+                        
+                        <div class="mb-3">
+                            <label for="oem_catalog_item_id" class="form-label">ID de Item OEM</label>
+                            <input type="number" class="form-control" id="oem_catalog_item_id" name="oem_catalog_item_id" 
+                                   placeholder="Ingrese el ID del item">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="supplier_id" class="form-label">Proveedor (opcional)</label>
+                            <select class="form-select" id="supplier_id" name="supplier_id">
+                                <option value="">Seleccionar proveedor...</option>
+                                {% for supplier in suppliers %}
+                                <option value="{{ supplier.supplier_id }}">{{ supplier.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-download me-1"></i>
+                            Importar Item
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bulk Import -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-box-seam me-2"></i>
+                        Importación por Marca
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'frontend:api_oem_import' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="import_type" value="brand">
+                        
+                        <div class="mb-3">
+                            <label for="oem_brand_code" class="form-label">Marca OEM</label>
+                            <select class="form-select" id="oem_brand_code" name="oem_brand_code">
+                                <option value="">Seleccionar marca...</option>
+                                {% for brand in brands %}
+                                <option value="{{ brand.oem_code }}">{{ brand.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="supplier_id_brand" class="form-label">Proveedor (opcional)</label>
+                            <select class="form-select" id="supplier_id_brand" name="supplier_id">
+                                <option value="">Seleccionar proveedor...</option>
+                                {% for supplier in suppliers %}
+                                <option value="{{ supplier.supplier_id }}">{{ supplier.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-cloud-download me-1"></i>
+                            Importar Todos los Items
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Sync Prices -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-cash-coin me-2"></i>
+                        Sincronización de Precios
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'frontend:api_oem_import' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="import_type" value="sync_prices">
+                        
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <p class="mb-0">
+                                    Sincroniza los precios desde el catálogo OEM hacia los productos importados.
+                                    Esto actualizará <code>standard_cost</code> y <code>avg_cost</code>.
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" name="oem_brand_code">
+                                    <option value="">Todas las marcas</option>
+                                    {% for brand in brands %}
+                                    <option value="{{ brand.oem_code }}">{{ brand.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-arrow-repeat me-1"></i>
+                                    Sincronizar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

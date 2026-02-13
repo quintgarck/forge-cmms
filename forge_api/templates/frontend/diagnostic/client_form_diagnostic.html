@@ -1,0 +1,513 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Diagnóstico de Formulario de Clientes - MovIAx{% endblock %}
+
+{% block extra_css %}
+<style>
+.diagnostic-card {
+    margin-bottom: 1.5rem;
+}
+
+.test-result {
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    margin-top: 0.5rem;
+}
+
+.test-success {
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+    color: #0f5132;
+}
+
+.test-error {
+    background-color: #f8d7da;
+    border: 1px solid #f5c2c7;
+    color: #842029;
+}
+
+.test-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffecb5;
+    color: #664d03;
+}
+
+.code-block {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-success { background-color: #28a745; }
+.status-error { background-color: #dc3545; }
+.status-warning { background-color: #ffc107; }
+.status-info { background-color: #17a2b8; }
+
+.btn-test {
+    margin: 0.25rem;
+}
+</style>
+{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item"><a href="{% url 'frontend:dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Diagnóstico de Formulario de Clientes</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="bi bi-bug me-2 text-warning"></i>
+                    {{ title }}
+                </h2>
+                <div>
+                    <a href="{% url 'frontend:client_create' %}" class="btn btn-primary">
+                        <i class="bi bi-person-plus me-1"></i>
+                        Ir al Formulario Real
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card diagnostic-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Estado del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <span class="status-indicator {% if api_available %}status-success{% else %}status-error{% endif %}"></span>
+                                <strong>API Backend:</strong>
+                                <span class="ms-2">
+                                    {% if api_available %}
+                                        <span class="text-success">Disponible</span>
+                                    {% else %}
+                                        <span class="text-danger">No Disponible</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <span class="status-indicator {% if request.user.is_authenticated %}status-success{% else %}status-error{% endif %}"></span>
+                                <strong>Autenticación:</strong>
+                                <span class="ms-2">
+                                    {% if request.user.is_authenticated %}
+                                        <span class="text-success">{{ request.user.username }}</span>
+                                    {% else %}
+                                        <span class="text-danger">No Autenticado</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <span class="status-indicator status-info"></span>
+                                <strong>API URL:</strong>
+                                <span class="ms-2 text-muted">{{ api_base_url }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if api_error %}
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Error de API:</strong> {{ api_error }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagnostic Tests -->
+    <div class="row">
+        <div class="col-lg-6">
+            <!-- Form Validation Test -->
+            <div class="card diagnostic-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-check2-square me-2"></i>
+                        Validación de Formulario
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Prueba la validación del formulario Django con datos válidos e inválidos.
+                    </p>
+                    <button type="button" class="btn btn-outline-primary btn-test" onclick="runTest('test_form_validation')">
+                        <i class="bi bi-play me-1"></i>
+                        Ejecutar Prueba
+                    </button>
+                    <div id="form-validation-result"></div>
+                </div>
+            </div>
+
+            <!-- API Connectivity Test -->
+            <div class="card diagnostic-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-wifi me-2"></i>
+                        Conectividad API
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Verifica la conectividad con el backend API y el estado de autenticación.
+                    </p>
+                    <button type="button" class="btn btn-outline-primary btn-test" onclick="runTest('test_api_connectivity')">
+                        <i class="bi bi-play me-1"></i>
+                        Ejecutar Prueba
+                    </button>
+                    <div id="api-connectivity-result"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <!-- Client Creation Test -->
+            <div class="card diagnostic-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-plus me-2"></i>
+                        Creación de Cliente
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Prueba la creación completa de un cliente a través de la API (se elimina automáticamente).
+                    </p>
+                    <button type="button" class="btn btn-outline-success btn-test" onclick="runTest('test_client_creation')">
+                        <i class="bi bi-play me-1"></i>
+                        Ejecutar Prueba
+                    </button>
+                    <div id="client-creation-result"></div>
+                </div>
+            </div>
+
+            <!-- Error Handling Test -->
+            <div class="card diagnostic-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Manejo de Errores
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Prueba el manejo de diferentes tipos de errores de la API.
+                    </p>
+                    <button type="button" class="btn btn-outline-warning btn-test" onclick="runTest('test_error_handling')">
+                        <i class="bi bi-play me-1"></i>
+                        Ejecutar Prueba
+                    </button>
+                    <div id="error-handling-result"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Form Testing -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card diagnostic-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-code-slash me-2"></i>
+                        Prueba de Formulario en Vivo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Prueba el formulario de cliente con datos personalizados y ve el resultado en tiempo real.
+                    </p>
+                    
+                    <form id="debug-form" onsubmit="debugFormSubmission(event)">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Código de Cliente</label>
+                                    <input type="text" name="client_code" class="form-control" placeholder="CLI-001" value="DEBUG-001">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo</label>
+                                    <select name="type" class="form-select">
+                                        <option value="individual">Persona Física</option>
+                                        <option value="business">Empresa</option>
+                                        <option value="fleet">Flota</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre</label>
+                                    <input type="text" name="name" class="form-control" placeholder="Nombre completo" value="Cliente de Prueba">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" name="email" class="form-control" placeholder="email@ejemplo.com" value="debug@test.com">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="text" name="phone" class="form-control" placeholder="1234567890" value="1234567890">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Límite de Crédito</label>
+                                    <input type="number" name="credit_limit" class="form-control" placeholder="0.00" value="1000.00" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Dirección</label>
+                            <textarea name="address" class="form-control" rows="2" placeholder="Dirección completa">Dirección de prueba para diagnóstico</textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-bug me-1"></i>
+                            Probar Formulario
+                        </button>
+                    </form>
+                    
+                    <div id="debug-form-result" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// CSRF token for AJAX requests
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+function runTest(testType) {
+    const resultDiv = document.getElementById(testType.replace('test_', '') + '-result');
+    
+    // Show loading
+    resultDiv.innerHTML = `
+        <div class="test-result test-warning">
+            <i class="bi bi-hourglass-split me-2"></i>
+            Ejecutando prueba...
+        </div>
+    `;
+    
+    // Make AJAX request
+    fetch(window.location.href, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: `test_type=${testType}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayTestResult(resultDiv, data, testType);
+        } else {
+            resultDiv.innerHTML = `
+                <div class="test-result test-error">
+                    <i class="bi bi-x-circle me-2"></i>
+                    <strong>Error:</strong> ${data.error}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = `
+            <div class="test-result test-error">
+                <i class="bi bi-x-circle me-2"></i>
+                <strong>Error de red:</strong> ${error.message}
+            </div>
+        `;
+    });
+}
+
+function displayTestResult(resultDiv, data, testType) {
+    let html = '';
+    
+    switch (testType) {
+        case 'test_form_validation':
+            html = `
+                <div class="test-result test-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <strong>Prueba de validación completada</strong>
+                </div>
+                <div class="mt-2">
+                    <h6>Formulario Válido:</h6>
+                    <div class="code-block">${JSON.stringify(data.valid_form, null, 2)}</div>
+                </div>
+                <div class="mt-2">
+                    <h6>Formulario Inválido:</h6>
+                    <div class="code-block">${JSON.stringify(data.invalid_form, null, 2)}</div>
+                </div>
+            `;
+            break;
+            
+        case 'test_api_connectivity':
+            const healthStatus = data.health_check ? 'success' : 'error';
+            const authStatus = data.has_authentication ? 'success' : 'warning';
+            const apiStatus = data.api_call_success ? 'success' : 'error';
+            
+            html = `
+                <div class="test-result test-${healthStatus}">
+                    <i class="bi bi-${healthStatus === 'success' ? 'check-circle' : 'x-circle'} me-2"></i>
+                    <strong>Health Check:</strong> ${data.health_check ? 'OK' : 'FAIL'}
+                </div>
+                <div class="test-result test-${authStatus}">
+                    <i class="bi bi-${authStatus === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                    <strong>Autenticación:</strong> ${data.has_authentication ? 'Autenticado' : 'No autenticado'}
+                </div>
+                <div class="test-result test-${apiStatus}">
+                    <i class="bi bi-${apiStatus === 'success' ? 'check-circle' : 'x-circle'} me-2"></i>
+                    <strong>Llamada API:</strong> ${data.api_response}
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">Base URL: ${data.base_url}</small>
+                </div>
+            `;
+            break;
+            
+        case 'test_client_creation':
+            if (data.creation_success) {
+                html = `
+                    <div class="test-result test-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>Cliente creado exitosamente</strong>
+                    </div>
+                    <div class="mt-2">
+                        <div class="code-block">${JSON.stringify({
+                            client_id: data.created_client_id,
+                            retrieval_success: data.retrieval_success,
+                            cleanup_success: data.cleanup_success,
+                            message: data.message
+                        }, null, 2)}</div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="test-result test-error">
+                        <i class="bi bi-x-circle me-2"></i>
+                        <strong>Error en creación:</strong> ${data.error_message}
+                    </div>
+                    <div class="mt-2">
+                        <div class="code-block">${JSON.stringify({
+                            error_code: data.error_code,
+                            error_message: data.error_message,
+                            error_details: data.error_details
+                        }, null, 2)}</div>
+                    </div>
+                `;
+            }
+            break;
+            
+        case 'test_error_handling':
+            html = '<div class="test-result test-success"><i class="bi bi-check-circle me-2"></i><strong>Pruebas de manejo de errores completadas</strong></div>';
+            
+            for (const [testName, result] of Object.entries(data.test_results)) {
+                const status = result.expected ? 'success' : 'warning';
+                html += `
+                    <div class="test-result test-${status} mt-2">
+                        <i class="bi bi-${status === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                        <strong>${testName}:</strong> ${result.message} (${result.status_code})
+                    </div>
+                `;
+            }
+            break;
+    }
+    
+    resultDiv.innerHTML = html;
+}
+
+function debugFormSubmission(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    const resultDiv = document.getElementById('debug-form-result');
+    
+    // Show loading
+    resultDiv.innerHTML = `
+        <div class="test-result test-warning">
+            <i class="bi bi-hourglass-split me-2"></i>
+            Procesando formulario...
+        </div>
+    `;
+    
+    // Make AJAX request to debug endpoint
+    fetch('{% url "frontend:client_form_debug" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const status = data.debug_info.form_valid ? 'success' : 'error';
+            resultDiv.innerHTML = `
+                <div class="test-result test-${status}">
+                    <i class="bi bi-${status === 'success' ? 'check-circle' : 'x-circle'} me-2"></i>
+                    <strong>Formulario ${data.debug_info.form_valid ? 'válido' : 'inválido'}</strong>
+                </div>
+                <div class="mt-2">
+                    <h6>Información de Debug:</h6>
+                    <div class="code-block">${JSON.stringify(data.debug_info, null, 2)}</div>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="test-result test-error">
+                    <i class="bi bi-x-circle me-2"></i>
+                    <strong>Error:</strong> ${data.error}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = `
+            <div class="test-result test-error">
+                <i class="bi bi-x-circle me-2"></i>
+                <strong>Error de red:</strong> ${error.message}
+            </div>
+        `;
+    });
+}
+
+// Auto-refresh system status every 30 seconds
+setInterval(() => {
+    runTest('test_api_connectivity');
+}, 30000);
+</script>
+{% endblock %}

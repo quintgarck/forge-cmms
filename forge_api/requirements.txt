@@ -1,0 +1,42 @@
+# ForgeDB API REST - Python Dependencies
+# Generated on 2025-12-29
+
+# Django and core dependencies
+Django==4.2.7
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+django-filter==23.3
+reportlab==4.0.7
+
+# Database
+psycopg2-binary==2.9.7
+
+# Authentication
+djangorestframework-simplejwt==5.2.2
+
+# API Documentation
+drf-yasg==1.21.7
+
+# Development and testing
+django-extensions==3.2.3
+hypothesis==6.90.0
+
+# Production server
+gunicorn==21.2.0
+
+# Environment management
+python-decouple==3.8
+
+# Caching (optional)
+redis==5.0.1
+django-redis==5.4.0
+
+# File handling
+Pillow==10.1.0
+openpyxl==3.1.2  # Soporte para archivos Excel (.xlsx)
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+requests==2.31.0
+PyJWT==2.8.0

@@ -1,0 +1,391 @@
+/**
+ * Performance-specific CSS optimizations
+ * ForgeDB Frontend Application
+ */
+
+/* ===== CSS CONTAINMENT FOR PERFORMANCE ===== */
+
+/* Contain layout and style recalculations */
+.card {
+    contain: layout style;
+}
+
+.table-responsive {
+    contain: layout;
+}
+
+.modal-dialog {
+    contain: layout style;
+}
+
+/* ===== WILL-CHANGE OPTIMIZATIONS ===== */
+
+/* Elements that will be animated */
+.btn:hover,
+.nav-link:hover,
+.dropdown-item:hover {
+    will-change: background-color, color;
+}
+
+.modal.fade {
+    will-change: opacity, transform;
+}
+
+.carousel-item {
+    will-change: transform;
+}
+
+.collapse {
+    will-change: height;
+}
+
+/* ===== TRANSFORM OPTIMIZATIONS ===== */
+
+/* Use transform instead of changing layout properties */
+.btn {
+    transition: transform 0.15s ease-in-out, background-color 0.15s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease-in-out;
+}
+
+/* ===== FONT LOADING OPTIMIZATIONS ===== */
+
+/* Prevent layout shift during font loading */
+body {
+    font-display: swap;
+}
+
+/* Optimize icon fonts */
+.bi {
+    font-display: block;
+}
+
+/* ===== IMAGE OPTIMIZATIONS ===== */
+
+/* Prevent layout shift for images */
+img {
+    height: auto;
+    max-width: 100%;
+}
+
+/* Optimize background images */
+.bg-image {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    will-change: transform;
+}
+
+/* Lazy loading placeholder */
+.img-placeholder {
+    background-color: #f8f9fa;
+    background-image: linear-gradient(45deg, #f8f9fa 25%, transparent 25%),
+                      linear-gradient(-45deg, #f8f9fa 25%, transparent 25%),
+                      linear-gradient(45deg, transparent 75%, #f8f9fa 75%),
+                      linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    animation: placeholder-shimmer 2s infinite linear;
+}
+
+@keyframes placeholder-shimmer {
+    0% { background-position: 0 0, 0 10px, 10px -10px, -10px 0px; }
+    100% { background-position: 20px 20px, 20px 30px, 30px 10px, 10px 20px; }
+}
+
+/* ===== SCROLL OPTIMIZATIONS ===== */
+
+/* Smooth scrolling with performance consideration */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Optimize scrollable areas */
+.table-responsive,
+.overflow-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+/* Custom scrollbar for webkit browsers */
+.table-responsive::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track,
+.overflow-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb,
+.overflow-auto::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover,
+.overflow-auto::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* ===== ANIMATION OPTIMIZATIONS ===== */
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    .carousel-item {
+        transition: none !important;
+    }
+    
+    .modal.fade {
+        transition: none !important;
+    }
+}
+
+/* Optimize common animations */
+.fade {
+    transition: opacity 0.15s linear;
+}
+
+.collapse {
+    transition: height 0.35s ease;
+}
+
+/* ===== CRITICAL RENDERING PATH OPTIMIZATIONS ===== */
+
+/* Above-the-fold content optimization */
+.hero-section,
+.navbar,
+.breadcrumb {
+    contain: layout style;
+}
+
+/* Defer non-critical content */
+.below-fold {
+    content-visibility: auto;
+    contain-intrinsic-size: 200px;
+}
+
+/* ===== MEMORY OPTIMIZATIONS ===== */
+
+/* Limit repaints for frequently updated elements */
+.live-update {
+    contain: layout style paint;
+}
+
+/* Optimize large lists */
+.large-list {
+    contain: layout;
+    overflow: hidden;
+}
+
+.large-list-item {
+    contain: layout style;
+}
+
+/* ===== NETWORK OPTIMIZATIONS ===== */
+
+/* Preload hints for critical resources */
+.preload-hint::before {
+    content: '';
+    display: none;
+    background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>');
+}
+
+/* ===== RESPONSIVE PERFORMANCE ===== */
+
+/* Optimize for different screen sizes */
+@media (max-width: 575.98px) {
+    /* Reduce complexity on mobile */
+    .shadow {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+    }
+    
+    .rounded {
+        border-radius: 0.25rem !important;
+    }
+    
+    /* Simplify gradients on mobile */
+    .bg-gradient {
+        background-image: none !important;
+    }
+    
+    /* Reduce animation complexity */
+    .btn:hover {
+        transform: none;
+    }
+    
+    .card:hover {
+        transform: none;
+    }
+}
+
+/* ===== PRINT PERFORMANCE ===== */
+
+@media print {
+    /* Remove all animations and transitions for print */
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+        will-change: auto !important;
+        transform: none !important;
+    }
+    
+    /* Optimize colors for print */
+    .bg-primary,
+    .bg-secondary,
+    .bg-success,
+    .bg-danger,
+    .bg-warning,
+    .bg-info {
+        background-color: transparent !important;
+        color: #000 !important;
+        border: 1px solid #000 !important;
+    }
+}
+
+/* ===== ACCESSIBILITY PERFORMANCE ===== */
+
+/* High contrast mode optimizations */
+@media (prefers-contrast: high) {
+    /* Simplify shadows and effects */
+    .shadow,
+    .shadow-sm,
+    .shadow-lg {
+        box-shadow: 0 0 0 2px currentColor !important;
+    }
+    
+    /* Ensure sufficient contrast */
+    .btn {
+        border: 2px solid currentColor !important;
+    }
+}
+
+/* ===== LOADING STATE OPTIMIZATIONS ===== */
+
+/* Skeleton loading with better performance */
+.skeleton-loader {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    will-change: background-position;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Optimized spinner */
+.spinner-optimized {
+    width: 2rem;
+    height: 2rem;
+    border: 0.25em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+    will-change: transform;
+}
+
+/* ===== UTILITY CLASSES FOR PERFORMANCE ===== */
+
+/* GPU acceleration */
+.gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* Contain layout changes */
+.contain-layout {
+    contain: layout;
+}
+
+.contain-style {
+    contain: style;
+}
+
+.contain-paint {
+    contain: paint;
+}
+
+.contain-all {
+    contain: layout style paint;
+}
+
+/* Optimize for animations */
+.will-change-transform {
+    will-change: transform;
+}
+
+.will-change-opacity {
+    will-change: opacity;
+}
+
+.will-change-auto {
+    will-change: auto;
+}
+
+/* Performance-friendly visibility */
+.visually-hidden-performant {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    contain: strict;
+}
+
+/* ===== CRITICAL CSS INLINING SUPPORT ===== */
+
+/* Mark critical styles for inlining */
+.critical-above-fold {
+    /* These styles should be inlined in the HTML head */
+    display: block;
+    margin: 0;
+    padding: 0;
+}
+
+/* ===== PROGRESSIVE ENHANCEMENT ===== */
+
+/* Base styles for no-JS users */
+.no-js .js-only {
+    display: none !important;
+}
+
+.no-js .no-js-fallback {
+    display: block !important;
+}
+
+/* Enhanced styles for JS users */
+.js .js-enhanced {
+    /* Enhanced functionality styles */
+}

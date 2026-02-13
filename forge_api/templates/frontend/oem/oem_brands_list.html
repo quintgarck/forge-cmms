@@ -1,0 +1,328 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Marcas OEM - MovIAx{% endblock %}
+
+{% block breadcrumb_items %}
+    <li class="breadcrumb-item">
+        <a href="{% url 'frontend:dashboard' %}">Dashboard</a>
+    </li>
+    <li class="breadcrumb-item active">Marcas OEM</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-building me-2 text-primary"></i>
+            Marcas OEM
+        </h1>
+        <p class="text-muted mb-0">Gestión de marcas de equipos originales</p>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBrandModal">
+            <i class="bi bi-plus-lg me-1"></i>
+            Nueva Marca
+        </button>
+    </div>
+</div>
+
+<!-- Search and Filter Bar -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" class="form-control" name="search" 
+                           placeholder="Buscar por nombre o código..." 
+                           value="{{ filters.search }}">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="country">
+                    <option value="">Todos los países</option>
+                    <option value="USA" {% if filters.country == 'USA' %}selected{% endif %}>Estados Unidos</option>
+                    <option value="Germany" {% if filters.country == 'Germany' %}selected{% endif %}>Alemania</option>
+                    <option value="Japan" {% if filters.country == 'Japan' %}selected{% endif %}>Japón</option>
+                    <option value="Korea" {% if filters.country == 'Korea' %}selected{% endif %}>Corea</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="status">
+                    <option value="">Todos los estados</option>
+                    <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Activas</option>
+                    <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Inactivas</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-funnel me-1"></i>
+                    Filtrar
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'frontend:oem_brands_list' %}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x-lg me-1"></i>
+                    Limpiar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- OEM Brands Grid -->
+<div class="row" id="oem-brands-grid">
+    {% for brand in oem_brands %}
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+            <div class="card h-100 oem-brand-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 50px; height: 50px;">
+                                <i class="bi bi-building"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="card-title mb-0">{{ brand.name }}</h5>
+                            <small class="text-muted">{{ brand.oem_code }}</small>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="bi bi-eye me-2"></i>Ver Detalles
+                                </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="bi bi-pencil me-2"></i>Editar
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#">
+                                    <i class="bi bi-trash me-2"></i>Eliminar
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="fw-bold text-primary">{{ brand.parts_count|default:0 }}</div>
+                                <small class="text-muted">Partes</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold text-success">{{ brand.active_parts|default:0 }}</div>
+                                <small class="text-muted">Activas</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="fw-bold text-info">{{ brand.equivalences_count|default:0 }}</div>
+                                <small class="text-muted">Equivalencias</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">País:</small>
+                            <span class="badge bg-light text-dark">{{ brand.country|default:"No especificado" }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">Estado:</small>
+                            {% if brand.is_active %}
+                                <span class="badge bg-success">Activa</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactiva</span>
+                            {% endif %}
+                        </div>
+                        {% if brand.website %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Web:</small>
+                                <a href="{{ brand.website }}" target="_blank" class="text-decoration-none small">
+                                    <i class="bi bi-link-45deg me-1"></i>Sitio web
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="viewBrandCatalog('{{ brand.oem_code }}')">
+                            <i class="bi bi-search me-1"></i>
+                            Ver Catálogo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-building display-1 text-muted"></i>
+                <h4 class="mt-3">No se encontraron marcas OEM</h4>
+                <p class="text-muted">Comienza agregando tu primera marca OEM</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBrandModal">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Agregar Marca
+                </button>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Add Brand Modal -->
+<div class="modal fade" id="addBrandModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-building me-2"></i>
+                    Nueva Marca OEM
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addBrandForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="oem_code" class="form-label">Código OEM *</label>
+                                <input type="text" class="form-control" id="oem_code" name="oem_code" required>
+                                <div class="form-text">Código único de la marca (ej: FORD, BMW, TOYOTA)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="country" class="form-label">País</label>
+                                <select class="form-select" id="country" name="country">
+                                    <option value="">Seleccionar país</option>
+                                    <option value="USA">Estados Unidos</option>
+                                    <option value="Germany">Alemania</option>
+                                    <option value="Japan">Japón</option>
+                                    <option value="Korea">Corea</option>
+                                    <option value="Italy">Italia</option>
+                                    <option value="France">Francia</option>
+                                    <option value="UK">Reino Unido</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="website" class="form-label">Sitio Web</label>
+                                <input type="url" class="form-control" id="website" name="website" 
+                                       placeholder="https://www.ejemplo.com">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="support_email" class="form-label">Email de Soporte</label>
+                        <input type="email" class="form-control" id="support_email" name="support_email" 
+                               placeholder="soporte@marca.com">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                            <label class="form-check-label" for="is_active">
+                                Marca activa
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>
+                        Crear Marca
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.oem-brand-card {
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+}
+
+.oem-brand-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-color: #4e73df;
+}
+
+.text-purple {
+    color: #6f42c1 !important;
+}
+
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function viewBrandCatalog(oemCode) {
+    // Navigate to OEM catalog items for this brand
+    window.location.href = `/oem/catalog-items/?brand=${oemCode}`;
+}
+
+// Handle add brand form submission
+document.getElementById('addBrandForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const brandData = {
+        oem_code: formData.get('oem_code'),
+        name: formData.get('name'),
+        country: formData.get('country'),
+        website: formData.get('website'),
+        support_email: formData.get('support_email'),
+        is_active: formData.get('is_active') === 'on'
+    };
+    
+    // Submit to API
+    fetch('/api/v1/oem/brands/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': MovIAx.api.getCSRFToken()
+        },
+        body: JSON.stringify(brandData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        MovIAx.utils.showToast('Marca OEM creada exitosamente', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('addBrandModal')).hide();
+        location.reload();
+    })
+    .catch(error => {
+        console.error('Error creating OEM brand:', error);
+        MovIAx.utils.showToast('Error al crear la marca OEM', 'danger');
+    });
+});
+</script>
+{% endblock %}

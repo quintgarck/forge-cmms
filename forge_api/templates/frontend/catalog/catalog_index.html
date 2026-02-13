@@ -1,0 +1,411 @@
+{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Catálogos - MovIAx{% endblock %}
+
+{% block body_class %}catalog-page{% endblock %}
+
+{% block extra_css %}
+<link href="{% static 'frontend/css/catalog.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">
+                <i class="bi bi-collection text-primary"></i>
+                Gestión de Catálogos
+            </h1>
+            <p class="text-muted mb-0">Centro de administración de catálogos y clasificaciones</p>
+        </div>
+    </div>
+
+    <!-- Módulos principales -->
+    <div class="row">
+        <!-- Tipos de Equipo -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 catalog-module-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-gear-wide-connected"></i>
+                        Tipos de Equipo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Gestión completa de tipos de equipos automotrices con categorización 
+                        y validaciones avanzadas.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Funcionalidades:</small>
+                        <ul class="small">
+                            <li>CRUD completo con validaciones</li>
+                            <li>Búsqueda y filtrado avanzado</li>
+                            <li>Códigos únicos por categoría</li>
+                            <li>Integración con API backend</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:equipment_type_list' %}" class="btn btn-primary">
+                            <i class="bi bi-list"></i> Ver Lista
+                        </a>
+                        <a href="{% url 'frontend:equipment_type_create' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-plus"></i> Crear Nuevo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categorías -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 catalog-module-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-folder-category"></i>
+                        Categorías
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Gestión de categorías para organizar tipos de equipo 
+                        en grupos lógicos y personalizables.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Funcionalidades:</small>
+                        <ul class="small">
+                            <li>CRUD de categorías</li>
+                            <li>Iconos y colores personalizados</li>
+                            <li>Orden de visualización</li>
+                            <li>Categorías activas/inactivas</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:category_list' %}" class="btn btn-success">
+                            <i class="bi bi-list"></i> Ver Lista
+                        </a>
+                        <a href="{% url 'frontend:category_create' %}" class="btn btn-outline-success">
+                            <i class="bi bi-plus"></i> Crear Nueva
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sistema de Taxonomía -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 catalog-module-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-diagram-3"></i>
+                        Sistema de Taxonomía
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Estructura jerárquica completa para clasificación de productos 
+                        y servicios con navegación interactiva.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Funcionalidades:</small>
+                        <ul class="small">
+                            <li>Árbol jerárquico interactivo</li>
+                            <li>Sistemas, subsistemas y grupos</li>
+                            <li>Búsqueda en tiempo real</li>
+                            <li>Validación de integridad</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:taxonomy_tree' %}" class="btn btn-success">
+                            <i class="bi bi-diagram-3"></i> Ver Árbol
+                        </a>
+                        <a href="{% url 'frontend:taxonomy_system_list' %}" class="btn btn-outline-success">
+                            <i class="bi bi-list"></i> Gestionar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Códigos de Referencia y catálogos para productos -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 catalog-module-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-code-square"></i>
+                        Códigos de Referencia
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Códigos estándar (combustible, transmisión, color, etc.) y catálogos para productos:
+                        tipos de marca, categorías y tipos de producto usados al crear productos.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Incluye:</small>
+                        <ul class="small">
+                            <li>Combustibles, transmisión, colores, tracción, condición, aspiración</li>
+                            <li>Tipos de marca, categorías de producto, tipos de producto</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:reference_code_list' %}" class="btn btn-info">
+                            <i class="bi bi-list"></i> Ver Códigos
+                        </a>
+                        <a href="#" class="btn btn-outline-info" data-action="import-codes">
+                            <i class="bi bi-upload"></i> Importar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestión de Monedas -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 catalog-module-card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-currency-exchange"></i>
+                        Gestión de Monedas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Administración completa de monedas con tasas de cambio 
+                        y conversiones automáticas.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Funcionalidades:</small>
+                        <ul class="small">
+                            <li>Tasas de cambio actualizables</li>
+                            <li>Conversión automática</li>
+                            <li>Histórico de tasas</li>
+                            <li>Moneda base configurable</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:currency_list' %}" class="btn btn-warning">
+                            <i class="bi bi-list"></i> Ver Monedas
+                        </a>
+                        <a href="#" class="btn btn-outline-warning" data-action="update-rates">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Proveedores Avanzados -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 catalog-module-card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-building"></i>
+                        Proveedores Avanzados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Gestión avanzada de proveedores con categorización, 
+                        evaluación y seguimiento de desempeño.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Características:</small>
+                        <ul class="small">
+                            <li>Categorización por especialidad</li>
+                            <li>Evaluación de desempeño</li>
+                            <li>Historial de transacciones</li>
+                            <li>Contactos múltiples</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:supplier_advanced_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-list"></i> Ver Lista
+                        </a>
+                        <a href="#" class="btn btn-outline-secondary" data-action="evaluate-suppliers">
+                            <i class="bi bi-graph-up"></i> Evaluar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas y Reportes -->
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card h-100 catalog-module-card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up"></i>
+                        Estadísticas y Reportes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Centro de reportes y análisis de todos los catálogos 
+                        con métricas de uso y tendencias.
+                    </p>
+                    <div class="mb-3">
+                        <small class="text-muted">Reportes disponibles:</small>
+                        <ul class="small">
+                            <li>Uso de tipos de equipo</li>
+                            <li>Cobertura de taxonomía</li>
+                            <li>Análisis de códigos</li>
+                            <li>Tendencias de proveedores</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'frontend:catalog_reports' %}" class="btn btn-dark">
+                            <i class="bi bi-bar-chart"></i> Ver Reportes
+                        </a>
+                        <a href="#" class="btn btn-outline-dark" data-action="export-data">
+                            <i class="bi bi-download"></i> Exportar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning"></i>
+                        Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-primary" data-action="bulk-import">
+                                    <i class="bi bi-upload"></i>
+                                    Importación Masiva
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-success" data-action="validate-all">
+                                    <i class="bi bi-check-circle"></i>
+                                    Validar Integridad
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-info" data-action="sync-external">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                    Sincronizar Externos
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-warning" data-action="backup-catalogs">
+                                    <i class="bi bi-shield-check"></i>
+                                    Respaldar Catálogos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejar acciones rápidas
+    document.addEventListener('click', function(e) {
+        const action = e.target.dataset.action || e.target.closest('[data-action]')?.dataset.action;
+        
+        switch (action) {
+            case 'import-codes':
+                window.location.href = '/catalog/reference-codes/import/';
+                break;
+            case 'update-rates':
+                updateExchangeRates();
+                break;
+            case 'evaluate-suppliers':
+                window.location.href = '/catalog/suppliers/evaluation/';
+                break;
+            case 'export-data':
+                exportCatalogData();
+                break;
+            case 'bulk-import':
+                showBulkImportModal();
+                break;
+            case 'validate-all':
+                validateAllCatalogs();
+                break;
+            case 'sync-external':
+                syncExternalSources();
+                break;
+            case 'backup-catalogs':
+                backupCatalogs();
+                break;
+        }
+    });
+    
+    function updateExchangeRates() {
+        if (confirm('¿Desea actualizar las tasas de cambio desde fuentes externas?')) {
+            // Implementar actualización de tasas
+            alert('Funcionalidad en desarrollo');
+        }
+    }
+    
+    function exportCatalogData() {
+        // Implementar exportación de datos
+        alert('Funcionalidad en desarrollo');
+    }
+    
+    function showBulkImportModal() {
+        // Implementar modal de importación masiva
+        alert('Funcionalidad en desarrollo');
+    }
+    
+    function validateAllCatalogs() {
+        if (confirm('¿Desea ejecutar una validación completa de todos los catálogos?')) {
+            // Implementar validación
+            alert('Funcionalidad en desarrollo');
+        }
+    }
+    
+    function syncExternalSources() {
+        if (confirm('¿Desea sincronizar con fuentes externas? Esto puede tomar varios minutos.')) {
+            // Implementar sincronización
+            alert('Funcionalidad en desarrollo');
+        }
+    }
+    
+    function backupCatalogs() {
+        if (confirm('¿Desea crear un respaldo completo de todos los catálogos?')) {
+            // Implementar respaldo
+            alert('Funcionalidad en desarrollo');
+        }
+    }
+});
+</script>
+{% endblock %}

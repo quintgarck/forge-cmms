@@ -1,0 +1,305 @@
+﻿{% extends 'frontend/base/base.html' %}
+{% load static %}
+
+{% block title %}Mantenimiento - MovIAx{% endblock %}
+
+{% block body_class %}maintenance-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/maintenance-list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">Gestión de Mantenimiento</h1>
+            <p class="text-muted">Administra las tareas de mantenimiento programadas</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'frontend:maintenance_calendar' %}" class="btn btn-outline-primary">
+                <i class="fas fa-calendar-alt me-2"></i>Vista Calendario
+            </a>
+            <a href="{% url 'frontend:maintenance_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Nueva Tarea
+            </a>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    {{ search_form.search.label_tag }}
+                    {{ search_form.search }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.equipment_id.label_tag }}
+                    <select name="equipment_id" class="form-select" id="equipment-filter">
+                        <option value="">Todos los equipos</option>
+                        {% for equipment in equipment_list %}
+                            <option value="{{ equipment.id }}" 
+                                {% if request.GET.equipment_id == equipment.id|stringformat:"s" %}selected{% endif %}>
+                                {{ equipment.equipment_code }} - {{ equipment.make }} {{ equipment.model }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.maintenance_type.label_tag }}
+                    {{ search_form.maintenance_type }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.status.label_tag }}
+                    {{ search_form.status }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.priority.label_tag }}
+                    {{ search_form.priority }}
+                </div>
+                <div class="col-md-1">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Date Range Filter -->
+            <div class="row g-3 mt-2">
+                <div class="col-md-2">
+                    {{ search_form.date_from.label_tag }}
+                    {{ search_form.date_from }}
+                </div>
+                <div class="col-md-2">
+                    {{ search_form.date_to.label_tag }}
+                    {{ search_form.date_to }}
+                </div>
+                <div class="col-md-8">
+                    {% if request.GET %}
+                        <label>&nbsp;</label>
+                        <a href="{% url 'frontend:maintenance_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>Limpiar Filtros
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="text-muted">
+            {% if pagination.count %}
+                Mostrando {{ maintenance_tasks|length }} de {{ pagination.count }} tareas de mantenimiento
+            {% else %}
+                No se encontraron tareas de mantenimiento
+            {% endif %}
+        </div>
+        <div class="maintenance-stats">
+            <span class="badge bg-warning me-2">Programadas</span>
+            <span class="badge bg-info me-2">En Progreso</span>
+            <span class="badge bg-success me-2">Completadas</span>
+            <span class="badge bg-danger">Vencidas</span>
+        </div>
+    </div>
+
+    <!-- Maintenance Tasks List -->
+    {% if maintenance_tasks %}
+        <div class="row">
+            {% for maintenance in maintenance_tasks %}
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card maintenance-card h-100 {% if maintenance.status == 'overdue' %}border-danger{% elif maintenance.priority == 'critical' %}border-warning{% endif %}">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <span class="maintenance-type-icon me-2">
+                                    {% if maintenance.maintenance_type == 'preventive' %}
+                                        <i class="fas fa-shield-alt text-success"></i>
+                                    {% elif maintenance.maintenance_type == 'corrective' %}
+                                        <i class="fas fa-wrench text-warning"></i>
+                                    {% elif maintenance.maintenance_type == 'predictive' %}
+                                        <i class="fas fa-chart-line text-info"></i>
+                                    {% else %}
+                                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                                    {% endif %}
+                                </span>
+                                <h6 class="mb-0">{{ maintenance.title|truncatechars:30 }}</h6>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{% url 'frontend:maintenance_detail' maintenance.id %}">
+                                        <i class="fas fa-eye me-2"></i>Ver Detalles
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{% url 'frontend:maintenance_update' maintenance.id %}">
+                                        <i class="fas fa-edit me-2"></i>Editar
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="confirmDelete({{ maintenance.id }}, '{{ maintenance.title }}')">
+                                        <i class="fas fa-trash me-2"></i>Eliminar
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="maintenance-info">
+                                <div class="row mb-2">
+                                    <div class="col-6">
+                                        <small class="text-muted">Equipo:</small><br>
+                                        <span class="fw-medium">{{ maintenance.equipment_code|default:"N/A" }}</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Prioridad:</small><br>
+                                        <span class="badge priority-{{ maintenance.priority }}">
+                                            {% if maintenance.priority == 'low' %}Baja
+                                            {% elif maintenance.priority == 'medium' %}Media
+                                            {% elif maintenance.priority == 'high' %}Alta
+                                            {% else %}Crítica{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-6">
+                                        <small class="text-muted">Fecha Programada:</small><br>
+                                        <span class="fw-medium">{{ maintenance.scheduled_date|date:"d/m/Y H:i" }}</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <small class="text-muted">Estado:</small><br>
+                                        <span class="badge status-{{ maintenance.status }}">
+                                            {% if maintenance.status == 'scheduled' %}Programado
+                                            {% elif maintenance.status == 'in_progress' %}En Progreso
+                                            {% elif maintenance.status == 'completed' %}Completado
+                                            {% elif maintenance.status == 'cancelled' %}Cancelado
+                                            {% else %}Vencido{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if maintenance.assigned_technician %}
+                                    <div class="row mb-2">
+                                        <div class="col-12">
+                                            <small class="text-muted">Técnico:</small><br>
+                                            <span class="fw-medium">{{ maintenance.assigned_technician }}</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                {% if maintenance.description %}
+                                    <div class="maintenance-description">
+                                        <small class="text-muted">Descripción:</small><br>
+                                        <p class="mb-0">{{ maintenance.description|truncatechars:100 }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ maintenance.estimated_duration }} min
+                                </small>
+                                <a href="{% url 'frontend:maintenance_detail' maintenance.id %}" class="btn btn-sm btn-primary">
+                                    Ver Detalles
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination.total_pages > 1 %}
+            <nav aria-label="Paginación de mantenimiento">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'-1' }}">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.page_range %}
+                        <li class="page-item {% if page_num == pagination.current_page %}active{% endif %}">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_num }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                    
+                    {% if pagination.next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ pagination.current_page|add:'1' }}">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+            <h4>No hay tareas de mantenimiento</h4>
+            <p class="text-muted">No se encontraron tareas de mantenimiento con los filtros aplicados.</p>
+            <a href="{% url 'frontend:maintenance_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Crear Primera Tarea
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar la tarea de mantenimiento <strong id="deleteMaintenanceName"></strong>?</p>
+                <p class="text-muted">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmDelete(maintenanceId, maintenanceName) {
+    document.getElementById('deleteMaintenanceName').textContent = maintenanceName;
+    document.getElementById('deleteForm').action = `/maintenance/${maintenanceId}/delete/`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Auto-submit form on filter change
+document.addEventListener('DOMContentLoaded', function() {
+    const filterSelects = document.querySelectorAll('#equipment-filter, #type-filter, #status-filter, #priority-filter');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+    
+    // Date range auto-submit
+    const dateInputs = document.querySelectorAll('#date-from, #date-to');
+    dateInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+});
+</script>
+{% endblock %}

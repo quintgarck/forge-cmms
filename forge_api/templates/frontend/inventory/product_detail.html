@@ -1,0 +1,323 @@
+﻿{% extends "frontend/base/base.html" %}
+
+{% load static %}
+
+{% block title %}Detalle de Producto - {{ product.name }} - MovIAx{% endblock %}
+
+{% block body_class %}inventory-page{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'frontend/css/inventory-detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-tag"></i> {{ product.name }}
+        </h1>
+        <div class="d-flex gap-2">
+            <a href="{% url 'frontend:product_update' product.id %}" class="d-none d-sm-inline-block btn btn-sm btn-warning shadow-sm">
+                <i class="fas fa-edit fa-sm text-white-50"></i> Editar
+            </a>
+            <a href="{% url 'frontend:product_list' %}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Product Header Card -->
+    <div class="row">
+        <div class="col-xl-12 col-lg-12">
+            <div class="card shadow mb-4">
+                <!-- Card Header -->
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi {{ product.category_icon }} text-{{ product.category_class }}"></i> 
+                        {{ product.get_category_display|default:product.category|title }}
+                        <span class="mx-2">|</span>
+                        <i class="bi bi-tag"></i> {{ product.product_code }}
+                    </h6>
+                    <div>
+                        <span class="badge bg-{{ product.stock_class }} me-2">
+                            <i class="bi bi-box-seam"></i> {{ product.stock_label }}
+                        </span>
+                        <span class="badge bg-{% if product.is_active %}success{% else %}secondary{% endif %}">
+                            {% if product.is_active %}<i class="bi bi-check-circle"></i> ACTIVO{% else %}<i class="bi bi-x-circle"></i> INACTIVO{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h4>{{ product.name }}</h4>
+                            {% if product.description %}
+                                <p class="text-muted">{{ product.description }}</p>
+                            {% endif %}
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-currency-dollar text-primary"></i> Información Comercial</h6>
+                                    <table class="table table-sm table-borderless">
+                                        <tr>
+                                            <td class="text-muted">Precio Unitario:</td>
+                                            <td><strong>${{ product.price|floatformat:2 }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Costo Unitario:</td>
+                                            <td>${{ product.cost|floatformat:2 }}</td>
+                                        </tr>
+                                        {% if product.profit_margin %}
+                                        <tr>
+                                            <td class="text-muted">Margen de Ganancia:</td>
+                                            <td><span class="badge bg-success">{{ product.profit_margin }}%</span></td>
+                                        </tr>
+                                        {% endif %}
+                                        {% if product.estimated_hours %}
+                                        <tr>
+                                            <td class="text-muted">Horas Estimadas:</td>
+                                            <td>{{ product.estimated_hours }} h</td>
+                                        </tr>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-box-seam text-primary"></i> Control de Inventario</h6>
+                                    <table class="table table-sm table-borderless">
+                                        <tr>
+                                            <td class="text-muted">Unidad de Medida:</td>
+                                            <td>{{ product.get_unit_of_measure_display|default:product.unit_of_measure|title }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Stock Mínimo:</td>
+                                            <td>{{ product.minimum_stock|default:0 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Stock Máximo:</td>
+                                            <td>{{ product.maximum_stock|default:"Ilimitado" }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Estado de Stock</h5>
+                                    <div class="display-4">{{ product.quantity_available|default:0 }}</div>
+                                    <p class="text-muted">disponibles</p>
+                                    
+                                    <div class="row mt-3">
+                                        <div class="col-6">
+                                            <small class="text-muted">En Existencia</small>
+                                            <div class="h6">{{ product.quantity_on_hand|default:0 }}</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">Reservados</small>
+                                            <div class="h6">{{ product.quantity_reserved|default:0 }}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if product.stock_value %}
+                                    <div class="mt-3 pt-3 border-top">
+                                        <small class="text-muted">Valor Total</small>
+                                        <div class="h6">${{ product.stock_value|floatformat:2 }}</div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs for additional information -->
+    <div class="row">
+        <div class="col-xl-12 col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <ul class="nav nav-tabs" id="productTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
+                                <i class="bi bi-info-circle"></i> Información
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button" role="tab">
+                                <i class="bi bi-arrow-left-right"></i> Transacciones
+                                {% if recent_transactions %}
+                                    <span class="badge bg-primary">{{ recent_transactions|length }}</span>
+                                {% endif %}
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="workorders-tab" data-bs-toggle="tab" data-bs-target="#workorders" type="button" role="tab">
+                                <i class="bi bi-tools"></i> Órdenes de Trabajo
+                                {% if recent_workorders %}
+                                    <span class="badge bg-info">{{ recent_workorders|length }}</span>
+                                {% endif %}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="productTabContent">
+                        <!-- Info Tab -->
+                        <div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-building text-primary"></i> Información del Proveedor</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td class="text-muted">Proveedor:</td>
+                                            <td>{{ product.supplier|default:"No especificado" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Código del Proveedor:</td>
+                                            <td>{{ product.supplier_code|default:"No especificado" }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><i class="bi bi-gear text-primary"></i> Configuración</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td class="text-muted">Tipo:</td>
+                                            <td>{{ product.get_type_display|default:product.type|title }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Gravable:</td>
+                                            <td>
+                                                {% if product.is_taxable %}
+                                                    <span class="badge bg-success"><i class="bi bi-check"></i> Sí</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary"><i class="bi bi-x"></i> No</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Creado:</td>
+                                            <td>{{ product.created_at|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">Actualizado:</td>
+                                            <td>{{ product.updated_at|default:"N/A" }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Transactions Tab -->
+                        <div class="tab-pane fade" id="transactions" role="tabpanel" aria-labelledby="transactions-tab">
+                            {% if recent_transactions %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Tipo</th>
+                                                <th>Almacén</th>
+                                                <th>Cantidad</th>
+                                                <th>Costo Unitario</th>
+                                                <th>Movimiento</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for transaction in recent_transactions %}
+                                            <tr>
+                                                <td>{{ transaction.transaction_date|date:"SHORT_DATETIME_FORMAT" }}</td>
+                                                <td>
+                                                    <span class="badge bg-{{ transaction.type_class }}">
+                                                        <i class="bi {{ transaction.type_icon }}"></i> {{ transaction.type_label }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ transaction.warehouse.name }}</td>
+                                                <td>{{ transaction.quantity }}</td>
+                                                <td>${{ transaction.unit_cost|floatformat:2|default:"N/A" }}</td>
+                                                <td>
+                                                    {% if transaction.type == 'receipt' %}
+                                                        <span class="text-success"><i class="bi bi-arrow-down-circle"></i> +{{ transaction.quantity }}</span>
+                                                    {% elif transaction.type == 'issue' %}
+                                                        <span class="text-danger"><i class="bi bi-arrow-up-circle"></i> -{{ transaction.quantity }}</span>
+                                                    {% else %}
+                                                        <span class="text-info"><i class="bi bi-arrow-left-right"></i> {{ transaction.quantity }}</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <a href="{% url 'frontend:transaction_list' %}?product={{ product.id }}" class="btn btn-sm btn-outline-primary">
+                                    Ver todas las transacciones <i class="bi bi-arrow-right"></i>
+                                </a>
+                            {% else %}
+                                <p class="text-muted text-center my-5">No hay transacciones registradas para este producto.</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Work Orders Tab -->
+                        <div class="tab-pane fade" id="workorders" role="tabpanel" aria-labelledby="workorders-tab">
+                            {% if recent_workorders %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Número</th>
+                                                <th>Cliente</th>
+                                                <th>Equipo</th>
+                                                <th>Estado</th>
+                                                <th>Fecha</th>
+                                                <th>Cantidad</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for wo in recent_workorders %}
+                                            <tr>
+                                                <td>{{ wo.wo_number }}</td>
+                                                <td>{{ wo.client.name }}</td>
+                                                <td>{{ wo.equipment.make }} {{ wo.equipment.model }}</td>
+                                                <td>
+                                                    <span class="badge bg-{{ wo.status_class }}">{{ wo.status_label }}</span>
+                                                </td>
+                                                <td>{{ wo.created_at|date:"SHORT_DATE_FORMAT" }}</td>
+                                                <td>{{ wo.quantity_used|default:"N/A" }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <a href="{% url 'frontend:workorder_list' %}?product={{ product.id }}" class="btn btn-sm btn-outline-primary">
+                                    Ver todas las órdenes <i class="bi bi-arrow-right"></i>
+                                </a>
+                            {% else %}
+                                <p class="text-muted text-center my-5">No hay órdenes de trabajo asociadas a este producto.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'frontend/js/inventory-detail.js' %}"></script>
+<script>
+// Tab management
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the first tab as active
+    const firstTab = document.getElementById('info-tab');
+    if (firstTab) {
+        new bootstrap.Tab(firstTab);
+    }
+});
+</script>
+{% endblock %}

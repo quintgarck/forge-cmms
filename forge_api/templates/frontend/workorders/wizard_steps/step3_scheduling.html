@@ -1,0 +1,283 @@
+<!-- Step 3: Scheduling and Details -->
+<div class="wizard-step-content">
+    <h4 class="mb-4">
+        <i class="bi bi-calendar-event me-2"></i>
+        Paso 3: Programación y Detalles
+    </h4>
+    
+    <div class="row">
+        <!-- Work Description -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-file-text me-2"></i>
+                        Descripción del Trabajo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descripción <span class="text-danger">*</span></label>
+                        <textarea class="form-control" 
+                                  name="description" 
+                                  id="description" 
+                                  rows="4" 
+                                  placeholder="Describa detalladamente el trabajo a realizar..."
+                                  required>{{ wizard_data.description }}</textarea>
+                        <div class="form-text">Proporcione una descripción clara y detallada del trabajo</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="complaint" class="form-label">Queja del Cliente</label>
+                        <textarea class="form-control" 
+                                  name="complaint" 
+                                  id="complaint" 
+                                  rows="3" 
+                                  placeholder="Describa el problema reportado por el cliente...">{{ wizard_data.complaint }}</textarea>
+                        <div class="form-text">Problema o queja reportada por el cliente (opcional)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Priority and Status -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-flag me-2"></i>
+                        Prioridad y Estado
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="priority" class="form-label">Prioridad</label>
+                        <select class="form-select" name="priority" id="priority">
+                            {% for option in priority_options %}
+                                <option value="{{ option.value }}" 
+                                        {% if wizard_data.priority == option.value %}selected{% endif %}>
+                                    {{ option.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Nivel de prioridad de la orden de trabajo</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Estado Inicial</label>
+                        <select class="form-select" name="status" id="status">
+                            {% for option in status_options %}
+                                <option value="{{ option.value }}" 
+                                        {% if wizard_data.status == option.value %}selected{% endif %}>
+                                    {{ option.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Estado inicial de la orden de trabajo</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="technician_id" class="form-label">Técnico Asignado</label>
+                        <select class="form-select" name="technician_id" id="technician_id">
+                            <option value="">Sin asignar</option>
+                            {% for technician in technicians %}
+                                <option value="{{ technician.id }}" 
+                                        {% if wizard_data.technician_id == technician.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ technician.first_name }} {{ technician.last_name }}
+                                    {% if technician.employee_code %} ({{ technician.employee_code }}){% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Técnico responsable del trabajo (opcional)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <!-- Scheduling -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-calendar3 me-2"></i>
+                        Programación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="scheduled_date" class="form-label">Fecha Programada</label>
+                        <input type="date" 
+                               class="form-control" 
+                               name="scheduled_date" 
+                               id="scheduled_date"
+                               value="{{ wizard_data.scheduled_date|date:'Y-m-d' }}"
+                               min="{% now 'Y-m-d' %}">
+                        <div class="form-text">Fecha en que se realizará el trabajo</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="scheduled_time" class="form-label">Hora Programada</label>
+                        <input type="time" 
+                               class="form-control" 
+                               name="scheduled_time" 
+                               id="scheduled_time"
+                               value="{{ wizard_data.scheduled_time|time:'H:i' }}">
+                        <div class="form-text">Hora de inicio del trabajo</div>
+                    </div>
+                    
+                    <div class="alert alert-info" id="schedulingNote" style="display: none;">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Nota:</strong> Si selecciona estado "Programada", debe proporcionar una fecha.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Estimates -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-clock me-2"></i>
+                        Estimaciones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="estimated_hours" class="form-label">Horas Estimadas</label>
+                        <input type="number" 
+                               class="form-control" 
+                               name="estimated_hours" 
+                               id="estimated_hours"
+                               value="{{ wizard_data.estimated_hours }}"
+                               min="0" 
+                               step="0.25" 
+                               placeholder="0.00">
+                        <div class="form-text">Tiempo estimado para completar el trabajo</div>
+                    </div>
+                    
+                    <!-- Summary from previous steps -->
+                    <div class="estimate-summary">
+                        <h6>Resumen de Servicios:</h6>
+                        <div class="small text-muted">
+                            <div>Servicios: <span id="servicesCount">{{ wizard_data.services|length }}</span></div>
+                            <div>Partes: <span id="partsCount">{{ wizard_data.parts|length }}</span></div>
+                            <div>Costo estimado: <span id="estimatedCost">$0.00</span></div>
+                            <div>Horas de servicios: <span id="serviceHours">0.0h</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Navigation Buttons -->
+    <div class="wizard-navigation mt-4">
+        <div class="d-flex justify-content-between">
+            <button type="submit" name="action" value="prev" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>
+                Anterior
+            </button>
+            <div>
+                <button type="submit" name="action" value="cancel" class="btn btn-outline-danger me-2">
+                    <i class="bi bi-x-lg me-1"></i>
+                    Cancelar
+                </button>
+                <button type="submit" name="action" value="next" class="btn btn-primary" id="nextButton">
+                    Siguiente
+                    <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const descriptionField = document.getElementById('description');
+    const statusField = document.getElementById('status');
+    const scheduledDateField = document.getElementById('scheduled_date');
+    const scheduledTimeField = document.getElementById('scheduled_time');
+    const nextButton = document.getElementById('nextButton');
+    const schedulingNote = document.getElementById('schedulingNote');
+    
+    // Calculate summary from wizard data
+    const wizardData = {{ wizard_data|safe }};
+    updateSummary();
+    
+    // Handle status change
+    statusField.addEventListener('change', function() {
+        if (this.value === 'scheduled') {
+            schedulingNote.style.display = 'block';
+            scheduledDateField.required = true;
+        } else {
+            schedulingNote.style.display = 'none';
+            scheduledDateField.required = false;
+        }
+        validateStep();
+    });
+    
+    // Handle description changes
+    descriptionField.addEventListener('input', validateStep);
+    scheduledDateField.addEventListener('change', validateStep);
+    
+    // Set default time if date is selected but no time
+    scheduledDateField.addEventListener('change', function() {
+        if (this.value && !scheduledTimeField.value) {
+            scheduledTimeField.value = '09:00';
+        }
+    });
+    
+    function validateStep() {
+        const descriptionValid = descriptionField.value.trim().length >= 10;
+        const statusValue = statusField.value;
+        const dateRequired = statusValue === 'scheduled';
+        const dateValid = !dateRequired || scheduledDateField.value;
+        
+        nextButton.disabled = !(descriptionValid && dateValid);
+        
+        // Update button text based on validation
+        if (!descriptionValid) {
+            nextButton.title = 'La descripción debe tener al menos 10 caracteres';
+        } else if (!dateValid) {
+            nextButton.title = 'Debe proporcionar una fecha para estado "Programada"';
+        } else {
+            nextButton.title = '';
+        }
+    }
+    
+    function updateSummary() {
+        let totalCost = 0;
+        let totalHours = 0;
+        
+        // Calculate from services
+        if (wizardData.services) {
+            wizardData.services.forEach(service => {
+                totalCost += (service.price || 0) * (service.quantity || 1);
+                totalHours += (service.estimated_hours || 0) * (service.quantity || 1);
+            });
+        }
+        
+        // Calculate from parts
+        if (wizardData.parts) {
+            wizardData.parts.forEach(part => {
+                totalCost += (part.price || 0) * (part.quantity || 1);
+            });
+        }
+        
+        // Update display
+        document.getElementById('servicesCount').textContent = wizardData.services ? wizardData.services.length : 0;
+        document.getElementById('partsCount').textContent = wizardData.parts ? wizardData.parts.length : 0;
+        document.getElementById('estimatedCost').textContent = `$${totalCost.toFixed(2)}`;
+        document.getElementById('serviceHours').textContent = `${totalHours.toFixed(1)}h`;
+    }
+    
+    // Initial validation
+    validateStep();
+    
+    // Trigger status change handler for initial state
+    statusField.dispatchEvent(new Event('change'));
+});
+</script>
